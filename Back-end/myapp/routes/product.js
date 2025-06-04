@@ -25,7 +25,7 @@ const upload = multer({
     fileFilter: checkFile
 });
 module.exports = upload;
-// http://localhost:3000/products
+// http://localhost:5000/products
 router.get('/', async (req, res) => {
     try {
         const result = await productsController.getAllPro();
@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
         return res.status(500).json({ status: false, message: 'Lỗi hệ thống' })
     }
 });
-// http://localhost:3000/products/681c9cf2bc60e77b1ccbc40a
+// http://localhost:5000/products/681c9cf2bc60e77b1ccbc40a
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -47,7 +47,7 @@ router.get('/:id', async (req, res) => {
 
     }
 })
-// http://localhost:3000/products/hide/681c9cf2bc60e77b1ccbc40a
+// http://localhost:5000/products/hide/681c9cf2bc60e77b1ccbc40a
 router.delete('/hide/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -58,7 +58,7 @@ router.delete('/hide/:id', async (req, res) => {
         return res.status(500).json({ status: false, message: 'Lỗi hệ thống' });
     }
 });
-// http://localhost:3000/products/addProduct
+// http://localhost:5000/products/addProduct
 router.post('/addProduct', upload.single('image'), async (req, res) => {
     try {
         const data = req.body;
@@ -76,7 +76,7 @@ router.post('/addProduct', upload.single('image'), async (req, res) => {
         return res.status(500).json({ status: false, message: 'Lỗi hệ thống' });
     }
 });
-// http://localhost:3000/products/updateProduct/681c9cf2bc60e77b1ccbc40a
+// http://localhost:5000/products/updateProduct/681c9cf2bc60e77b1ccbc40a
 router.put("/updateProduct/:id", upload.single("image"), async (req, res) => {
     try {
       const { id } = req.params;

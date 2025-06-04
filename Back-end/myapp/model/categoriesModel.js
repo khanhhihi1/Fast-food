@@ -7,4 +7,4 @@ const categoriesSchema = new Schema({
 });
 
 module.exports =
-  mongoose.models.Category || mongoose.model("Category", categoriesSchema);
+  mongoose.models.Categories || mongoose.model("Categories", categoriesSchema);
