@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require("../controller/userController.js");
 
 // Đăng ký người dùng
-// POST http://localhost:3000/user/register
+// http://localhost:5000/users/register
 router.post("/register", async (req, res) => {
   try {
     const data = req.body;
@@ -18,7 +18,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Đăng nhập
-// POST http://localhost:3000/user/login
+// POST http://localhost:5000/users/login
 router.post("/login", async (req, res) => {
   try {
     const data = req.body;
@@ -33,7 +33,7 @@ router.post("/login", async (req, res) => {
 });
 
 // Cập nhật thông tin người dùng
-// PUT http://localhost:3000/user/update/:id
+// PUT http://localhost:5000/users/update/:id
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -49,7 +49,7 @@ router.put("/update/:id", async (req, res) => {
 });
 
 // Xoá người dùng
-// DELETE http://localhost:3000/user/delete/:id
+// DELETE http://localhost:5000/users/delete/:id
 router.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
