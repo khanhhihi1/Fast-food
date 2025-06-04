@@ -1,10 +1,10 @@
-const categoryModel = require("../model/categoriesModel");
+const CategoriesModel = require("../model/categoriesModel");
 const productModel = require("../model/productModel");
 
 // Lấy tất cả danh mục
 const getAllCate = async () => {
   try {
-    const result = await categoryModel.find();
+    const result = await CategoriesModel.find();
     return result;
   } catch (error) {
     console.error("Lỗi khi lấy danh mục:", error.message);
@@ -15,7 +15,7 @@ const getAllCate = async () => {
 // Lấy chi tiết danh mục theo ID
 const getDetailCate = async (id) => {
   try {
-    const result = await categoryModel.findById(id);
+    const result = await CategoriesModel.findById(id);
     if (!result) throw new Error("Không tìm thấy danh mục");
     return result;
   } catch (error) {
@@ -28,7 +28,7 @@ const getDetailCate = async (id) => {
 const addCate = async (data) => {
   try {
     const { name, imageUrl } = data;
-    const newCate = new categoryModel({ name, imageUrl });
+    const newCate = new CategoriesModel({ name, imageUrl });
     const result = await newCate.save();
     return result;
   } catch (error) {
@@ -40,11 +40,11 @@ const addCate = async (data) => {
 // Xoá danh mục (kiểm tra nếu có sản phẩm thì không xoá)
 const deleteCate = async (id) => {
   try {
-    const pros = await productModel.find({ category: id });
+    const pros = await productModel.find({ Categories: id });
     if (pros.length > 0) {
       throw new Error("Không thể xoá vì danh mục còn chứa sản phẩm");
     }
-    const cate = await categoryModel.findByIdAndDelete(id);
+    const cate = await CategoriesModel.findByIdAndDelete(id);
     if (!cate) {
       throw new Error("Không tìm thấy danh mục để xoá");
     }
@@ -60,7 +60,7 @@ const updateCate = async (id, data) => {
   try {
     // updateCate
     const { name, imageUrl } = data;
-    const updatedCate = await categoryModel.findByIdAndUpdate(
+    const updatedCate = await CategoriesModel.findByIdAndUpdate(
       id,
       { name, imageUrl },
       { new: true }

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const categoryController = require("../controller/categoriesController.js");
-
+// http://localhost:5000/categories
 router.get("/", async (req, res) => {
   try {
     const result = await categoryController.getAllCate();
@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 });
-
+// http://localhost:5000/categories/681c9d57bc60e77b1ccbc425
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -22,7 +22,7 @@ router.get("/:id", async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 });
-
+// http://localhost:5000/categories/add
 router.post("/add", async (req, res) => {
   try {
     const data = req.body;
@@ -33,7 +33,7 @@ router.post("/add", async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 });
-
+// http://localhost:5000/categories/update/
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -45,7 +45,7 @@ router.put("/update/:id", async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 });
-
+// http://localhost:5000/categories/delete/
 router.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
