@@ -16,6 +16,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import './admin.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminSideBar from './component/adminSideBar';
+import AdminNavbar from './component/adminNavbar';
 ChartJS.register(ArcElement, Tooltip, Legend);
 const useDarkMode = () => {
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -196,7 +197,7 @@ export default function ShowAdmin() {
 
             {/* Main Content */}
             <Container fluid className={`content w-100 container-content ${collapsed ? 'collapsed-content' : ''}`}>
-                <Navbar className="navbar" style={{ marginRight: '10px' }}>
+                {/* <Navbar className="navbar" style={{ marginRight: '10px' }}>
                     <Container fluid className="container-fluid">
                         <Button variant="light" onClick={toggleSidebar} className="me-3">
                             <FontAwesomeIcon icon={faBarsStaggered} />
@@ -259,7 +260,8 @@ export default function ShowAdmin() {
                             </Offcanvas>
                         </div>
                     </Container>
-                </Navbar>
+                </Navbar> */}
+                <AdminNavbar/>
 
                 {/* Dashboard Cards */}
                 <div className="dashboard-container">
