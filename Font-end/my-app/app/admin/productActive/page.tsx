@@ -46,7 +46,7 @@ export default function ShowAdmin() {
     const [show, setShow] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 5;
+    const productsPerPage = 10;
 
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
