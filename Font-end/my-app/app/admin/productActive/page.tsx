@@ -21,6 +21,8 @@ import useDarkMode from "../useDarkMode/page";
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import { FaSearch } from "react-icons/fa";
 import { AnimatePresence, motion } from "framer-motion";
+import AdminSideBar from '../component/adminSideBar';
+
 
 export default function ShowAdmin() {
     interface PostType {
@@ -114,7 +116,7 @@ export default function ShowAdmin() {
     return (
         <>
             <div className="d-flex dark-mode">
-                <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+                {/* <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
                     <h3 className="text-center">
                         <img
                             className="rounded-circle"
@@ -234,7 +236,9 @@ export default function ShowAdmin() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> */}
+                <AdminSideBar />
+
                 <Container fluid className={`content w-100 container-content ${collapsed ? 'collapsed-content' : ''}`}>
                     <Navbar className="navbar" style={{ marginRight: '10px' }}>
                         <Container fluid className="container-fluid">
