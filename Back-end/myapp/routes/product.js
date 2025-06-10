@@ -59,22 +59,24 @@ router.delete('/hide/:id', async (req, res) => {
     }
 });
 // http://localhost:5000/products/addProduct
-router.post('/addProduct', upload.single('image'), async (req, res) => {
-    try {
-        const data = req.body;
-        data.image = req.file ? req.file.filename : null; 
+router.post('/addProduct', async (req, res) => {
+  try {
+    const data = req.body; 
 
-        const result = await productsController.addPro(data);
-        return res.status(201).json({ 
-            status: true, 
-            result, 
-            image: data.image, 
-            message: 'Thêm sản phẩm thành công' 
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ status: false, message: 'Lỗi hệ thống' });
-    }
+    const result = await productsController.addPro(data);
+    return res.status(201).json({ 
+      status: true, 
+      result, 
+      image: data.image, 
+      message: 'Thêm sản phẩm thành công' 
+    });
+  } catch (error) {
+    console.error("Lỗi chi tiết:", error);
+    const statusCode = error.message.includes('Thiếu trường bắt buộc') || 
+                      error.message.includes('Danh mục không tồn tại') || 
+                      error.message.includes('Hình ảnh phải là URL') ? 400 : 500;
+    return res.status(statusCode).json({ status: false, message: error.message });
+  }
 });
 // http://localhost:5000/products/updateProduct/681c9cf2bc60e77b1ccbc40a
 router.put("/updateProduct/:id", upload.single("image"), async (req, res) => {
