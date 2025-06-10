@@ -17,11 +17,21 @@ async function getAllPro() {
 // Thêm mới sản phẩm
 async function addPro(data) {
   try {
-    const requiredFields = ["name", "price", "categories", "quantity", "image", "taste", "size"];
+    const requiredFields = ["name", "price", "categories", "quantity", "taste", "size", "image"];
     for (const field of requiredFields) {
       if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
+    }
+
+    if (typeof data.price !== 'number' || data.price <= 0) {
+      throw new Error('Giá phải là số dương');
+    }
+    if (typeof data.quantity !== 'number' || data.quantity < 0) {
+      throw new Error('Số lượng không được âm');
+    }
+    if (typeof data.image !== 'string' || !data.image.match(/^https?:\/\/.+/)) {
+      throw new Error('Hình ảnh phải là URL hợp lệ');
     }
 
     const categoriesFind = await categoriesModel.findById(data.categories);
@@ -32,7 +42,7 @@ async function addPro(data) {
     const newPro = new productsModel({
       name: data.name,
       price: data.price,
-      image: data.image,
+      image: data.image, 
       quantity: data.quantity,
       taste: data.taste,
       size: data.size,
@@ -46,7 +56,7 @@ async function addPro(data) {
     return result;
   } catch (error) {
     console.error("Lỗi khi thêm sản phẩm:", error.message);
-    throw new Error("Lỗi thêm dữ liệu sản phẩm: " + error.message);
+    throw error;
   }
 }
 
