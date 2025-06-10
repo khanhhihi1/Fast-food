@@ -15,8 +15,8 @@ import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import './admin.css';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdminSideBar from './component/adminSideBar';
 ChartJS.register(ArcElement, Tooltip, Legend);
-
 const useDarkMode = () => {
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -73,7 +73,7 @@ export default function ShowAdmin() {
     return (
         <div className="d-flex">
             {/* Sidebar */}
-            <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+            {/* <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
                 <h3 className="text-center">
                     <img
                         className="rounded-circle"
@@ -191,7 +191,8 @@ export default function ShowAdmin() {
                        
                     </div>
                 </div>
-            </div>
+            </div> */}
+          <AdminSideBar />
 
             {/* Main Content */}
             <Container fluid className={`content w-100 container-content ${collapsed ? 'collapsed-content' : ''}`}>

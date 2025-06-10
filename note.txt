@@ -1,0 +1,10 @@
+1. git pull origin main                  # Luôn cập nhật trước khi làm (có thể bỏ nếu là dự án cá nhân)
+2. git checkout -b feature/abc           # Tạo nhánh mới
+3. 
+git add .  
+git commit -m "..."      # Commit thay đổi
+4. git push origin feature/abc           # Push lên GitHub
+5. Tạo Pull Request trên GitHub
+6. Review, sửa code nếu cần
+7. Merge vào main
+8. git checkout main && git pull         # Đồng bộ máy bạn
