@@ -13,16 +13,16 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import '../admin.css';
 import Link from "next/link";
-import ModalsAdmin from "@/app/admin/component/create.model.admin";
+import ModalsAdmin from "@/app/component/create.model.admin";
 import { useEffect, useState } from 'react';
 import { toast } from "react-toastify";
-import UpdateModelAdmin from "@/app/admin/component/update-model-admin";
+import UpdateModelAdmin from "@/app/component/update-model-admin";
 import useDarkMode from "../useDarkMode/page";
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import { FaSearch } from "react-icons/fa";
 import { AnimatePresence, motion } from "framer-motion";
-import AdminSideBar from '../component/adminSideBar';
-
+import AdminSideBar from '../../component/adminSideBar';
+import AdminNavbar from "../../component/adminNavbar";
 
 export default function ShowAdmin() {
     interface PostType {
@@ -240,7 +240,7 @@ export default function ShowAdmin() {
                 <AdminSideBar />
 
                 <Container fluid className={`content w-100 container-content ${collapsed ? 'collapsed-content' : ''}`}>
-                    <Navbar className="navbar" style={{ marginRight: '10px' }}>
+                    {/* <Navbar className="navbar" style={{ marginRight: '10px' }}>
                         <Container fluid className="container-fluid">
                             <Button variant="light" onClick={toggleSidebar} className="me-3">
                                 <FontAwesomeIcon icon={faBarsStaggered} />
@@ -303,7 +303,8 @@ export default function ShowAdmin() {
                                 </Offcanvas>
                             </div>
                         </Container>
-                    </Navbar>
+                    </Navbar> */}
+                    <AdminNavbar />
                     <p className="text-center title-productAdmin mt-5">Sản phẩm đang bán</p>
                     <div className="row">
                         <div className="col">
