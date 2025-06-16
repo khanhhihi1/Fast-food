@@ -27,8 +27,11 @@ const getDetailCate = async (id) => {
 // Thêm danh mục
 const addCate = async (data) => {
   try {
-    const { name, imageUrl } = data;
-    const newCate = new CategoriesModel({ name, imageUrl });
+    const { name, image } = data;
+    const newCate = new CategoriesModel({
+      name,
+      imageUrl: image,
+    });
     const result = await newCate.save();
     return result;
   } catch (error) {
