@@ -923,7 +923,6 @@ body.dark-mode .table-striped>tbody>tr:nth-of-type(odd)>* {
 
 .container-content {
   background-color: rgb(7, 25, 50);
-  height: 100%;
 }
 .product-list-container {
   background-color: #1a1a2e;
@@ -965,7 +964,4 @@ body.dark-mode .table-striped>tbody>tr:nth-of-type(odd)>* {
 .pagination {
   margin-top: 20px;
   text-align: left;
-}
-.productCategory{
-  height: 90vh;
 }
