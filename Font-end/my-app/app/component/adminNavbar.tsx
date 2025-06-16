@@ -13,7 +13,7 @@ import { FaSearch, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import '../admin.css';
+import './admin.css';
 import { motion, AnimatePresence } from 'framer-motion';
 ChartJS.register(ArcElement, Tooltip, Legend);
 const useDarkMode = () => {

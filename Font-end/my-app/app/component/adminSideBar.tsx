@@ -9,7 +9,7 @@ import {
     faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
-import '../admin.css';
+import './admin.css';
 import { motion, AnimatePresence } from 'framer-motion';
 
 
@@ -54,13 +54,13 @@ export default function AdminSideBar() {
                                     >
                                         <div className="submenu space-y-1 mt-2">
                                             <Link
-                                                href="/admin/productAdmin"
+                                                href="/admin/productActive"
                                                 className="nav-link2"
                                             >
                                                 Sản phẩm đang bán
                                             </Link>
                                             <Link
-                                                href="/admin/productAdmin/add"
+                                                href="/admin/productHidden"
                                                 className="nav-link2"
                                             >
                                                 Sản phẩm ngưng bán
