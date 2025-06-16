@@ -13,15 +13,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import '../admin.css';
 import Link from "next/link";
-import ModalsAdmin from "@/app/admin/component/create.model.admin";
+import ModalsAdmin from "@/app/component/create.model.admin";
 import { useEffect, useState } from 'react';
 import { toast } from "react-toastify";
-import UpdateModelAdmin from "@/app/admin/component/update-model-admin";
+import UpdateModelAdmin from "@/app/component/update-model-admin";
 import useDarkMode from "../useDarkMode/page";
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import { FaSearch } from "react-icons/fa";
 import { AnimatePresence, motion } from "framer-motion";
-import AdminSideBar from '../component/adminSideBar';
+import AdminSideBar from '../../component/adminSideBar';
 
 
 export default function ShowAdmin() {
