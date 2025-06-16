@@ -1,18 +1,18 @@
 const categoriesModel = require('../model/categoriesModel.js');
 const productsModel = require('../model/productModel.js');
-module.exports = { getAllPro, getDatailPro, hideProduct,addPro,updateProduct }
+module.exports = { getAllPro, getDatailPro, hideProduct, addPro, updateProduct }
 const mongoose = require('mongoose');
 // Lấy tất cả sản phẩm 
 async function getAllPro() {
-    try {
-        const cates = await productsModel.find();
-        return cates;
+  try {
+    const cates = await productsModel.find();
+    return cates;
 
-    } catch (error) {
+  } catch (error) {
 
-        console.log(error);
-        throw new Error('Loi lay du lieu')
-    }
+    console.log(error);
+    throw new Error('Loi lay du lieu')
+  }
 }
 // Thêm mới sản phẩm
 async function addPro(data) {
@@ -42,7 +42,7 @@ async function addPro(data) {
     const newPro = new productsModel({
       name: data.name,
       price: data.price,
-      image: data.image, 
+      image: data.image,
       quantity: data.quantity,
       taste: data.taste,
       size: data.size,
@@ -62,14 +62,14 @@ async function addPro(data) {
 
 // Sản phẩm chi tiết
 async function getDatailPro(id) {
-    try {
-        const result = await productsModel.findOne({ _id: id });
-        return result;
-    }
-    catch (errorr) {
-        console.log(errorr);
-        throw new Error('error')
-    };
+  try {
+    const result = await productsModel.findOne({ _id: id });
+    return result;
+  }
+  catch (errorr) {
+    console.log(errorr);
+    throw new Error('error')
+  };
 }
 // Ẩn sản phẩm
 async function hideProduct(id) {
@@ -77,20 +77,25 @@ async function hideProduct(id) {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new Error("ID sản phẩm không hợp lệ");
         }
+
+        
+        const product = await productsModel.findById(id);
+        if (!product) throw new Error("Sản phẩm không tồn tại");
+
+       
         const result = await productsModel.findByIdAndUpdate(
             id,
-            { isHidden: true },
+            { status: !product.status },
             { new: true }
         );
-        if (!result) {
-            throw new Error("Sản phẩm không tồn tại");
-        }
+
         return result;
     } catch (error) {
         console.log(error);
         throw new Error(error.message || "Lỗi khi ẩn sản phẩm");
     }
 }
+
 // Cập nhât sản phẩm
 async function updateProduct(data, id) {
   try {
@@ -99,9 +104,9 @@ async function updateProduct(data, id) {
       throw new Error("Sản phẩm không tồn tại");
     }
 
-    const { name, price, categories, quantity, image,taste,size  } = data;
+    const { name, price, categories, quantity, image, taste, size } = data;
 
-    let categoriesUpdate = pro.categories; 
+    let categoriesUpdate = pro.categories;
 
     if (categories) {
       const categoriesFind = await categoriesModel.findById(categories);
