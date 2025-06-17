@@ -143,7 +143,7 @@ async function updateProduct(data, id) {
       throw new Error("Sản phẩm không tồn tại");
     }
 
-    const { name, price, categories, quantity, image, taste, size } = data;
+    const { name, price, categories, quantity, image, taste, size,description } = data;
 
     let categoriesUpdate = pro.categories;
 
@@ -162,6 +162,7 @@ async function updateProduct(data, id) {
       {
         name,
         price,
+        description,
         categories: categoriesUpdate,
         quantity,
         image,
