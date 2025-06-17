@@ -79,17 +79,13 @@ router.post('/addProduct', async (req, res) => {
   }
 });
 // http://localhost:5000/products/updateProduct/681c9cf2bc60e77b1ccbc40a
-router.put("/updateProduct/:id", upload.single("image"), async (req, res) => {
+router.put("/updateProduct/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
-
-    if (req.file) {
-      data.image = req.file.originalname;
-    } else {
-      delete data.image;
+      if (!data.image) {
+      return res.status(400).json({ status: false, message: "Thiếu URL hình ảnh" });
     }
-
     const result = await productsController.updateProduct(data, id);
     return res.status(201).json({
       status: true,
