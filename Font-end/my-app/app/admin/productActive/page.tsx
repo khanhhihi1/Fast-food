@@ -100,19 +100,6 @@ export default function ShowAdmin() {
             setCurrentPage(currentPage + 1);
         }
     };
-
-    const handleEdit = (product: PostType) => {
-        if (!product || !product._id || !product.name || !product.image ||
-            product.price == null || product.quantity == null || !product.taste || !product.size) {
-            toast.error("Dữ liệu sản phẩm không hợp lệ, không thể chỉnh sửa!");
-            console.error("Sản phẩm lỗi:", product);
-            return;
-        }
-        console.log("Sản phẩm được chọn để chỉnh sửa:", product);
-        setPost(product);
-        setUpdateModal(true);
-    };
-
     return (
         <>
             <div className="d-flex dark-mode">
