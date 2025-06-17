@@ -343,7 +343,7 @@ export default function ShowAdmin() {
                                             <td>
                                                 <button
                                                     className="action-btn edit-btn mx-3"
-                                                    onClick={() => handleEdit(product)}
+                                                    onClick={() =>{ setUpdateModal(true); setPost(product);}}
                                                 >
                                                     <FontAwesomeIcon icon={faPenToSquare} />
                                                 </button>
