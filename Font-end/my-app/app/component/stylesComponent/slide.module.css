@@ -1,0 +1,26 @@
+.bannerMain{
+  width: 100%;
+  height: auto;
+  display: block;
+  }
+  .btnMain{
+    position: absolute;
+    background-color: white ;
+    border: none;
+    border-radius: 0;
+    color: #c10a28;
+    font-weight: bolder;
+    bottom: 110px;
+    left: 390px;
+    width: 230px;
+    height: 65.5px;
+    font-size: 26px;
+    border-radius: 2px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all   0.3s ease;
+  }
+  .btnMain:hover{
+    background: linear-gradient(90deg, #ff5722, #ffc107);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+    transform: translateY(-3px); 
+  }
