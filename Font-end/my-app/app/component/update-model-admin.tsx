@@ -172,11 +172,8 @@ function UpdateModelAdmin({ showUpdateModal, setUpdateModal, post, fetchPosts }:
 
                         <Form.Label className="mt-3 form-label">Hương vị</Form.Label>
                         <Form.Select
-                            multiple
-                            value={taste}
-                            onChange={(e) =>
-                                setTaste(Array.from(e.target.selectedOptions, (option) => option.value))
-                            }
+                            value={taste[0] || ""}
+                            onChange={(e) => setTaste([e.target.value])}
                             disabled={loading || !tasteOptions}
                         >
                             <option value="">-- Chọn hương vị --</option>
@@ -192,13 +189,11 @@ function UpdateModelAdmin({ showUpdateModal, setUpdateModal, post, fetchPosts }:
                             )}
                         </Form.Select>
 
+
                         <Form.Label className="mt-3 form-label">Kích cỡ</Form.Label>
                         <Form.Select
-                            multiple
-                            value={size}
-                            onChange={(e) =>
-                                setSize(Array.from(e.target.selectedOptions, (option) => option.value))
-                            }
+                            value={size[0] || ""}
+                            onChange={(e) => setSize([e.target.value])} 
                             disabled={loading || !sizeOptions}
                         >
                             <option value="">-- Chọn kích cỡ --</option>
@@ -213,6 +208,7 @@ function UpdateModelAdmin({ showUpdateModal, setUpdateModal, post, fetchPosts }:
                                 !loading && <option>Không có kích cỡ</option>
                             )}
                         </Form.Select>
+
 
                         <Form.Label className="mt-2" style={{ color: "black" }}>Mô tả sản phẩm</Form.Label>
                         <Form.Control type="text" placeholder="Danh mục sản phẩm" value={description} onChange={(e) => setDescription(e.target.value)} />
