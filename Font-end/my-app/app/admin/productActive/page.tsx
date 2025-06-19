@@ -57,11 +57,12 @@ export default function ShowAdmin() {
     interface PostType {
         _id: string;
         name: string;
+        category: string;
         image: string;
-        price: number;
+        price: number | Record<string, number>;
         quantity: number;
-        taste: string;
-        size: string;
+        taste: string[];
+        size: string[];
         isHidden: boolean;
     }
 
@@ -74,6 +75,7 @@ export default function ShowAdmin() {
     const { isDarkMode, toggleDarkMode } = useDarkMode();
     const [show, setShow] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
+    const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 10;
 
@@ -94,7 +96,6 @@ export default function ShowAdmin() {
                 throw new Error("Lỗi khi tải dữ liệu sản phẩm");
             }
             const data = await response.json();
-            console.log("Dữ liệu sản phẩm:", data);
             if (!data.result || !Array.isArray(data.result)) {
                 throw new Error("Dữ liệu sản phẩm không hợp lệ");
             }
@@ -115,6 +116,23 @@ export default function ShowAdmin() {
 
     useEffect(() => {
         fetchPosts();
+    }, []);
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/categories");
+                if (!response.ok) throw new Error("Không thể tải danh mục");
+                const data = await response.json();
+                const list = Array.isArray(data) ? data : data.result;
+                setCategories(list || []);
+            } catch (error: any) {
+                console.error("Lỗi tải danh mục:", error);
+                toast.error(error.message || "Không thể tải danh mục");
+            }
+        };
+
+        fetchPosts();
+        fetchCategories(); // 👈 gọi khi load trang
     }, []);
 
     const totalPages = Math.ceil(posts.length / productsPerPage);
@@ -146,15 +164,12 @@ export default function ShowAdmin() {
             !product.size
         ) {
             toast.error("Dữ liệu sản phẩm không hợp lệ, không thể chỉnh sửa!");
-            console.error("Sản phẩm lỗi:", product);
             return;
         }
-        console.log("Sản phẩm được chọn để chỉnh sửa:", product);
         setPost(product);
         setUpdateModal(true);
     };
 
-    // hàm ẩn sản phẩm
     const handleHideProduct = async (productId: string) => {
         try {
             const response = await fetch(
@@ -172,7 +187,6 @@ export default function ShowAdmin() {
                 throw new Error("Lỗi khi ẩn sản phẩm");
             }
 
-            // Cập nhật lại danh sách sản phẩm sau khi ẩn
             await fetchPosts();
             toast.success("Ẩn sản phẩm thành công!");
         } catch (error: any) {
@@ -180,30 +194,30 @@ export default function ShowAdmin() {
             toast.error(error.message || "Không thể ẩn sản phẩm");
         }
     };
+
+    const renderPrice = (price: PostType["price"]) => {
+        if (typeof price === "object") {
+            return Object.entries(price).map(([size, value]) => (
+                <div key={size}>{size}: {Number(value).toLocaleString()}đ</div>
+            ));
+        }
+        return <div>{Number(price).toLocaleString()}đ</div>;
+    };
+
     return (
         <>
             <div className="d-flex dark-mode">
                 <AdminSideBar />
                 <Container
                     fluid
-                    className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
-                        }`}
+                    className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}
                 >
                     <AdminNavbar />
-                    <p className="text-center title-productAdmin mt-5">
-                        Sản phẩm đang bán
-                    </p>
+                    <p className="text-center title-productAdmin mt-5">Sản phẩm đang bán</p>
                     <div className="row">
                         <div className="col">
                             <Button className="button-add" onClick={() => setShowModal(true)}>
-                                <FontAwesomeIcon
-                                    style={{
-                                        fontSize: "17px",
-                                        color: "rgb(10, 19, 100)",
-                                        fontWeight: "bold",
-                                    }}
-                                    icon={faPlus}
-                                />
+                                <FontAwesomeIcon icon={faPlus} />
                             </Button>
                         </div>
                     </div>
@@ -211,21 +225,22 @@ export default function ShowAdmin() {
                         <Table striped bordered hover className="table1 text-center">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>#</th>
                                     <th>Hình</th>
                                     <th>Tên</th>
                                     <th>Giá</th>
                                     <th>Số lượng</th>
                                     <th>Hương vị</th>
                                     <th>Kích cỡ</th>
+                                    <th>Danh mục</th>
                                     <th>Chức năng</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {currentProducts.length > 0 ? (
-                                    currentProducts.map((product) => (
+                                    currentProducts.map((product, index) => (
                                         <tr key={product._id}>
-                                            <td>{product._id}</td>
+                                            <td>{index + 1}</td>
                                             <td>
                                                 <img
                                                     src={product.image}
@@ -234,10 +249,14 @@ export default function ShowAdmin() {
                                                 />
                                             </td>
                                             <td>{product.name}</td>
-                                            <td>{product.price}</td>
+                                            <td>{renderPrice(product.price)}</td>
                                             <td>{product.quantity}</td>
-                                            <td>{product.taste}</td>
-                                            <td>{product.size}</td>
+                                            <td>{product.taste.join(", ")}</td>
+                                            <td>{product.size.join(", ")}</td>
+                                            <td>
+                                                {categories.find((cat) => cat._id === product.category)?.name || "Không rõ"}
+                                            </td>
+
                                             <td>
                                                 <button
                                                     className="action-btn edit-btn mx-3"
@@ -261,15 +280,7 @@ export default function ShowAdmin() {
                                 )}
                             </tbody>
                         </Table>
-                        <div
-                            className="pagination"
-                            style={{
-                                padding: "10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                            }}
-                        >
+                        <div className="pagination" style={{ padding: "10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div>
                                 <Button
                                     variant="outline-secondary"
@@ -279,20 +290,16 @@ export default function ShowAdmin() {
                                 >
                                     Trang trước
                                 </Button>
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                                    (page) => (
-                                        <Button
-                                            key={page}
-                                            variant={
-                                                currentPage === page ? "primary" : "outline-secondary"
-                                            }
-                                            onClick={() => setCurrentPage(page)}
-                                            style={{ marginRight: "5px" }}
-                                        >
-                                            {page}
-                                        </Button>
-                                    )
-                                )}
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                    <Button
+                                        key={page}
+                                        variant={currentPage === page ? "primary" : "outline-secondary"}
+                                        onClick={() => setCurrentPage(page)}
+                                        style={{ marginRight: "5px" }}
+                                    >
+                                        {page}
+                                    </Button>
+                                ))}
                                 <Button
                                     variant="outline-secondary"
                                     onClick={handleNext}
@@ -306,7 +313,6 @@ export default function ShowAdmin() {
                     </div>
                 </Container>
             </div>
-
             <ModalsAdmin showModal={showModal} setShowModal={setShowModal} />
             <UpdateModelAdmin
                 showUpdateModal={showUpdateModal}
