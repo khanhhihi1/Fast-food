@@ -12,41 +12,47 @@ interface iShow {
 
 function ModalsAdmin(props: iShow) {
     const { showModal, setShowModal } = props;
-    const [name, setName] = useState<string>("");
-    const [categories, setCategories] = useState<string>("");
-    const [price, setPrice] = useState<string>("");
-    const [image, setImage] = useState<string>(""); 
-    const [quantity, setQuantity] = useState<string>("");
-    const [taste, setTaste] = useState<string>("");
-    const [size, setSize] = useState<string>("");
+
+    const [name, setName] = useState("");
+    const [categories, setCategories] = useState("");
+    const [price, setPrice] = useState(""); // Giá đơn nếu không có biến thể
+    const [variantPrices, setVariantPrices] = useState<{ [key: string]: number }>({}); // Giá theo biến thể
+    const [image, setImage] = useState("");
+    const [quantity, setQuantity] = useState("");
+    const [taste, setTaste] = useState<string[]>([]);
+    const [size, setSize] = useState<string>("Không"); // Mặc định là "Không"
+    const [status, setStatus] = useState(true);
+    const [description, setDescription] = useState("");
+
+    const [tasteOptions, setTasteOptions] = useState<string[]>([]);
+    const [sizeOptions, setSizeOptions] = useState<string[]>([]);
     const [categoriesList, setCategoriesList] = useState<{ _id: string; name: string }[] | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (showModal) {
             const fetchCategories = async () => {
                 setLoading(true);
                 try {
-                    const response = await fetch('http://localhost:5000/categories', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    if (!response.ok) {
-                        throw new Error(`Lỗi khi lấy danh sách danh mục: ${response.status} ${response.statusText}`);
-                    }
+                    const response = await fetch('http://localhost:5000/categories');
                     const data = await response.json();
-                    if (!data || (!Array.isArray(data) && !Array.isArray(data.result))) {
-                        throw new Error("Dữ liệu danh mục không hợp lệ");
-                    }
+                    const tasteSet = new Set<string>();
+                    const sizeSet = new Set<string>();
+                    const products = Array.isArray(data) ? data : data.result || [];
+
+                    products.forEach((product: any) => {
+                        product.taste?.forEach((t: string) => tasteSet.add(t));
+                        product.size?.forEach((s: string) => sizeSet.add(s));
+                    });
+
+                    setTasteOptions(Array.from(tasteSet));
+                    setSizeOptions(Array.from(sizeSet));
+
                     const categoriesData = Array.isArray(data) ? data : data.result;
                     setCategoriesList(categoriesData);
                 } catch (error: any) {
-                    console.error("Lỗi chi tiết khi lấy danh mục:", error);
+                    console.error("Lỗi khi lấy danh mục:", error);
                     toast.error(error.message || "Không thể tải danh sách danh mục");
-                    setCategoriesList([]);
                 } finally {
                     setLoading(false);
                 }
@@ -56,26 +62,41 @@ function ModalsAdmin(props: iShow) {
     }, [showModal]);
 
     const handleSubmit = async () => {
-        if (!name || !price || !categories || !quantity || !taste || !size || !image) {
+        if (!name || !categories || !quantity || !taste.length || !image) {
             toast.error("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
-        if (Number(price) <= 0 || Number(quantity) < 0) {
-            toast.error("Giá phải lớn hơn 0 và số lượng không được âm!");
-            return;
+
+        const isVariant = size === "Có";
+
+        let finalPrice: number | { [key: string]: number };
+
+        if (isVariant) {
+            const requiredSizes = ["Nhỏ", "Vừa", "Lớn"];
+            const missingPrices = requiredSizes.filter(sz => !variantPrices[sz]);
+            if (missingPrices.length > 0) {
+                toast.error(`Thiếu giá cho kích cỡ: ${missingPrices.join(", ")}`);
+                return;
+            }
+            finalPrice = variantPrices;
+        } else {
+            if (!price || Number(price) <= 0) {
+                toast.error("Giá phải lớn hơn 0!");
+                return;
+            }
+            finalPrice = Number(price);
         }
-        if (!image.match(/^https?:\/\/.+/)) {
-            toast.error("Hình ảnh phải là URL hợp lệ (bắt đầu bằng http:// hoặc https://)!");
-            return;
-        }
+
         const data = {
             name,
-            price: Number(price), 
-            categories,
-            quantity: Number(quantity), 
+            price: finalPrice,
+            category: categories,
+            quantity: Number(quantity),
             taste,
-            size,
-            image
+            size: isVariant ? ["Nhỏ", "Vừa", "Lớn"] : [],
+            image,
+            status,
+            description,
         };
 
         try {
@@ -90,7 +111,6 @@ function ModalsAdmin(props: iShow) {
 
             const result = await response.json();
             if (!response.ok) {
-                console.error("Phản hồi từ server:", result);
                 throw new Error(result.message || "Có lỗi xảy ra khi thêm sản phẩm");
             }
 
@@ -98,7 +118,7 @@ function ModalsAdmin(props: iShow) {
             handleClose();
             window.location.reload();
         } catch (error: any) {
-            console.error("Lỗi chi tiết khi thêm sản phẩm:", error);
+            console.error("Lỗi khi thêm sản phẩm:", error);
             toast.error(error.message || "Thêm sản phẩm thất bại");
         }
     };
@@ -107,118 +127,154 @@ function ModalsAdmin(props: iShow) {
         setName("");
         setCategories("");
         setPrice("");
-        setImage(""); 
+        setImage("");
         setQuantity("");
-        setTaste("");
-        setSize("");
+        setDescription("");
+        setTaste([]);
+        setSize("Không");
+        setVariantPrices({});
+        setStatus(true);
         setShowModal(false);
     };
 
     return (
-        <>
-            <Modal
-                show={showModal}
-                onHide={handleClose}
-                backdrop="static"
-                keyboard={false}
-            >
-                <Modal.Header closeButton className="modal-header">
-                    <Modal.Title className="modal-title">Thêm sản phẩm mới</Modal.Title>
-                </Modal.Header>
-                <Modal.Body className="modal-body">
-                    <Form>
-                        <Form.Group className="mb-3" controlId="formName">
-                            <Form.Label className="mt-3 form-label">Tên sản phẩm</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Tên sản phẩm"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                            />
-                        </Form.Group>
+        <Modal show={showModal} onHide={handleClose} backdrop="static" keyboard={false}>
+            <Modal.Header closeButton>
+                <Modal.Title>Thêm sản phẩm mới</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Form>
+                    <Form.Group>
+                        <Form.Label>Tên sản phẩm</Form.Label>
+                        <Form.Control type="text" placeholder="Nhập tên sản phẩm" value={name} onChange={(e) => setName(e.target.value)} />
+                    </Form.Group>
+                    <Form.Group>
+                        <Form.Label>Kích cỡ</Form.Label>
+                        <Form.Select
+                            value={size}
+                            onChange={(e) => {
+                                const selected = e.target.value;
+                                setSize(selected); // Chỉ cho phép chọn một giá trị
+                            }}
+                        >
+                            <option value="Không">Không</option>
+                            <option value="Có">Có</option>
+                        </Form.Select>
+                    </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formPrice">
-                            <Form.Label className="mt-3 form-label">Giá</Form.Label>
+                    {size === "Không" ? (
+                        <Form.Group>
+                            <Form.Label>Giá</Form.Label>
                             <Form.Control
                                 type="number"
-                                placeholder="Giá"
+                                placeholder="Nhập giá sản phẩm"
                                 value={price}
                                 onChange={(e) => setPrice(e.target.value)}
                             />
                         </Form.Group>
+                    ) : (
+                        ["Nhỏ", "Vừa", "Lớn"].map((sz) => (
+                            <Form.Group key={sz}>
+                                <Form.Label>Giá cho kích cỡ {sz}</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    placeholder="Nhập giá sản phẩm"
+                                    value={variantPrices[sz] || ""}
+                                    onChange={(e) => {
+                                        setVariantPrices({
+                                            ...variantPrices,
+                                            [sz]: Number(e.target.value) || 0,
+                                        });
+                                    }}
+                                />
+                            </Form.Group>
+                        ))
+                    )}
 
-                        <Form.Group className="mb-3" controlId="formCategories">
-                            <Form.Label className="mt-3 form-label">Danh mục</Form.Label>
-                            <Form.Select
-                                value={categories}
-                                onChange={(e) => setCategories(e.target.value)}
-                                disabled={loading || !categoriesList}
-                            >
-                                <option value="">-- Chọn danh mục --</option>
-                                {loading && <option>Đang tải...</option>}
-                                {!loading && categoriesList && categoriesList.length > 0 ? (
-                                    categoriesList.map((cat) => (
-                                        <option key={cat._id} value={cat._id}>
-                                            {cat.name}
-                                        </option>
-                                    ))
-                                ) : (
-                                    !loading && <option>Không có danh mục</option>
-                                )}
-                            </Form.Select>
-                        </Form.Group>
+                    <Form.Group>
+                        <Form.Label>Danh mục</Form.Label>
+                        <Form.Select
+                            value={categories}
+                            onChange={(e) => setCategories(e.target.value)}
+                            disabled={loading || !categoriesList}
+                        >
+                            <option value="">-- Chọn danh mục --</option>
+                            {categoriesList?.map(cat => (
+                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formQuantity">
-                            <Form.Label className="mt-3 form-label">Số lượng</Form.Label>
-                            <Form.Control
-                                type="number"
-                                placeholder="Số lượng"
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
-                            />
-                        </Form.Group>
+                    <Form.Group>
+                        <Form.Label>Số lượng</Form.Label>
+                        <Form.Control
+                            placeholder="Nhập số lượng sản phẩm"
+                            type="number"
+                            value={quantity}
+                            onChange={(e) => setQuantity(e.target.value)}
+                        />
+                    </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formTaste">
-                            <Form.Label className="mt-3 form-label">Hương vị</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Hương vị"
-                                value={taste}
-                                onChange={(e) => setTaste(e.target.value)}
-                            />
-                        </Form.Group>
+                    <Form.Group>
+                        <Form.Label>Hương vị</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Nhập hương vị và nhấn Enter"
+                            onKeyDown={(e) => {
+                                const value = (e.target as HTMLInputElement).value.trim();
+                                if (e.key === "Enter" && value) {
+                                    e.preventDefault();
+                                    if (!taste.includes(value)) {
+                                        setTaste([...taste, value]);
+                                    }
+                                    (e.target as HTMLInputElement).value = "";
+                                }
+                            }}
+                        />
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: 8 }}>
+                            {taste.map((t, i) => (
+                                <span key={i} style={{ background: '#007bff', color: 'white', padding: '5px 10px', borderRadius: 20 }}>
+                                    {t}
+                                    <button
+                                        onClick={() => setTaste(taste.filter((_, idx) => idx !== i))}
+                                        style={{ marginLeft: 8, color: 'red', background: 'none', border: 'none' }}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formSize">
-                            <Form.Label className="mt-3 form-label">Kích thước</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Kích thước"
-                                value={size}
-                                onChange={(e) => setSize(e.target.value)}
-                            />
-                        </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formImage">
-                            <Form.Label className="mt-3 form-label">URL Hình ảnh</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Nhập URL hình ảnh (http:// hoặc https://)"
-                                value={image}
-                                onChange={(e) => setImage(e.target.value)} 
-                            />
-                        </Form.Group>
-                    </Form>
-                </Modal.Body>
-                <Modal.Footer className="modal-footer">
-                    <Button variant="secondary" onClick={handleClose}>
-                        Đóng
-                    </Button>
-                    <Button variant="primary" onClick={handleSubmit}>
-                        Thêm sản phẩm
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-        </>
+
+                    <Form.Group>
+                        <Form.Label>URL hình ảnh</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Nhập URL hình ảnh"
+                            value={image}
+                            onChange={(e) => setImage(e.target.value)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group>
+                        <Form.Label>Trạng thái</Form.Label>
+                        <Form.Select
+                            value={status ? "Đang bán" : "Ngừng bán"}
+                            onChange={(e) => setStatus(e.target.value === "Đang bán")}
+                        >
+                            <option value="Đang bán">Đang bán</option>
+                            <option value="Ngừng bán">Ngừng bán</option>
+                        </Form.Select>
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={handleClose}>Đóng</Button>
+                <Button variant="primary" onClick={handleSubmit}>Thêm sản phẩm</Button>
+            </Modal.Footer>
+        </Modal>
     );
 }
 

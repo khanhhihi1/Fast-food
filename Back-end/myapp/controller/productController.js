@@ -11,7 +11,6 @@ module.exports = {
   getInactiveProducts,
 };
 const mongoose = require("mongoose");
-// Lấy tất cả sản phẩm
 async function getAllPro() {
   try {
     const cates = await productsModel.find();
@@ -21,59 +20,73 @@ async function getAllPro() {
     throw new Error("Loi lay du lieu");
   }
 }
+
+
 // Thêm mới sản phẩm
 async function addPro(data) {
   try {
-    const requiredFields = [
-      "name",
-      "price",
-      "categories",
-      "quantity",
-      "taste",
-      "size",
-      "image",
-    ];
+    const requiredFields = ["name", "price", "category", "quantity", "taste", "size", "image"];
     for (const field of requiredFields) {
-      if (!data[field]) {
+      if (data[field] === undefined || data[field] === null || data[field] === "") {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
     }
 
-    if (typeof data.price !== "number" || data.price <= 0) {
-      throw new Error("Giá phải là số dương");
-    }
-    if (typeof data.quantity !== "number" || data.quantity < 0) {
-      throw new Error("Số lượng không được âm");
-    }
-    if (typeof data.image !== "string" || !data.image.match(/^https?:\/\/.+/)) {
+    if (typeof data.image !== "string" || !/^https?:\/\/.+/.test(data.image)) {
       throw new Error("Hình ảnh phải là URL hợp lệ");
     }
 
-    const categoriesFind = await categoriesModel.findById(data.categories);
-    if (!categoriesFind) {
+    const quantity = Number(data.quantity);
+    if (isNaN(quantity) || quantity < 0) {
+      throw new Error("Số lượng không được âm");
+    }
+
+    let parsedPrice;
+    if (typeof data.price === "object" && !Array.isArray(data.price)) {
+      parsedPrice = {};
+      for (const key in data.price) {
+        const value = Number(data.price[key]);
+        if (isNaN(value) || value <= 0) {
+          throw new Error(`Giá cho size "${key}" phải là số dương`);
+        }
+        parsedPrice[key] = value;
+      }
+    } else {
+      const price = Number(data.price);
+      if (isNaN(price) || price <= 0) {
+        throw new Error("Giá phải là số dương");
+      }
+      parsedPrice = price;
+    }
+
+    const category = await categoriesModel.findById(data.category);
+    if (!category) {
       throw new Error("Danh mục không tồn tại");
     }
 
     const newPro = new productsModel({
       name: data.name,
-      price: data.price,
+      price: parsedPrice,
       image: data.image,
-      quantity: data.quantity,
+      quantity: quantity,
       taste: data.taste,
       size: data.size,
-      categories: {
-        categoriesId: categoriesFind._id,
-        categoriesName: categoriesFind.name,
-      },
+      description: data.description || "",
+      status: data.status !== undefined ? data.status : true,
+      category: category._id,
     });
 
     const result = await newPro.save();
     return result;
+
   } catch (error) {
     console.error("Lỗi khi thêm sản phẩm:", error.message);
     throw error;
   }
 }
+
+
+
 
 // Sản phẩm chi tiết
 async function getDatailPro(id) {
@@ -143,39 +156,72 @@ async function updateProduct(data, id) {
       throw new Error("Sản phẩm không tồn tại");
     }
 
-    const { name, price, categories, quantity, image, taste, size,description } = data;
+    const requiredFields = ["name", "price", "category", "quantity", "taste", "size", "image"];
+    for (const field of requiredFields) {
+      if (data[field] === undefined || data[field] === null || data[field] === "") {
+        throw new Error(`Thiếu trường bắt buộc: ${field}`);
+      }
+    }
 
-    let categoriesUpdate = pro.categories;
+    if (typeof data.image !== "string" || !/^https?:\/\/.+/.test(data.image)) {
+      throw new Error("Hình ảnh phải là URL hợp lệ");
+    }
 
-    if (categories) {
-      const categoriesFind = await categoriesModel.findById(categories);
-      if (!categoriesFind) {
+    const quantity = Number(data.quantity);
+    if (isNaN(quantity) || quantity < 0) {
+      throw new Error("Số lượng không được âm");
+    }
+
+    let parsedPrice;
+    if (typeof data.price === "object" && !Array.isArray(data.price)) {
+      parsedPrice = {};
+      for (const key in data.price) {
+        const value = Number(data.price[key]);
+        if (isNaN(value) || value <= 0) {
+          throw new Error(`Giá cho size "${key}" phải là số dương`);
+        }
+        parsedPrice[key] = value;
+      }
+    } else {
+      const price = Number(data.price);
+      if (isNaN(price) || price <= 0) {
+        throw new Error("Giá phải là số dương");
+      }
+      parsedPrice = price;
+    }
+
+    let categoriesUpdate;
+    let categoryId = pro.category;
+    if (data.category) {
+      const category = await categoriesModel.findById(data.category);
+      if (!category) {
         throw new Error("Danh mục không tồn tại");
       }
-      categoriesUpdate = {
-        categoriesId: categoriesFind._id,
-        categoriesName: categoriesFind.name,
-      };
+      categoryId = category._id;
+    } else {
+      categoriesUpdate = pro.category;
     }
+
     const result = await productsModel.findByIdAndUpdate(
       id,
       {
-        name,
-        price,
-        description,
-        categories: categoriesUpdate,
-        quantity,
-        image,
-        taste,
-        size,
+        name: data.name,
+        price: parsedPrice,
+        description: data.description || pro.description || "",
+        category: categoryId,
+        quantity: quantity,
+        image: data.image,
+        taste: data.taste,
+        size: data.size,
+        status: data.status !== undefined ? data.status : pro.status,
       },
       { new: true }
     );
 
     return result;
   } catch (error) {
-    console.error(error);
-    throw new Error("Lỗi cập nhật sản phẩm");
+    console.error("Lỗi khi cập nhật sản phẩm:", error.message);
+    throw error;
   }
 }
 
