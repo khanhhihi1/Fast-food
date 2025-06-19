@@ -1,0 +1,65 @@
+
+.service{
+  cursor: pointer;
+  gap: 10px;
+  border-radius: 10px;
+  background-color: #cdcdcd; 
+  box-shadow: 0 2px 4px rgba(107, 106, 106, 0.4);
+  transition: all   0.3s ease;
+}
+.service:hover{
+  background-color: #c10a28; 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6); 
+  transform: translateY(-3px); 
+}
+.serviceTittle p{
+  font-size: 16px;
+  margin: 0;
+  color: black;
+}
+.serviceTittle h1{
+  font-size: 22px;
+  margin: 0;
+  color: black;
+}
+.service:hover .serviceTittle h1,
+.service:hover .serviceTittle p {
+  color: white;
+}
+.h1Box {
+  position: relative;
+  display: inline-block;
+  font-size: 24px;
+  padding: 0;
+  line-height: normal;
+  color: black; 
+}
+.h1Box:hover{
+  color: #c10a28;
+  cursor: pointer;
+}
+
+.h1Box::after {
+  content: "";
+  display: block;
+  width: 60%;     
+  height: 3px;   
+  background-color: #c10a28;  
+  margin: 8px auto 0;    
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.h1Box:hover:after{
+  width: 100%; 
+}
+.h1 {
+  font-size: 24px;
+  padding: 0;
+  line-height: normal;
+  color: black; 
+}
+.h1:hover{
+  color: #c10a28;
+  cursor: pointer;
+}
+

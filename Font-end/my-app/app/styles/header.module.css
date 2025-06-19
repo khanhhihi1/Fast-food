@@ -1,0 +1,12 @@
+.aLink{
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 600;
+  color: black;
+}
+.aLink:hover{
+  color:  #c10a28;
+}
+.box{
+  border-bottom:  1px solid #ccc;
+}

@@ -1,68 +1,143 @@
 "use client";
-import React, { useState } from "react";
-import { Navbar, Nav, Container, Button, Offcanvas } from "react-bootstrap";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaShoppingCart } from "react-icons/fa";
-import { FaUserCircle } from "react-icons/fa";
+import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
+import Image from "react-bootstrap/Image";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faPhone,
+  faClock,
+  faSearch,
+  faUser,
+  faShoppingBag,
+} from "@fortawesome/free-solid-svg-icons";
+import styles from "../styles/header.module.css";
 export default function Header() {
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-
   return (
     <>
-      <Navbar expand="lg" bg="dark" data-bs-theme="dark" style={{ opacity: 0.95 }}>
+      <Container fluid style={{ backgroundColor: "#c10a28" }} className="p-2">
         <Container>
-          <Navbar.Brand href="/">
-            <img src="/logo.png" alt="Logo" height="40" />
-          </Navbar.Brand>
-          <Navbar.Toggle aria-controls="navbarNav" onClick={handleShow} />
-          <Navbar.Collapse id="navbarNav">
-            <Nav className="ms-auto">
-              <Link className="nav-link text-white" href="/">Trang chủ</Link>
-              <Link className="nav-link text-white" href="/">Giới thiệu</Link>
-              <Link className="nav-link text-white" href="/contact">Hỗ trợ</Link>
-              <Link className="nav-link text-white" href="/cart"><FaShoppingCart size={20} color="white" /></Link>
-              <Link className="nav-link text-white" href="/login"> <FaUserCircle size={20} color="white" /></Link>
-            </Nav>
-          </Navbar.Collapse>
+          <Row className="d-flex align-items-center">
+            <Col className="d-flex align-items-center" style={{ gap: "10px" }}>
+              <span
+                className="text-light"
+                style={{ fontSize: "16px", fontWeight: "600" }}
+              >
+                <FontAwesomeIcon
+                  icon={faPhone}
+                  className="text-light me-2"
+                  style={{ fontSize: "16px" }}
+                />
+                0931892826
+              </span>
+              <span
+                className="text-light mx-2"
+                style={{ fontSize: "16px", fontWeight: "600" }}
+              >
+                <FontAwesomeIcon
+                  icon={faClock}
+                  className="text-light me-1"
+                  style={{ fontSize: "16px" }}
+                />
+                Thứ 2 - Chủ nhật: 9:00 - 18:00
+              </span>
+            </Col>
+            <Col
+              className="d-flex justify-content-end align-items-center"
+              style={{ gap: "10px" }}
+            >
+              <Link
+                href="/signup"
+                style={{
+                  textDecoration: "none",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                }}
+              >
+                Đăng ký
+              </Link>
+              <Link
+                href="/login"
+                style={{
+                  textDecoration: "none",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                }}
+              >
+                Đăng nhập
+              </Link>
+              <FontAwesomeIcon
+                icon={faSearch}
+                className="text-light"
+                style={{ fontSize: "16px" }}
+              />
+              <Link href="/cart">
+                <FontAwesomeIcon
+                  icon={faShoppingBag}
+                  className="text-light me-2"
+                  style={{ fontSize: "16px" }}
+                />
+              </Link>
+            </Col>
+          </Row>
         </Container>
-      </Navbar>
-
-      <div className="container-fluid p-0">
-        <img src="/slideshow_2.webp" className="img-fluid w-100 vh-100" alt="Slideshow" />
-      </div>
-
-      <Navbar expand="lg" bg="secondary" variant="dark">
-        <Container>
-          <Navbar.Brand href="/">Food Menu</Navbar.Brand>
-          <Navbar.Toggle aria-controls="navbarNav2" />
-          <Navbar.Collapse id="navbarNav2">
-            <Nav className="ms-auto">
-              <Link className="nav-link" href="/product">Combo Fried King</Link>
-              <Link className="nav-link" href="/product-item">Thức ăn kèm</Link>
-              <Link className="nav-link" href="#">Category 3</Link>
-            </Nav>
-          </Navbar.Collapse>
+      </Container>
+      <Container fluid className={styles.box}>
+        <Container
+          style={{
+            paddingLeft: "100px",
+            paddingRight: "100px",
+            height: "150px",
+            paddingTop: "20px",
+          }}
+        >
+          <Row>
+            <Col
+              xs={5}
+              className="d-flex align-items-center justify-content-center"
+              style={{ gap: "30px" }}
+            >
+              <Link href="/" className={`${styles.aLink}`}>
+                TRANG CHỦ
+              </Link>
+              <Link href="/" className={`${styles.aLink}`}>
+                GIỚI THIỆU
+              </Link>
+              <Link href="/menu" className={`${styles.aLink}`}>
+                THỰC ĐƠN
+              </Link>
+            </Col>
+            <Col
+              xs={2}
+              className="d-flex align-items-center justify-content-center"
+            >
+              <Image
+                src="/Logo.png"
+                alt="Logo"
+                style={{ width: "130px", height: "130px" }}
+              />
+            </Col>
+            <Col
+              xs={5}
+              className="d-flex align-items-center justify-content-center"
+              style={{ gap: "30px" }}
+            >
+              <Link href="/" className={`${styles.aLink}`}>
+                TIN TỨC
+              </Link>
+              <Link href="/" className={`${styles.aLink}`}>
+                LIÊN HỆ
+              </Link>
+              <Link href="/" className={`${styles.aLink}`}>
+                NHƯỢNG QUYỀN
+              </Link>
+            </Col>
+          </Row>
         </Container>
-      </Navbar>
-      <Container className="mt-4">
-        <div className="row">
-          {[
-            { icon: "fas fa-motorcycle", title: "NHIỀU ƯU ĐÃI HẤP DẪN", text: "Hotline: 19009480" },
-            { icon: "fas fa-drumstick-bite", title: "Shop đỉnh cao", text: "Đỉnh cao của thời đại" },
-            { icon: "fas fa-mobile-alt", title: "ĐẶT HÀNG TRỰC TUYẾN", text: "Thanh toán Online" },
-            { icon: "fas fa-phone-volume", title: "HỖ TRỢ NHANH CHÓNG", text: "Từ 9:00 đến 21:00 tất cả các ngày" }
-          ].map((info, index) => (
-            <div key={index} className="col-md-3 col-sm-6">
-              <div className="info-box border rounded p-3 text-center">
-                <i className={info.icon + " fa-2x"}></i>
-                <h5 className="mt-2">{info.title}</h5>
-                <p>{info.text}</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </Container>
     </>
   );
