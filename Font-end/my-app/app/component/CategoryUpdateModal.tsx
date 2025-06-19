@@ -28,8 +28,8 @@ function CategoryUpdateModal(props: iShow) {
         };
 
         try {
-            const response = await fetch('http://localhost:5000/categories/add', {
-                method: 'POST',
+            const response = await fetch('http://localhost:5000/categories/update/', {
+                method: 'PUT',
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
