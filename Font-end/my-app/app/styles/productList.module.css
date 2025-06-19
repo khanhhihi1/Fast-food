@@ -1,0 +1,194 @@
+
+.productButton{
+  background-color: #c10a28 !important;
+  border: 2px solid #c10a28;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+.productButton:hover{
+  background-color: white !important;
+  color: #c10a28;
+  border: 2px solid #c10a28;
+}
+/* dọc */
+.productList.vertical{
+  display: flex;
+  width: calc((100% - 40px) / 5);
+  flex-direction: column;
+  gap: 3px;
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+.h1Container.vertical{
+  display: flex;
+  justify-content: center;
+}
+.productList.vertical .productImg{
+  width: 274.15px;
+ height: 274.15px 
+}
+.productList.vertical .productName{
+  color: #252a2b; 
+  font-size: 15px; 
+  margin: 0
+}
+.productList.vertical .productPrice{
+color: #252a2b; 
+font-size: 14px;
+margin: 0;
+}
+.productList.vertical .productBot{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.h1Box.vertical{
+  position: relative;
+  display: inline-block;
+  font-size: 24px;
+  padding: 0;
+  line-height: normal;
+   text-transform: uppercase;
+  color: black; 
+}
+.h1Box.vertical:hover{
+  color: #c10a28;
+  cursor: pointer;
+}
+
+.h1Box.vertical::after {
+  content: "";
+  display: block;
+  width: 60%;     
+  height: 3px;   
+  background-color: #c10a28;  
+  margin: 8px auto 0;    
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.h1Box.vertical:hover:after{
+  width: 100%; 
+}
+/* ngang */
+
+.productList.horizontal{
+  display: flex;
+  width: calc((100% - 10px) / 2);
+  gap: 3px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 10px;
+}
+.productList.horizontal .productImg{
+  width: 130px;
+ height: 130px
+}
+.productList.horizontal .productName{
+  color: #252a2b; 
+  font-size: 15px; 
+  margin: 0
+}
+.productList.horizontal .productPrice{
+color: #252a2b; 
+font-size: 14px
+}
+.productList.horizontal .productPrice{
+  color: #252a2b; 
+  font-size: 14px;
+  margin: 0;
+  }
+  .productList.horizontal .productBot{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  } 
+.h1Box.horizontal{
+  position: relative;
+  display: inline-block;
+  font-size: 24px;
+  padding: 0;
+  line-height: normal;
+  color: black; 
+}
+.h1Box.horizontal:hover{
+  color: #c10a28;
+  cursor: pointer;
+}
+
+.h1Box.horizontal::after {
+  content: "";
+  display: block;
+  width: 60%;     
+  height: 3px;   
+  background-color: #c10a28;  
+  margin: 8px ;    
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.h1Box.horizontal:hover:after{
+  width: 100%; 
+}
+/* default */
+.productList.default{
+  display: flex;
+  width: calc((100% - 40px) / 5);
+  flex-direction: column;
+  gap: 3px;
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+.h1Container.default{
+  display: flex;
+}
+.productList.default .productImg{
+  width: 274.15px;
+ height: 274.15px 
+}
+.productList.default .productName{
+  color: #252a2b; 
+  font-size: 15px; 
+  margin: 0
+}
+.productList.default .productPrice{
+color: #252a2b; 
+font-size: 14px;
+margin: 0;
+}
+.productList.default .productBot{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.h1Box.default{
+  position: relative;
+  display: inline-block;
+  font-size: 24px;
+  padding: 0;
+  line-height: normal;
+  color: black; 
+  text-transform: uppercase;
+}
+.h1Box.default:hover{
+  color: #c10a28;
+  cursor: pointer;
+}
+
+.h1Box.default::after {
+  content: "";
+  display: block;
+  width: 60%;     
+  height: 3px;   
+  background-color: #c10a28;  
+  margin: 3px 3px ;    
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.h1Box.default:hover:after{
+  width: 100%; 
+}

@@ -1,0 +1,54 @@
+.h1 {
+  font-size: 24px;
+  padding: 0;
+  line-height: normal;
+  color: black; 
+}
+.h1:hover{
+  color: #c10a28;
+  cursor: pointer;
+}
+.boxDiscount{
+  cursor: pointer;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(107, 106, 106, 0.4);
+  transition: all   0.3s ease;
+  padding: 0;
+}
+.boxDiscount:hover{
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6); 
+  transform: translateY(-6px); 
+}
+.discountContainer{
+  background: linear-gradient(to bottom, #c10a28 80%, white 50%);
+}
+.discountProduct{
+  background-color: #f64563;
+  border-radius: 15px;
+}
+.bannerMain{
+  width: 100%;
+  height: auto;
+  display: block;
+  }
+  .btnMain{
+    position: absolute;
+    background-color: white ;
+    border: none;
+    border-radius: 0;
+    color: #c10a28;
+    font-weight: bolder;
+    bottom: 110px;
+    left: 390px;
+    width: 230px;
+    height: 65.5px;
+    font-size: 26px;
+    border-radius: 2px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all   0.3s ease;
+  }
+  .btnMain:hover{
+    background: linear-gradient(90deg, #ff5722, #ffc107);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+    transform: translateY(-3px); 
+  }

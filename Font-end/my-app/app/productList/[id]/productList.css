@@ -1,0 +1,7 @@
+.breadCrumbItem a{
+  text-decoration: none !important;
+  color:  #252a2b;
+}
+.breadCrumbItem a:hover{
+  color: red;
+}
