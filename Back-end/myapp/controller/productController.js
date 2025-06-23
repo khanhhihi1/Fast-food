@@ -9,6 +9,7 @@ module.exports = {
   updateProduct,
   getActiveProducts,
   getInactiveProducts,
+  getHotProducts,
 };
 const mongoose = require("mongoose");
 async function getAllPro() {
@@ -91,11 +92,21 @@ async function addPro(data) {
 // Sản phẩm chi tiết
 async function getDatailPro(id) {
   try {
-    const result = await productsModel.findOne({ _id: id });
+    // Tìm sản phẩm
+    const result = await productsModel.findById(id);
+
+    if (!result) {
+      throw new Error("Không tìm thấy sản phẩm");
+    }
+
+    // Tăng số lượt xem
+    result.view = (result.view || 0) + 1;
+    await result.save(); // lưu lại thay đổi
+
     return result;
-  } catch (errorr) {
-    console.log(errorr);
-    throw new Error("error");
+  } catch (error) {
+    console.log(error);
+    throw new Error("Lỗi khi lấy chi tiết sản phẩm");
   }
 }
 // Ẩn sản phẩm
@@ -244,5 +255,18 @@ async function getInactiveProducts() {
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm ngưng bán:", error.message);
     throw new Error("Không thể lấy danh sách sản phẩm ngưng bán");
+  }
+}
+ // sp hot
+async function getHotProducts() {
+  try {
+    const result = await productsModel
+      .find({})                 // Lấy tất cả sản phẩm
+      .sort({ view: -1 })       // Sắp xếp giảm dần theo view
+      .limit(4);                // Lấy tối đa 5 sản phẩm
+    return result;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Lỗi khi lấy sản phẩm hot");
   }
 }
