@@ -92,6 +92,7 @@ export default function ProductCategory() {
     });
     setShowModal(true);
   };
+
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`${API_BASE}/delete/${id}`, { method: "DELETE" });
