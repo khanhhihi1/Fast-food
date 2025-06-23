@@ -20,6 +20,7 @@ async function registerUser(data) {
   try {
     const { username, name, email, password, confirmPassword } = data;
 
+    // Kiểm tra đầu vào
     if (!username || !name || !email || !password || !confirmPassword) {
       throw new Error("Thiếu thông tin bắt buộc");
     }
@@ -36,6 +37,7 @@ async function registerUser(data) {
       throw new Error("Mật khẩu không khớp");
     }
 
+    // Kiểm tra tài khoản đã tồn tại chưa
     const existingUser = await userModel.findOne({
       $or: [{ username }, { email }],
     });
@@ -44,14 +46,16 @@ async function registerUser(data) {
       throw new Error("Tên đăng nhập hoặc email đã tồn tại");
     }
 
+    // Mã hoá mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Tạo người dùng mới (không lưu confirmPassword)
     const newUser = new userModel({
       username,
       name,
       email,
       password: hashedPassword,
-      confirmPassword: hashedPassword,
+      role: "user",
     });
 
     const result = await newUser.save();
@@ -61,7 +65,6 @@ async function registerUser(data) {
     throw new Error(error.message);
   }
 }
-
 // Đăng nhập
 async function loginUser(data) {
   try {
