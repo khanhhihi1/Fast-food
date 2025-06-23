@@ -133,7 +133,16 @@ router.put("/show/:id", async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 });
-
+// http://localhost:5000/products/hot
+router.get("/hot", async (req, res) => {
+  try {
+    const result = await productsController.getHotProducts();
+    return res.status(200).json({ status: true, result });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+  }
+});
 // http://localhost:5000/products/681cb62cbc60e77b1ccbc469
 router.get("/:id", async (req, res) => {
   try {
