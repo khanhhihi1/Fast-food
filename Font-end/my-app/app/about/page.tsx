@@ -16,7 +16,7 @@ const roboto = Roboto({
 export default function About() {
   return (
     <>
-      <Container>
+      <Container className="mt-5">
         <Row>
           <Col xs={4}>
             <Image
