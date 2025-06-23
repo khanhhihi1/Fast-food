@@ -30,19 +30,19 @@ export default function Cart() {
 
   return (
     <Container className="py-5">
-      <h2 className="text-center mb-4">Shopping Cart</h2>
+      <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
       <Row className="justify-content-center">
         <Col md={8}>
           <Card className="shadow p-4">
             <Table responsive hover>
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Name</th>
-                  <th>Price</th>
-                  <th>Quantity</th>
-                  <th>Total</th>
-                  <th>Action</th>
+                  <th>Hình ảnh</th>
+                  <th>Tên</th>
+                  <th>Giá</th>
+                  <th>Số lượng</th>
+                  <th>Thành tiền</th>
+                  <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,13 +76,13 @@ export default function Cart() {
         </Col>
         <Col md={4}>
           <Card className="shadow p-4">
-            <h4>Order Summary</h4>
+            <h4>Tổng đơn hàng</h4>
             <p>
-              <strong>Total Price:</strong> {totalPrice}₫
+              <strong>Tổng giá:</strong> {totalPrice}₫
             </p>
 
             <Button variant="dark" className="w-100">
-              Proceed to Checkout
+             Thanh toán
             </Button>
           </Card>
         </Col>
