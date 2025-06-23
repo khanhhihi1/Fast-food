@@ -49,17 +49,6 @@ export default function Header() {
               style={{ gap: "10px" }}
             >
               <Link
-                href="/signup"
-                style={{
-                  textDecoration: "none",
-                  color: "white",
-                  fontSize: "16px",
-                  fontWeight: "600",
-                }}
-              >
-                Đăng ký
-              </Link>
-              <Link
                 href="/login"
                 style={{
                   textDecoration: "none",
@@ -68,7 +57,11 @@ export default function Header() {
                   fontWeight: "600",
                 }}
               >
-                Đăng nhập
+                <FontAwesomeIcon
+                icon={faUser}
+                className="text-light"
+                style={{ fontSize: "16px" }}
+              />
               </Link>
               <FontAwesomeIcon
                 icon={faSearch}
