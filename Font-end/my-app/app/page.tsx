@@ -18,15 +18,16 @@ export default function Home() {
     <>
       <Slide />
       <Service />
+      <About />
       <ProductList
         category="hot"
         title="🔥Sản phẩm Hot"
         layout="horizontal"
         limit={2}
       />
-      <DiscountPage />
       <SalePage />
-      <About />
+      <DiscountPage />
+      <ProductList category="related" title="Thức Ăn Kèm" />
     </>
   );
 }
