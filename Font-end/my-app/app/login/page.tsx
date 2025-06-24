@@ -26,6 +26,7 @@ export default function SignInPage() {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: body.toString(),
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -35,16 +36,9 @@ export default function SignInPage() {
         return;
       }
 
-      const token = data.result.token;
-      const user = data.result.user;
-
-      // ✅ Lưu token và user vào localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
       alert("Đăng nhập thành công!");
       // ✅ Điều hướng theo vai trò
-      if (user.role === "admin") {
+      if (data.result.user.role === "admin") {
         router.push("/admin");
       } else {
         router.push("/");
