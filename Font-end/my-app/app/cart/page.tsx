@@ -10,6 +10,7 @@ import {
   Image,
 } from "react-bootstrap";
 import { useEffect, useState } from "react";
+import ProtectedRoute from "../component/ProtectedRoute";
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -29,64 +30,65 @@ export default function Cart() {
   );
 
   return (
-    <Container className="py-5">
-      <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
-      <Row className="justify-content-center">
-        <Col md={8}>
-          <Card className="shadow p-4">
-            <Table responsive hover>
-              <thead>
-                <tr>
-                  <th>Hình ảnh</th>
-                  <th>Tên</th>
-                  <th>Giá</th>
-                  <th>Số lượng</th>
-                  <th>Thành tiền</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {" "}
-                {cartItems.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <Image
-                        src={item.imageUrl}
-                        style={{ width: "80px", height: "80px" }}
-                      />
-                    </td>
-                    <td>{item.name}</td>
-                    <td>{item.price}₫</td>
-                    <td>{item.quantity}</td>
-                    <td>{item.price * item.quantity}₫</td>
-                    <td>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleRemove(item.id)}
-                      >
-                        Xóa
-                      </Button>
-                    </td>
+    <ProtectedRoute>
+      <Container className="py-5">
+        <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
+        <Row className="justify-content-center">
+          <Col md={8}>
+            <Card className="shadow p-4">
+              <Table responsive hover>
+                <thead>
+                  <tr>
+                    <th>Hình ảnh</th>
+                    <th>Tên</th>
+                    <th>Giá</th>
+                    <th>Số lượng</th>
+                    <th>Thành tiền</th>
+                    <th>Hành động</th>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Card>
-        </Col>
-        <Col md={4}>
-          <Card className="shadow p-4">
-            <h4>Tổng đơn hàng</h4>
-            <p>
-              <strong>Tổng giá:</strong> {totalPrice}₫
-            </p>
+                </thead>
+                <tbody>
+                  {cartItems.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <Image
+                          src={item.imageUrl}
+                          style={{ width: "80px", height: "80px" }}
+                        />
+                      </td>
+                      <td>{item.name}</td>
+                      <td>{item.price}₫</td>
+                      <td>{item.quantity}</td>
+                      <td>{item.price * item.quantity}₫</td>
+                      <td>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleRemove(item.id)}
+                        >
+                          Xóa
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card>
+          </Col>
+          <Col md={4}>
+            <Card className="shadow p-4">
+              <h4>Tổng đơn hàng</h4>
+              <p>
+                <strong>Tổng giá:</strong> {totalPrice}₫
+              </p>
 
-            <Button variant="dark" className="w-100">
-             Thanh toán
-            </Button>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+              <Button variant="dark" className="w-100">
+                Thanh toán
+              </Button>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </ProtectedRoute>
   );
 }

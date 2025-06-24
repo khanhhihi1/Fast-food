@@ -7,6 +7,7 @@ module.exports = {
   loginUser,
   updateUser,
   deleteUser,
+  getUserInfo,
 };
 
 // Helper
@@ -140,6 +141,20 @@ async function deleteUser(id) {
     return user;
   } catch (error) {
     console.error("Lỗi xoá người dùng:", error.message);
+    throw new Error(error.message);
+  }
+}
+
+// lấy thông tin người dùng sau khi đăng nhập
+async function getUserInfo(id) {
+  try {
+    const user = await userModel.findById(id).select("-password"); // không trả password
+    if (!user) {
+      throw new Error("Không tìm thấy người dùng");
+    }
+    return user;
+  } catch (error) {
+    console.error("Lỗi lấy thông tin người dùng:", error.message);
     throw new Error(error.message);
   }
 }
