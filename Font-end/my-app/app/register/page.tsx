@@ -60,7 +60,7 @@ export default function SignUpPage() {
         return;
       }
 
-      alert("🎉 Đăng ký thành công!");
+      alert("🎉 Đăng ký thành công! Chuyển về trang đăng nhập!");
       // Optionally redirect to login
       window.location.href = "/login";
     } catch (error: any) {
