@@ -1,5 +1,4 @@
 "use client";
-import { useEffect, useState } from "react";
 import { Image, Button } from "react-bootstrap";
 import Link from "next/link";
 import styles from "../styles/productList.module.css";
@@ -10,19 +9,19 @@ interface Product {
   _id?: string;
   category: string;
   name: string;
-  imageUrl: string;
+  image: string;
   price: number;
   rating: number;
   time: string;
-  description: string[]; 
-  taste: Record<string, number>; 
+  description: string[];
+  taste: Record<string, number>;
 }
 
 interface CartItem {
   id: string;
   name: string;
   price: number;
-  imageUrl: string;
+  image: string;
   quantity: number;
 }
 
@@ -48,7 +47,7 @@ export default function ProductItem({
         id: product.id,
         name: product.name,
         price: product.price,
-        imageUrl: product.imageUrl,
+        image: product.image,
         quantity: 1,
       });
     }
@@ -61,7 +60,7 @@ export default function ProductItem({
     <div className={`${styles.productList} ${styles[layout]}`}>
       <Link href={`/productList/${product.id}`}>
         <Image
-          src={product.imageUrl}
+          src={product.image}
           className={styles.productImg}
           alt={product.name}
           fluid
