@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Dropdown } from "react-bootstrap";
 import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
 import Image from "react-bootstrap/Image";
 import Row from "react-bootstrap/Row";
@@ -14,7 +16,48 @@ import {
   faShoppingBag,
 } from "@fortawesome/free-solid-svg-icons";
 import styles from "../styles/header.module.css";
+
 export default function Header() {
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/users/profile", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.status) {
+          setUser(data.result); // đã đăng nhập
+        } else {
+          setUser(null); // chưa đăng nhập
+        }
+      } catch (error) {
+        setUser(null);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/users/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok && data.status) {
+        setUser(null);
+        router.push("/login"); // chuyển hướng về trang login
+      } else {
+        alert("Đăng xuất thất bại!");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <>
       <Container fluid style={{ backgroundColor: "#c10a28" }} className="p-2">
@@ -48,21 +91,38 @@ export default function Header() {
               className="d-flex justify-content-end align-items-center"
               style={{ gap: "10px" }}
             >
-              <Link
-                href="/login"
-                style={{
-                  textDecoration: "none",
-                  color: "white",
-                  fontSize: "16px",
-                  fontWeight: "600",
-                }}
-              >
-                <FontAwesomeIcon
-                icon={faUser}
-                className="text-light"
-                style={{ fontSize: "16px" }}
-              />
-              </Link>
+              {user ? (
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="link"
+                    id="dropdown-user"
+                    className="text-white p-0 border-0"
+                    style={{ fontSize: "16px" }}
+                  >
+                    <FontAwesomeIcon icon={faUser} />
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu align="end">
+                    <Dropdown.Item as={Link} href="/account">
+                      Tài khoản
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={handleLogout}>
+                      Đăng xuất
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              ) : (
+                <Link
+                  href="/login"
+                  style={{
+                    textDecoration: "none",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUser} />
+                </Link>
+              )}
               <FontAwesomeIcon
                 icon={faSearch}
                 className="text-light"
