@@ -92,16 +92,16 @@ async function addPro(data) {
 // Sản phẩm chi tiết
 async function getDatailPro(id) {
   try {
-    // Tìm sản phẩm
+    
     const result = await productsModel.findById(id);
 
     if (!result) {
       throw new Error("Không tìm thấy sản phẩm");
     }
 
-    // Tăng số lượt xem
+    
     result.view = (result.view || 0) + 1;
-    await result.save(); // lưu lại thay đổi
+    await result.save(); 
 
     return result;
   } catch (error) {
@@ -261,9 +261,9 @@ async function getInactiveProducts() {
 async function getHotProducts() {
   try {
     const result = await productsModel
-      .find({})                 // Lấy tất cả sản phẩm
-      .sort({ view: -1 })       // Sắp xếp giảm dần theo view
-      .limit(4);                // Lấy tối đa 5 sản phẩm
+      .find({})                 
+      .sort({ view: -1 })       
+      .limit(4);               
     return result;
   } catch (error) {
     console.log(error);
