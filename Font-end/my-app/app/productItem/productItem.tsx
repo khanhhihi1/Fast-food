@@ -1,24 +1,28 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Card } from "react-bootstrap";
+import { Image, Button } from "react-bootstrap";
 import Link from "next/link";
-import Image from "react-bootstrap/Image";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
 import styles from "../styles/productList.module.css";
 import { toast } from "react-toastify";
+
 interface Product {
   id: string;
+  _id?: string;
   category: string;
   name: string;
-  imageUrl: string;
+  image: string;
   price: number;
   rating: number;
   time: string;
   description: string[];
-  taste: string[];
+  taste: Record<string, number>;
+}
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
 }
 
 interface ProductItemsProps {
@@ -43,7 +47,7 @@ export default function ProductItem({
         id: product.id,
         name: product.name,
         price: product.price,
-        imageUrl: product.imageUrl,
+        image: product.image,
         quantity: 1,
       });
     }
@@ -53,34 +57,30 @@ export default function ProductItem({
   };
 
   return (
-    <>
-      <div
-        key={product.id}
-        className={`${styles.productList} ${styles[layout]}`}
-      >
-        <Link href={`/productList/${product.id}`}>
-          <Image
-            src={product.imageUrl}
-            className={`${styles.productImg} `}
-            alt="banner"
-          ></Image>
-        </Link>
-        <div>
-          <div>
-            <p className={`${styles.productName} `}>{product.name}</p>
-            <p>{product.description}</p>
-          </div>
-          <div className={`${styles.productBot}`}>
-            <p className={`${styles.productPrice} `}>{product.price}</p>
-            <Button
-              className={`${styles.productButton} `}
-              onClick={() => addToCart(product)}
-            >
-              Thêm
-            </Button>
-          </div>
+    <div className={`${styles.productList} ${styles[layout]}`}>
+      <Link href={`/productList/${product.id}`}>
+        <Image
+          src={product.image}
+          className={styles.productImg}
+          alt={product.name}
+          fluid
+        />
+      </Link>
+
+      <div>
+        <p className={styles.productName}>{product.name}</p>
+        <div className={styles.productBot}>
+          <p className={styles.productPrice}>
+            {product.price.toLocaleString()}đ
+          </p>
+          <Button
+            className={styles.productButton}
+            onClick={() => addToCart(product)}
+          >
+            Thêm
+          </Button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
