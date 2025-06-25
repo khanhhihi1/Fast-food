@@ -23,7 +23,7 @@ export default function Home() {
         category="hot"
         title="🔥Sản phẩm Hot"
         layout="horizontal"
-        limit={2}
+        limit={4}
       />
       <SalePage />
       <DiscountPage />

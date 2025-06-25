@@ -32,5 +32,7 @@ const productSchema = new Schema({
   sizes: { type: [sizeSchema], required: true },
 });
 
+// Export model
 module.exports =
   mongoose.models.products || mongoose.model("products", productSchema);
+

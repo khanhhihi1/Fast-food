@@ -11,6 +11,7 @@ module.exports = {
   updateProduct,
   getActiveProducts,
   getInactiveProducts,
+  getHotProducts,
 };
 
 // Lấy tất cả sản phẩm
@@ -259,5 +260,18 @@ async function getInactiveProducts() {
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm ngưng bán:", error.message);
     throw new Error("Không thể lấy danh sách sản phẩm ngưng bán");
+  }
+}
+ // sp hot
+async function getHotProducts() {
+  try {
+    const result = await productsModel
+      .find({})                 
+      .sort({ view: -1 })       
+      .limit(4);               
+    return result;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Lỗi khi lấy sản phẩm hot");
   }
 }
