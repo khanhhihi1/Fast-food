@@ -29,7 +29,7 @@ const upload = multer({
   fileFilter: checkFile,
 });
 
-// sản phẩm
+// Lấy tất cả sản phẩm
 router.get("/", async (req, res) => {
   try {
     const result = await productsController.getAllPro();
@@ -125,6 +125,17 @@ router.put("/show/:id", async (req, res) => {
       .json({ status: true, result, message: "Hiển thị sản phẩm thành công" });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
+  }
+});
+
+// Lấy sản phẩm hot
+router.get("/hot", async (req, res) => {
+  try {
+    const result = await productsController.getHotProducts();
+    return res.status(200).json({ status: true, result });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ status: false, message: "Lỗi hệ thống" });
   }
 });
 

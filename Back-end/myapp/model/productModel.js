@@ -1,17 +1,19 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+// Schema cho từng size
 const sizeSchema = new Schema(
   {
-    name: { type: String, required: true }, // Ví dụ: "S", "M", "L", hoặc "default"
+    name: { type: String, required: true }, // Ví dụ: "Nhỏ", "Vừa", "Lớn"
     price: {
       original: { type: Number, required: true },
-      discount: { type: Number }, // Không bắt buộc, chỉ có nếu giảm giá
+      discount: { type: Number }, // Optional
     },
   },
   { _id: false }
 );
 
+// Schema chính cho sản phẩm
 const productSchema = new Schema({
   name: { type: String, required: true },
   categoryId: {
