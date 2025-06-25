@@ -6,4 +6,5 @@ const categoriesSchema = new Schema({
   imageUrl: { type: String },
 });
 
-module.exports =mongoose.models.Categories || mongoose.model("Categories", categoriesSchema);
+module.exports =
+  mongoose.models.Categories || mongoose.model("categories", categoriesSchema);

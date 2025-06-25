@@ -4,9 +4,11 @@ import { Container, Table, Button, Alert, Spinner } from "react-bootstrap";
 import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
 import CategoryFormModal from "@/app/component/CategoryFormModal";
+import CategoryUpdateModal from "@/app/component/CategoryUpdateModal";
 import "../admin.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+
 interface CategoryType {
   _id: string;
   name: string;
@@ -15,18 +17,16 @@ interface CategoryType {
 
 export default function ProductCategory() {
   const [categories, setCategories] = useState<CategoryType[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    imageUrl: "",
-  });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const API_BASE = "http://localhost:5000/categories";
 
-  // Fetch danh mục từ API
   const fetchCategories = async () => {
     try {
       setLoading(true);
@@ -48,51 +48,6 @@ export default function ProductCategory() {
     fetchCategories();
   }, []);
 
-  // Cập nhật giá trị form
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Xử lý thêm/sửa danh mục
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const method = editId ? "PUT" : "POST";
-      const url = editId ? `${API_BASE}/update/${editId}` : `${API_BASE}/add`;
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-      if (data.status) {
-        setShowModal(false);
-        setFormData({ name: "", imageUrl: "" });
-        setEditId(null);
-        fetchCategories();
-      } else {
-        setError("Lỗi khi lưu danh mục.");
-      }
-    } catch (err) {
-      setError("Lỗi khi gửi dữ liệu.");
-    }
-  };
-
-  // Sửa danh mục
-  const handleEdit = (category: CategoryType) => {
-    setEditId(category._id);
-    setFormData({
-      name: category.name,
-      imageUrl: category.imageUrl,
-    });
-    setShowModal(true);
-  };
-
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`${API_BASE}/delete/${id}`, { method: "DELETE" });
@@ -107,6 +62,11 @@ export default function ProductCategory() {
     }
   };
 
+  const handleEdit = (category: CategoryType) => {
+    setSelectedCategory(category);
+    setShowEditModal(true);
+  };
+
   return (
     <div className="d-flex">
       <AdminSideBar />
@@ -114,7 +74,7 @@ export default function ProductCategory() {
         <AdminNavbar />
         <div className="p-4 productCategory">
           <h3>Quản lý danh mục sản phẩm</h3>
-          <Button variant="primary" onClick={() => setShowModal(true)}>
+          <Button variant="primary" onClick={() => setShowAddModal(true)}>
             Thêm danh mục
           </Button>
 
@@ -139,42 +99,47 @@ export default function ProductCategory() {
                 </tr>
               </thead>
               <tbody>
-                {categories.map((cat, index) => {
-                  // ← Thêm dòng này để kiểm tra image
-
-                  return (
-                    <tr key={cat._id}>
-                      <td>{index + 1}</td>
-                      <td>{cat.name}</td>
-                      <td>
-                        <img src={cat.imageUrl} alt={cat.name} width="80" />
-                      </td>
-                      <td>
-                        <button
-                          className="action-btn edit-btn mx-2"
-                          onClick={() => handleEdit(cat)}
-                        >
-                          <FontAwesomeIcon icon={faPenToSquare} />
-                        </button>
-                        <button
-                          className="action-btn delete-btn mx-2"
-                          onClick={() => handleDelete(cat._id)}
-                        >
-                          <FontAwesomeIcon icon={faEyeSlash} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {categories.map((cat, index) => (
+                  <tr key={cat._id}>
+                    <td>{index + 1}</td>
+                    <td>{cat.name}</td>
+                    <td>
+                      <img src={cat.imageUrl} alt={cat.name} width="80" />
+                    </td>
+                    <td>
+                      <button
+                        className="action-btn edit-btn mx-2"
+                        onClick={() => handleEdit(cat)}
+                      >
+                        <FontAwesomeIcon icon={faPenToSquare} />
+                      </button>
+                      <button
+                        className="action-btn delete-btn mx-2"
+                        onClick={() => handleDelete(cat._id)}
+                      >
+                        <FontAwesomeIcon icon={faEyeSlash} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </Table>
           )}
 
-          {/* Modal thêm/sửa danh mục */}
+          {/* Modal Thêm */}
           <CategoryFormModal
-            showModal={showModal}
-            setShowModal={setShowModal}
+            showModal={showAddModal}
+            setShowModal={setShowAddModal}
           />
+
+          {/* Modal Cập nhật */}
+          {selectedCategory && (
+            <CategoryUpdateModal
+              showModal={showEditModal}
+              setShowModal={setShowEditModal}
+              category={selectedCategory}
+            />
+          )}
         </div>
       </Container>
     </div>
