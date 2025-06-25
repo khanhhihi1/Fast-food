@@ -1,5 +1,7 @@
 const categoriesModel = require("../model/categoriesModel.js");
 const productsModel = require("../model/productModel.js");
+const mongoose = require("mongoose");
+
 module.exports = {
   getAllPro,
   getDatailPro,
@@ -10,29 +12,36 @@ module.exports = {
   getActiveProducts,
   getInactiveProducts,
 };
-const mongoose = require("mongoose");
+
+// Lấy tất cả sản phẩm
 async function getAllPro() {
   try {
-    const cates = await productsModel.find();
-    return cates;
+    const products = await productsModel.find().populate("categoryId");
+    return products;
   } catch (error) {
-    console.log(error);
-    throw new Error("Loi lay du lieu");
+    console.error(error);
+    throw new Error("Lỗi lấy dữ liệu sản phẩm");
   }
 }
-
 
 // Thêm mới sản phẩm
 async function addPro(data) {
   try {
-    const requiredFields = ["name", "price", "category", "quantity", "taste", "size", "image"];
+    const requiredFields = [
+      "name",
+      "sizes",
+      "categoryId",
+      "quantity",
+      "taste",
+      "image",
+    ];
     for (const field of requiredFields) {
-      if (data[field] === undefined || data[field] === null || data[field] === "") {
+      if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
     }
 
-    if (typeof data.image !== "string" || !/^https?:\/\/.+/.test(data.image)) {
+    if (!/^https?:\/\/.+/.test(data.image)) {
       throw new Error("Hình ảnh phải là URL hợp lệ");
     }
 
@@ -41,63 +50,61 @@ async function addPro(data) {
       throw new Error("Số lượng không được âm");
     }
 
-    let parsedPrice;
-    if (typeof data.price === "object" && !Array.isArray(data.price)) {
-      parsedPrice = {};
-      for (const key in data.price) {
-        const value = Number(data.price[key]);
-        if (isNaN(value) || value <= 0) {
-          throw new Error(`Giá cho size "${key}" phải là số dương`);
-        }
-        parsedPrice[key] = value;
-      }
-    } else {
-      const price = Number(data.price);
-      if (isNaN(price) || price <= 0) {
-        throw new Error("Giá phải là số dương");
-      }
-      parsedPrice = price;
-    }
-
-    const category = await categoriesModel.findById(data.category);
+    const category = await categoriesModel.findById(data.categoryId);
     if (!category) {
       throw new Error("Danh mục không tồn tại");
     }
 
-    const newPro = new productsModel({
-      name: data.name,
-      price: parsedPrice,
-      image: data.image,
-      quantity: quantity,
-      taste: data.taste,
-      size: data.size,
-      description: data.description || "",
-      status: data.status !== undefined ? data.status : true,
-      category: category._id,
+    // Kiểm tra và chuẩn hóa giá từng size
+    const sizes = data.sizes.map((size) => {
+      if (
+        !size.name ||
+        !size.price ||
+        typeof size.price.original !== "number"
+      ) {
+        throw new Error("Thông tin size không hợp lệ");
+      }
+      return {
+        name: size.name,
+        price: {
+          original: size.price.original,
+          discount: size.price.discount || undefined,
+        },
+      };
     });
 
-    const result = await newPro.save();
-    return result;
+    const newProduct = new productsModel({
+      name: data.name,
+      categoryId: category._id,
+      image: data.image,
+      quantity,
+      taste: data.taste,
+      description: data.description || "",
+      status: data.status !== undefined ? data.status : true,
+      saleOff: data.saleOff || false,
+      time: data.time || "30-45min",
+      sizes,
+    });
 
+    const result = await newProduct.save();
+    return result;
   } catch (error) {
     console.error("Lỗi khi thêm sản phẩm:", error.message);
     throw error;
   }
 }
 
-
-
-
-// Sản phẩm chi tiết
+// Lấy chi tiết sản phẩm
 async function getDatailPro(id) {
   try {
-    const result = await productsModel.findOne({ _id: id });
+    const result = await productsModel.findById(id).populate("categoryId");
     return result;
-  } catch (errorr) {
-    console.log(errorr);
-    throw new Error("error");
+  } catch (error) {
+    console.error(error);
+    throw new Error("Lỗi khi lấy chi tiết sản phẩm");
   }
 }
+
 // Ẩn sản phẩm
 async function hideProduct(id) {
   try {
@@ -110,18 +117,18 @@ async function hideProduct(id) {
 
     const result = await productsModel.findByIdAndUpdate(
       id,
-      { status: !product.status },
+      { status: false },
       { new: true }
     );
 
     return result;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw new Error(error.message || "Lỗi khi ẩn sản phẩm");
   }
 }
 
-// hiện sản phẩm
+// Hiện sản phẩm
 async function showProduct(id) {
   try {
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -143,27 +150,34 @@ async function showProduct(id) {
 
     return result;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw new Error(error.message || "Lỗi khi hiển thị sản phẩm");
   }
 }
 
-// Cập nhât sản phẩm
+// Cập nhật sản phẩm
 async function updateProduct(data, id) {
   try {
-    const pro = await productsModel.findById(id);
-    if (!pro) {
+    const product = await productsModel.findById(id);
+    if (!product) {
       throw new Error("Sản phẩm không tồn tại");
     }
 
-    const requiredFields = ["name", "price", "category", "quantity", "taste", "size", "image"];
+    const requiredFields = [
+      "name",
+      "sizes",
+      "categoryId",
+      "quantity",
+      "taste",
+      "image",
+    ];
     for (const field of requiredFields) {
-      if (data[field] === undefined || data[field] === null || data[field] === "") {
+      if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
     }
 
-    if (typeof data.image !== "string" || !/^https?:\/\/.+/.test(data.image)) {
+    if (!/^https?:\/\/.+/.test(data.image)) {
       throw new Error("Hình ảnh phải là URL hợp lệ");
     }
 
@@ -172,48 +186,41 @@ async function updateProduct(data, id) {
       throw new Error("Số lượng không được âm");
     }
 
-    let parsedPrice;
-    if (typeof data.price === "object" && !Array.isArray(data.price)) {
-      parsedPrice = {};
-      for (const key in data.price) {
-        const value = Number(data.price[key]);
-        if (isNaN(value) || value <= 0) {
-          throw new Error(`Giá cho size "${key}" phải là số dương`);
-        }
-        parsedPrice[key] = value;
-      }
-    } else {
-      const price = Number(data.price);
-      if (isNaN(price) || price <= 0) {
-        throw new Error("Giá phải là số dương");
-      }
-      parsedPrice = price;
+    const category = await categoriesModel.findById(data.categoryId);
+    if (!category) {
+      throw new Error("Danh mục không tồn tại");
     }
 
-    let categoriesUpdate;
-    let categoryId = pro.category;
-    if (data.category) {
-      const category = await categoriesModel.findById(data.category);
-      if (!category) {
-        throw new Error("Danh mục không tồn tại");
+    const sizes = data.sizes.map((size) => {
+      if (
+        !size.name ||
+        !size.price ||
+        typeof size.price.original !== "number"
+      ) {
+        throw new Error("Thông tin size không hợp lệ");
       }
-      categoryId = category._id;
-    } else {
-      categoriesUpdate = pro.category;
-    }
+      return {
+        name: size.name,
+        price: {
+          original: size.price.original,
+          discount: size.price.discount || undefined,
+        },
+      };
+    });
 
     const result = await productsModel.findByIdAndUpdate(
       id,
       {
         name: data.name,
-        price: parsedPrice,
-        description: data.description || pro.description || "",
-        category: categoryId,
-        quantity: quantity,
+        categoryId: category._id,
         image: data.image,
+        quantity,
         taste: data.taste,
-        size: data.size,
-        status: data.status !== undefined ? data.status : pro.status,
+        description: data.description || product.description,
+        status: data.status !== undefined ? data.status : product.status,
+        saleOff: data.saleOff !== undefined ? data.saleOff : product.saleOff,
+        time: data.time || product.time,
+        sizes,
       },
       { new: true }
     );
