@@ -98,6 +98,14 @@ async function addPro(data) {
 async function getDatailPro(id) {
   try {
     const result = await productsModel.findById(id).populate("categoryId");
+
+    if (!result) {
+      throw new Error("Không tìm thấy sản phẩm");
+    }
+
+    result.view = (result.view || 0) + 1;
+    await result.save();
+
     return result;
   } catch (error) {
     console.error(error);
