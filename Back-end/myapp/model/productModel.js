@@ -1,36 +1,38 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const { Mixed } = Schema.Types;
 
-
-const productSchema = new Schema({
-    name: { type: String, required: true },
-    category: { type: Schema.Types.ObjectId, ref: 'categories', required: true },
+// Schema cho từng size
+const sizeSchema = new Schema(
+  {
+    name: { type: String, required: true }, // Ví dụ: "Nhỏ", "Vừa", "Lớn"
     price: {
-        type: Schema.Types.Mixed, required: true, validate: {
-            validator: function (price) {
-                if (typeof price === 'number') {
-                    return price > 0;
-                }
-                if (typeof price === 'object' && price !== null) {
-                    const validSizes = ['Nhỏ', 'Vừa', 'Lớn'];
-                    return (
-                        Object.keys(price).length > 0 &&
-                        Object.keys(price).every(key => validSizes.includes(key)) &&
-                        Object.values(price).every(value => typeof value === 'number' && value > 0)
-                    );
-                }
-                return false;
-            },
-            message: 'Price phải là số dương hoặc object với các kích thước hợp lệ (Nhỏ, Vừa, Lớn)',
-        }
+      original: { type: Number, required: true },
+      discount: { type: Number }, // Optional
     },
-    quantity: { type: Number, required: true },
-    image: { type: String, required: true },
-    description: { type: String, default: '' },
-    status: { type: Boolean, default: true },
-    taste: { type: [String], default: [] },
-    size: { type: [String], default: [] },
-    view: { type: Number, default: 0, },
+  },
+  { _id: false }
+);
+
+// Schema chính cho sản phẩm
+const productSchema = new Schema({
+  name: { type: String, required: true },
+  categoryId: {
+    type: Schema.Types.ObjectId,
+    ref: "categories",
+    required: true,
+  },
+  image: { type: String, required: true },
+  description: { type: String, default: "" },
+  taste: { type: [String], default: [] },
+  status: { type: Boolean, default: true },
+  quantity: { type: Number, required: true },
+  view: { type: Number, default: 0 },
+  time: { type: String, default: "30-45min" },
+  saleOff: { type: Boolean, default: false },
+  sizes: { type: [sizeSchema], required: true },
 });
-module.exports = mongoose.models.products || mongoose.model('products', productSchema);
+
+// Export model
+module.exports =
+  mongoose.models.products || mongoose.model("products", productSchema);
+
