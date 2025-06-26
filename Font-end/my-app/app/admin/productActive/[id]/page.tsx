@@ -1,186 +1,197 @@
-'use client'
-import Button from 'react-bootstrap/Button';
-import Card from 'react-bootstrap/Card';
-import useSWR, { Fetcher } from "swr";
-import './item.css'
-import { Row, Col, Image, Container, Navbar, InputGroup, Form } from 'react-bootstrap';
-import { toast } from 'react-toastify';
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-    faHouse, faBarsProgress, faArrowLeft, faCartShopping, faTicket,
-    faCircleUser, faChartSimple, faComments, faDollarSign, faTruck, faMagnifyingGlass,
-    faBell, faBars, faSearch, faDollar, faPenToSquare, faTrash, faEye
-} from "@fortawesome/free-solid-svg-icons";
-interface PostType {
-    id: number;
-    name: string;
-    image: string;
-    price: number;
-    description: string;
-    category: string;
-    quanlity:string;
+"use client";
+import useSWR from "swr";
+import Button from "react-bootstrap/Button";
+import Col from "react-bootstrap/Col";
+import Row from "react-bootstrap/Row";
+import Form from "react-bootstrap/Form";
+import Container from "react-bootstrap/Container";
+import Breadcrumb from "react-bootstrap/Breadcrumb";
+import Image from "react-bootstrap/Image";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Counter from "@/app/count/count";
+import "./productList.css";
+import ProductList from "./productList";
+
+interface SizeType {
+  name: string;
+  price: {
+    original: number;
+    discount?: number;
+  };
 }
 
-const PostDetail = ({ params }: { params: { id: string } }) => {
-    const fetcher: Fetcher<PostType, string> = (url) => fetch(url).then(res => res.json());
-    const { data, error, isLoading } = useSWR(
-        `http://localhost:9000/Product/${params.id}`, fetcher, {
-        revalidateIfStale: false,
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
+interface CategoryInfo {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+  isHidden?: boolean;
+}
+
+interface ProductType {
+  _id: string;
+  name: string;
+  image: string;
+  description: string;
+  time: string;
+  view: number;
+  quantity: number;
+  taste?: string[];
+  sizes?: SizeType[];
+  categoryId?: CategoryInfo;
+}
+
+const ProductDetail = () => {
+  const { id } = useParams();
+  const [productId, setProductId] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (id && typeof id === "string") {
+      setProductId(id);
     }
-    );
+  }, [id]);
 
-    if (isLoading) return <p>Đang tải dữ liệu...</p>;
-    if (error) return <p>Lỗi khi tải dữ liệu!</p>;
-    if (!data) return <p>Không tìm thấy sản phẩm!</p>;
+  const fetcher = async (url: string): Promise<ProductType> => {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || !data.result) {
+      throw new Error("Không thể lấy dữ liệu sản phẩm");
+    }
+    return data.result;
+  };
 
+  const { data, error, isLoading } = useSWR(
+    productId ? `http://localhost:5000/products/${productId}` : null,
+    fetcher
+  );
+
+  useEffect(() => {
+    if (data?.sizes && data.sizes.length > 0) {
+      setSelectedSize(data.sizes[0].name);
+    } else {
+      setSelectedSize(null);
+    }
+  }, [data]);
+
+  const renderPrice = () => {
+    if (!data?.sizes || data.sizes.length === 0) return "Giá không khả dụng";
+    const size = data.sizes.find((s) => s.name === selectedSize);
+    if (!size) return "Không có size phù hợp";
+
+    const { original, discount } = size.price;
     return (
-        <>
-            <div className="d-flex">
-                <div className="sidebar">
-                    <h3 className="text-center">
-                        <img
-                            className="rounded-circle"
-                            src="/logo-admin.jpg"
-                            style={{ width: "100px", height: "100px", marginLeft: 50 }}
-                            alt="Logo"
-                        />
-                    </h3>
-                    <div className="navbar">
-                        <div className="nav-item">
-                            <div className="nav-link">
-                                <FontAwesomeIcon icon={faHouse} style={{ marginTop: "8px", marginLeft: "5px" }} />
-                                <a href="/admin">Dashboard</a>
-                            </div>
-                            <div className="nav-link1">
-                                <FontAwesomeIcon
-                                    icon={faBarsProgress}
-                                    style={{ marginTop: "8px", marginLeft: "5px", color: "rgb(135, 136, 140)" }}
-                                />
-                                <a style={{ marginLeft: "2px" }} href="#">
-                                    Quản lý sản phẩm
-                                </a>
-                            </div>
-                            <div className="nav-link">
-                                <FontAwesomeIcon
-                                    icon={faCartShopping}
-                                    style={{ marginTop: "8px", marginLeft: "5px", color: "rgb(135, 136, 140)" }}
-                                />
-                                <a style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }} href="#">
-                                    Quản lý đơn hàng
-                                </a>
-                            </div>
-                            <div className="nav-link">
-                                <FontAwesomeIcon
-                                    icon={faTicket}
-                                    style={{ marginTop: "8px", marginLeft: "5px", color: "rgb(135, 136, 140)" }}
-                                />
-                                <a style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }} href="#">
-                                    Quản lý voucher
-                                </a>
-                            </div>
-                            <div className="nav-link">
-                                <FontAwesomeIcon
-                                    icon={faCircleUser}
-                                    style={{ marginTop: "8px", marginLeft: "5px", color: "rgb(135, 136, 140)" }}
-                                />
-                                <a style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }} href="#">
-                                    Quản lý user
-                                </a>
-                            </div>
-                            <div className="nav-link">
-                                <FontAwesomeIcon
-                                    icon={faChartSimple}
-                                    style={{ marginTop: "8px", marginLeft: "5px", color: "rgb(135, 136, 140)" }}
-                                />
-                                <a style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }} href="#">
-                                    Thống kê
-                                </a>
-                            </div>
-                            <div className="nav-link">
-                                <FontAwesomeIcon
-                                    icon={faComments}
-                                    style={{ marginTop: "8px", marginLeft: "5px", color: "rgb(135, 136, 140)" }}
-                                />
-                                <a style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }} href="#">
-                                    Đánh giá
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <Container className="content w-100">
-                    <Navbar className="navbar" style={{ marginRight: "10px" }}>
-                        <Container fluid className="container-fluid">
-                            <InputGroup className="input-group w-50">
-                                <span className="input-group-text">
-                                    <FontAwesomeIcon
-                                        icon={faSearch}
-                                    />
-                                </span>
-                                <Form.Control type="search" className="form-control" placeholder="Tìm kiếm..." />
-                            </InputGroup>
-                            <div className="hihi">
-                                <span className="me-3">
-                                    <FontAwesomeIcon
-                                        icon={faBell}
-                                        style={{ fontSize: 24 }}
-                                    />
-                                </span>
-                                <span>
-                                    <img
-                                        src="/avt.jpg"
-                                        className="rounded-circle"
-                                        alt="Cinque Terre"
-                                        style={{ width: "50px", height: "50px", marginTop: "-19px", marginRight: "12px" }}
-                                    />
-                                </span>
-                                <span>
-                                    <FontAwesomeIcon
-                                        icon={faBars}
-                                        style={{ fontSize: 24 }}
-                                    />
-                                </span>
-                            </div>
-                        </Container>
-                    </Navbar>
-                    <Button className="back" variant="secondary" onClick={() => window.history.back()}>
-                        <FontAwesomeIcon
-                            icon={faArrowLeft}
-
-                        />
-                    </Button>
-                    <div className="row">
-                        <Row className="mt-3">
-                            <Col md={6}>
-                                <Image style={{ borderRadius: "7px" }} src={data.image} alt={data.name} fluid />
-                            </Col>
-                            <Col md={6}>
-                                <h2>{data.name}</h2>
-                                <h4 className="text-danger">{data.price}₫</h4>
-                                <p>{data.description || "Không có mô tả"}</p>
-                                <div className="cate" style={{ display: "flex" }}>
-                                    <p style={{ fontSize: "17px", fontWeight: "bold" }}>ID sản phẩm : </p>
-                                    <p className="text-danger" style={{ fontSize: "17px", marginLeft: "5px" }}>{data.id}</p>
-                                </div>
-                                <div className="cate" style={{ display: "flex" }}>
-                                    <p style={{ fontSize: "17px", fontWeight: "bold" }}>Danh mục : </p>
-                                    <p className="text-danger" style={{ fontSize: "17px", marginLeft: "5px" }}>{data.category}</p>
-                                </div>
-                                <div className="cate" style={{ display: "flex" }}>
-                                    <p style={{ fontSize: "17px", fontWeight: "bold" }}>Số lượng sản phẩm : </p>
-                                    <p className="text-danger" style={{ fontSize: "17px", marginLeft: "5px" }}>{data.quanlity}</p>
-                                </div>
-
-
-                            </Col>
-                        </Row>
-                    </div>
-                </Container>
-            </div>
-        </>
+      <span>
+        {discount ? (
+          <>
+            <del>{original.toLocaleString()}đ</del>{" "}
+            <strong>{discount.toLocaleString()}đ</strong>
+          </>
+        ) : (
+          <>{original.toLocaleString()}đ</>
+        )}
+      </span>
     );
-}
+  };
 
-export default PostDetail;
+  if (isLoading) return <p>Đang tải...</p>;
+  if (error) return <p>Lỗi khi tải sản phẩm: {error.message}</p>;
+  if (!data || !data._id) return <p>Không tìm thấy sản phẩm</p>;
+
+  return (
+    <>
+      <Container fluid className="mt-4">
+        <Breadcrumb className="ms-5">
+          <Breadcrumb.Item href="/" className="breadCrumbItem">
+            Trang chủ
+          </Breadcrumb.Item>
+          <Breadcrumb.Item href="" className="breadCrumbItem">
+            {data.categoryId?.name || "Danh mục"}
+          </Breadcrumb.Item>
+          <Breadcrumb.Item active>{data.name}</Breadcrumb.Item>
+        </Breadcrumb>
+
+        <Container fluid className="p-5">
+          <Row>
+            <Col xs={8} className="d-flex justify-content-center">
+              <Image src={data.image} fluid />
+            </Col>
+            <Col xs={4}>
+              <Row className="d-flex flex-column" style={{ gap: "12px" }}>
+                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{data.name}</h1>
+
+                <span>{renderPrice()}</span>
+
+                {data.sizes && data.sizes.length > 0 && (
+                  <>
+                    <p className="m-0">Chọn kích thước:</p>
+                    <Form>
+                      {data.sizes.map((size, index) => (
+                        <Form.Check
+                          type="radio"
+                          key={index}
+                          id={`size-${index}`}
+                          label={`${size.name} (${size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()}đ)`}
+                          name="size"
+                          checked={selectedSize === size.name}
+                          onChange={() => setSelectedSize(size.name)}
+                        />
+                      ))}
+                    </Form>
+                  </>
+                )}
+
+                <span>{data.time || "Thời gian không khả dụng"}</span>
+                <span>Đánh giá: 0 sao</span>
+
+                <p className="m-0">Chọn vị:</p>
+                <Form>
+                  {Array.isArray(data.taste) && data.taste.length > 0 ? (
+                    data.taste.map((item, index) => (
+                      <Form.Check
+                        key={index}
+                        id={`taste-checkbox-${index}`}
+                        label={item}
+                      />
+                    ))
+                  ) : (
+                    <p>Không có lựa chọn vị</p>
+                  )}
+                </Form>
+
+                <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
+                <ul>
+                  <li>{data.description || "Không có mô tả"}</li>
+                </ul>
+
+                <Counter />
+
+                <Button
+                  className="text-light p-2"
+                  style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
+                  onClick={() => {
+                    const sizeInfo = data.sizes?.find((s) => s.name === selectedSize);
+                    const price = sizeInfo?.price.discount ?? sizeInfo?.price.original ?? 0;
+
+                    console.log("Thêm vào giỏ:", {
+                      productId: data._id,
+                      name: data.name,
+                      size: selectedSize,
+                      price,
+                    });
+                  }}
+                >
+                  Thêm vào giỏ
+                </Button>
+              </Row>
+            </Col>
+          </Row>
+        </Container>
+      </Container>
+
+      <ProductList category="related" title="Sản phẩm liên quan" limit={6} />
+    </>
+  );
+};
+
+export default ProductDetail;

@@ -140,6 +140,7 @@ router.get("/hot", async (req, res) => {
 });
 
 // Lấy chi tiết sản phẩm theo ID
+// http://localhost:5000/products/685c215d94fac3b3a5e7d7bf
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
