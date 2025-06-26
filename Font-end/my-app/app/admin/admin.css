@@ -141,12 +141,12 @@ h4 {
 }
 
 .table-responsive {
-  background-color: rgb(33, 34, 45);
   border-radius: 5px;
+   background-color:unset;
 }
 
 .table>:not(caption)>*>* {
-  background-color: #2a3b4c
+  background-color: #2a3b4c;
 }
 .input-group-text {
   margin-left: -23px;

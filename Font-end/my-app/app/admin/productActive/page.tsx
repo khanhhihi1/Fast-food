@@ -14,7 +14,7 @@ import UpdateModelAdmin from "@/app/component/update-model-admin";
 import useDarkMode from "../useDarkMode/page";
 import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
-
+import "../admin.css"
 export default function ShowAdmin() {
   interface PostType {
     _id: string;
@@ -206,7 +206,7 @@ export default function ShowAdmin() {
             ))}
           </tbody>
         </Table>
-        <div className="d-flex justify-content-center gap-2">
+        <div className="d-flex justify-content mt-3 gap-2">
           <Button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
