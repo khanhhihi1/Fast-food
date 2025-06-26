@@ -12,6 +12,7 @@ module.exports = {
   getActiveProducts,
   getInactiveProducts,
   getHotProducts,
+  getDiscountProduct,
 };
 
 // Lấy tất cả sản phẩm
@@ -273,5 +274,24 @@ async function getHotProducts() {
   } catch (error) {
     console.log(error);
     throw new Error("Lỗi khi lấy sản phẩm hot");
+  }
+}
+async function getDiscountProduct() {
+  try {
+    const productsWithDiscount = await productsModel.find({
+      status: true,
+      saleOff: true,
+      sizes: {
+        $elemMatch: {
+          "price.discount": { $exists: true }
+        }
+      }
+    })
+    .limit(5);
+
+    return productsWithDiscount;
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm giảm giá:", error);
+    throw new Error("Không thể lấy sản phẩm giảm giá");
   }
 }
