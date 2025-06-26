@@ -10,7 +10,7 @@ interface Product {
   category: string;
   name: string;
   image: string;
-  price: number;
+  price: number | Record<string, number>;
   rating: number;
   time: string;
   description: string[];
@@ -29,7 +29,17 @@ interface ProductItemsProps {
   product: Product;
   layout?: "vertical" | "horizontal" | "default";
 }
-
+const renderPrice = (price: Product["price"]) => {
+  if (typeof price === "number") {
+    return `${price.toLocaleString()}đ`;
+  } else if (typeof price === "object" && price !== null) {
+    const firstKey = Object.keys(price)[0];
+    const firstValue = price[firstKey];
+    return `${firstKey}: ${firstValue.toLocaleString()}đ`;
+  } else {
+    return "Không rõ";
+  }
+};
 export default function ProductItem({
   product,
   layout = "vertical",
@@ -71,7 +81,7 @@ export default function ProductItem({
         <p className={styles.productName}>{product.name}</p>
         <div className={styles.productBot}>
           <p className={styles.productPrice}>
-            {product.price.toLocaleString()}đ
+            {renderPrice(product.price)}
           </p>
           <Button
             className={styles.productButton}

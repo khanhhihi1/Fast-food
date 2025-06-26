@@ -90,25 +90,41 @@ export default function ShowAdmin() {
   };
 
   const renderSizes = (sizes?: PostType["sizes"]) => {
-    if (!sizes || sizes.length === 0) return "Không có";
-    return (
+  if (!sizes || sizes.length === 0) return "Không có";
+
+  // Nếu chỉ có 1 size và tên là "default" thì hiển thị giá không kèm chữ "default"
+  if (sizes.length === 1 && sizes[0].name === "default") {
+    const s = sizes[0].price;
+    return s.discount ? (
       <>
-        {sizes.map((s) => (
-          <div key={s.name}>
-            {s.name}:{" "}
-            {s.price.discount ? (
-              <>
-                <del>{s.price.original.toLocaleString()}đ</del>{" "}
-                <strong>{s.price.discount.toLocaleString()}đ</strong>
-              </>
-            ) : (
-              <>{s.price.original.toLocaleString()}đ</>
-            )}
-          </div>
-        ))}
+        <del>{s.original.toLocaleString()}đ</del>{" "}
+        <strong>{s.discount.toLocaleString()}đ</strong>
       </>
+    ) : (
+      <>{s.original.toLocaleString()}đ</>
     );
-  };
+  }
+
+  // Ngược lại hiển thị từng size như S, M, L
+  return (
+    <>
+      {sizes.map((s) => (
+        <div key={s.name}>
+          {s.name}:{" "}
+          {s.price.discount ? (
+            <>
+              <del>{s.price.original.toLocaleString()}đ</del>{" "}
+              <strong>{s.price.discount.toLocaleString()}đ</strong>
+            </>
+          ) : (
+            <>{s.price.original.toLocaleString()}đ</>
+          )}
+        </div>
+      ))}
+    </>
+  );
+};
+
 
   const totalPages = Math.ceil(posts.length / productsPerPage);
   const indexOfLast = currentPage * productsPerPage;
