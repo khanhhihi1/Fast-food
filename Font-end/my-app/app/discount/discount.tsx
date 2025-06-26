@@ -29,7 +29,7 @@ export default function DiscountPage() {
               <Image src="https://bizweb.dktcdn.net/100/510/571/themes/941527/assets/flash_sale.png?1727255430829"></Image>
             </Col>
             <Col xs={12} className={`p-3 mt-2 ${styles.discountProduct}`}>
-              <ProductList category="related" limit={5} />
+              <ProductList category="discount" limit={5} />
             </Col>
           </Row>
         </Container>
