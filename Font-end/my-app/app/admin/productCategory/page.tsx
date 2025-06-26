@@ -8,6 +8,7 @@ import CategoryUpdateModal from "@/app/component/CategoryUpdateModal";
 import "../admin.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import useDarkMode from "../useDarkMode/page";
 
 interface CategoryType {
   _id: string;
@@ -24,6 +25,7 @@ export default function ProductCategory() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { isDarkMode } = useDarkMode();
 
   const API_BASE = "http://localhost:5000/categories";
 
