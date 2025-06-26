@@ -15,11 +15,17 @@ interface Product {
   category: string;
   name: string;
   image: string;
-  price: number;
-  rating: number;
-  time: string;
-  description: string[];
-  taste: Record<string, number>;
+  quantity: number;
+  taste?: string[];
+  sizes?: {
+    name: string;
+    price: {
+      original: number;
+      discount?: number;
+    };
+  }[];
+  description: string;
+  view: number;
 }
 
 interface ProductListProps {
@@ -62,7 +68,7 @@ export default function ProductList({
 
     fetchProducts();
 
-    return () => controller.abort(); 
+    return () => controller.abort();
   }, [category]);
 
   return (
@@ -90,7 +96,7 @@ export default function ProductList({
         {products.slice(0, limit ?? products.length).map((item) => (
           <ProductItem
             key={item._id}
-            product={{ ...item, id: item._id }} 
+            product={{ ...item, id: item._id }}
             layout={layout}
           />
         ))}

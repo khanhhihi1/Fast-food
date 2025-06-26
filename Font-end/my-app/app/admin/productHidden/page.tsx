@@ -182,9 +182,6 @@ export default function ShowInactiveProducts() {
 
         <h4 className="text-center mt-4">Danh sách sản phẩm ngưng bán</h4>
         <div className="d-flex justify-content-end mb-2">
-          <Button onClick={() => setShowModal(true)}>
-            <FontAwesomeIcon icon={faPlus} /> Thêm sản phẩm
-          </Button>
         </div>
 
         <Table striped bordered hover responsive className="mt-3 text-center">
@@ -226,14 +223,6 @@ export default function ShowInactiveProducts() {
                         ?.name || "Không rõ"}
                 </td>
                 <td>
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleEdit(product)}
-                  >
-                    <FontAwesomeIcon icon={faPenToSquare} />
-                  </Button>
                   <Button
                     variant="success"
                     size="sm"
