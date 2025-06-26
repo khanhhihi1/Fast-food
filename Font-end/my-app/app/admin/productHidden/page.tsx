@@ -16,6 +16,7 @@ import {
   faPlus,
   faPenToSquare,
   faEye,
+  faRotate
 } from "@fortawesome/free-solid-svg-icons";
 import { FaSearch } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -23,6 +24,7 @@ import ModalsAdmin from "@/app/component/create.model.admin";
 import UpdateModelAdmin from "@/app/component/update-model-admin";
 import useDarkMode from "../useDarkMode/page";
 import AdminSideBar from "../../component/adminSideBar";
+import AdminNavbar from "@/app/component/adminNavbar";
 
 export default function ShowInactiveProducts() {
   interface PostType {
@@ -133,53 +135,7 @@ export default function ShowInactiveProducts() {
           collapsed ? "collapsed-content" : ""
         }`}
       >
-        <Navbar className="navbar">
-          <Container fluid>
-            <Button
-              variant="light"
-              onClick={() => setCollapsed(!collapsed)}
-              className="me-3"
-            >
-              <FontAwesomeIcon icon={faBarsStaggered} />
-            </Button>
-            <Form className="d-flex search-form">
-              <div className="input-group">
-                <input
-                  className="form-control"
-                  type="search"
-                  placeholder="Tìm kiếm..."
-                />
-                <button className="btn btn-outline-secondary">
-                  <FaSearch />
-                </button>
-              </div>
-            </Form>
-            <div className="d-flex align-items-center">
-              <FontAwesomeIcon icon={faBell} className="me-3" />
-              <Dropdown>
-                <Dropdown.Toggle className="drop-down-avt" id="dropdown-basic">
-                  <img
-                    src="/avt.jpg"
-                    className="rounded-circle"
-                    width={45}
-                    height={45}
-                  />
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item href="/admin/account">
-                    Trang cá nhân
-                  </Dropdown.Item>
-                  <Dropdown.Item>Cài đặt</Dropdown.Item>
-                  <Dropdown.Item>Đăng xuất</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-              <Button className="ms-3" onClick={toggleDarkMode}>
-                <FontAwesomeIcon icon={faGear} />
-              </Button>
-            </div>
-          </Container>
-        </Navbar>
-
+        <AdminNavbar />
         <h4 className="text-center mt-4">Danh sách sản phẩm ngưng bán</h4>
         <div className="d-flex justify-content-end mb-2">
         </div>
@@ -228,7 +184,7 @@ export default function ShowInactiveProducts() {
                     size="sm"
                     onClick={() => handleShowProduct(product._id)}
                   >
-                    <FontAwesomeIcon icon={faEye} />
+                    <FontAwesomeIcon icon={faRotate} />
                   </Button>
                 </td>
               </tr>
@@ -236,7 +192,7 @@ export default function ShowInactiveProducts() {
           </tbody>
         </Table>
 
-        <div className="d-flex justify-content-center gap-2 mt-3">
+        <div className="d-flex justify-content gap-2 mt-3">
           <Button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
