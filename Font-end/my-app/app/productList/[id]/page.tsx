@@ -1,5 +1,5 @@
 "use client";
-import useSWR, { Fetcher } from "swr";
+import useSWR from "swr";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
@@ -13,21 +13,32 @@ import Counter from "@/app/count/count";
 import "./productList.css";
 import ProductList from "../productList";
 
+interface SizeType {
+  name: string;
+  price: {
+    original: number;
+    discount?: number;
+  };
+}
+
+interface CategoryInfo {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+  isHidden?: boolean;
+}
+
 interface ProductType {
   _id: string;
-  id?: string;
-  category: string;
   name: string;
   image: string;
-  price: number | Record<string, number>;
-  rating?: number;
+  description: string;
   time: string;
-  description?: string;
-  taste: string[];
-  size?: string[];
-  status: boolean;
-  quantity: number;
   view: number;
+  quantity: number;
+  taste?: string[];
+  sizes?: SizeType[];
+  categoryId?: CategoryInfo;
 }
 
 const ProductDetail = () => {
@@ -35,110 +46,60 @@ const ProductDetail = () => {
   const [productId, setProductId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-  // Hàm định dạng giá
-  const renderPrice = (price: ProductType["price"], selectedSize: string | null) => {
-    if (typeof price === "number") {
-      return <div>{price.toLocaleString()}đ</div>;
-    }
-    if (selectedSize && price[selectedSize]) {
-      return <div>{selectedSize}: {price[selectedSize].toLocaleString()}đ</div>;
-    }
-    return <div>Giá không khả dụng</div>;
-  };
-
   useEffect(() => {
     if (id && typeof id === "string") {
       setProductId(id);
-    } else {
-      console.error("ID sản phẩm không hợp lệ:", id);
     }
   }, [id]);
 
-  const fetcher: Fetcher<ProductType, string> = async (url: string) => {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Không thể lấy dữ liệu sản phẩm");
-    }
-    const response = await res.json();
-    console.log("API response:", response); // Ghi log để debug
-    const data = response.result; // Lấy dữ liệu từ result
-    if (!data) {
-      throw new Error("Không tìm thấy sản phẩm");
-    }
-    // Chuẩn hóa price
-    if (typeof data.price === "number") {
-      if (data.price <= 0) {
-        console.warn("Giá thường không hợp lệ:", data.price);
-        data.price = 0;
-      }
-    } else if (typeof data.price === "object" && data.price !== null) {
-      if (
-        !Object.keys(data.price).length ||
-        Object.values(data.price).some(v => typeof v !== "number" || v <= 0)
-      ) {
-        console.warn("Giá theo kích thước không hợp lệ:", data.price);
-        data.price = { Nhỏ: 0, Vừa: 0, Lớn: 0 };
-      }
-    } else {
-      console.warn("Price không hợp lệ:", data.price);
-      data.price = 0; // Giá mặc định
-    }
-    // Chuẩn hóa taste
-    if (!Array.isArray(data.taste)) {
-      console.warn("Taste không phải mảng:", data.taste);
-      data.taste = [];
-    }
-    // Chuẩn hóa size
-    if (!Array.isArray(data.size)) {
-      console.warn("Size không phải mảng:", data.size);
-      data.size = [];
-    }
-    // Chuẩn hóa description
-    if (typeof data.description !== "string") {
-      console.warn("Description không phải chuỗi:", data.description);
-      data.description = "Không có mô tả";
-    }
-    // Chuẩn hóa rating
-    if (typeof data.rating !== "number") {
-      console.warn("Rating không hợp lệ:", data.rating);
-      data.rating = 0;
-    }
-    // Chuẩn hóa status
-    if (typeof data.status !== "boolean") {
-      console.warn("Status không hợp lệ:", data.status);
-      data.status = true;
-    }
-    // Chuẩn hóa quantity
-    if (typeof data.quantity !== "number") {
-      console.warn("Quantity không hợp lệ:", data.quantity);
-      data.quantity = 0;
-    }
-    // Chuẩn hóa view
-    if (typeof data.view !== "number") {
-      console.warn("View không hợp lệ:", data.view);
-      data.view = 0;
-    }
-    return data;
-  };
+ const fetcher = async (url: string) => {
+  console.log("Fetching:", url);
+  const res = await fetch(url);
+  const data = await res.json();
+  console.log("Response:", data);
+  if (!res.ok) throw new Error(`Lỗi ${res.status}: ${data.message || data}`);
+  if (!data.result) throw new Error("API không trả về 'result'");
+  return data.result;
+};
 
   const { data, error, isLoading } = useSWR(
     productId ? `http://localhost:5000/products/${productId}` : null,
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
+    fetcher
   );
 
-  // useEffect để đặt kích thước mặc định
   useEffect(() => {
-    if (data && typeof data.price === "object" && data.size && data.size.length > 0) {
-      setSelectedSize(data.size[0]); // Chọn kích thước đầu tiên
+    if (data?.sizes && data.sizes.length > 0) {
+      setSelectedSize(data.sizes[0].name);
     } else {
-      setSelectedSize(null); // Không chọn kích thước nếu price là số hoặc không có size
+      setSelectedSize(null);
     }
-  }, [data]); // Dependency array chỉ chứa data
+  }, [data]);
+  useEffect(() => {
+    console.log("useParams id:", id);
+    if (id && typeof id === "string") {
+      setProductId(id);
+    }
+  }, [id]);
+
+  const renderPrice = () => {
+    if (!data?.sizes || data.sizes.length === 0) return "Giá không khả dụng";
+    const size = data.sizes.find((s) => s.name === selectedSize);
+    if (!size) return "Không có size phù hợp";
+
+    const { original, discount } = size.price;
+    return (
+      <span>
+        {discount ? (
+          <>
+            <del>{original.toLocaleString()}đ</del>{" "}
+            <strong>{discount.toLocaleString()}đ</strong>
+          </>
+        ) : (
+          <>{original.toLocaleString()}đ</>
+        )}
+      </span>
+    );
+  };
 
   if (isLoading) return <p>Đang tải...</p>;
   if (error) return <p>Lỗi khi tải sản phẩm: {error.message}</p>;
@@ -152,49 +113,51 @@ const ProductDetail = () => {
             Trang chủ
           </Breadcrumb.Item>
           <Breadcrumb.Item href="" className="breadCrumbItem">
-            {data.category || "Danh mục"}
+            {data.categoryId?.name || "Danh mục"}
           </Breadcrumb.Item>
-          <Breadcrumb.Item active>{data.name || "Sản phẩm"}</Breadcrumb.Item>
+          <Breadcrumb.Item active>{data.name}</Breadcrumb.Item>
         </Breadcrumb>
+
         <Container fluid className="p-5">
           <Row>
             <Col xs={8} className="d-flex justify-content-center">
-              <Image src={data.image || "/placeholder-image.jpg"} fluid />
+              <Image src={data.image} fluid />
             </Col>
             <Col xs={4}>
               <Row className="d-flex flex-column" style={{ gap: "12px" }}>
-                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>
-                  {data.name}
-                </h1>
-                <span>{renderPrice(data.price, selectedSize)}</span>
-                {/* Form chọn kích thước (chỉ hiển thị nếu price là object và có size) */}
-                {typeof data.price === "object" && data.size && data.size.length > 0 && (
+                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{data.name}</h1>
+
+                <span>{renderPrice()}</span>
+
+                {data.sizes && data.sizes.length > 0 && (
                   <>
                     <p className="m-0">Chọn kích thước:</p>
                     <Form>
-                      {data.size.map((size, index) => (
+                      {data.sizes.map((size, index) => (
                         <Form.Check
                           type="radio"
-                          id={`size-radio-${index}`}
                           key={index}
-                          label={`${size} (${data.price[size] ? data.price[size].toLocaleString() : "N/A"}đ)`}
+                          id={`size-${index}`}
+                          label={`${size.name} (${size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()}đ)`}
                           name="size"
-                          checked={selectedSize === size}
-                          onChange={() => setSelectedSize(size)}
+                          checked={selectedSize === size.name}
+                          onChange={() => setSelectedSize(size.name)}
                         />
                       ))}
                     </Form>
                   </>
                 )}
+
                 <span>{data.time || "Thời gian không khả dụng"}</span>
-                <span>Đánh giá: {data.rating} sao</span>
+                <span>Đánh giá: 0 sao</span>
+
                 <p className="m-0">Chọn vị:</p>
                 <Form>
                   {Array.isArray(data.taste) && data.taste.length > 0 ? (
                     data.taste.map((item, index) => (
                       <Form.Check
-                        id={`taste-checkbox-${index}`}
                         key={index}
+                        id={`taste-checkbox-${index}`}
                         label={item}
                       />
                     ))
@@ -202,30 +165,26 @@ const ProductDetail = () => {
                     <p>Không có lựa chọn vị</p>
                   )}
                 </Form>
-                <p className="m-0" style={{ color: "orange" }}>
-                  Combo bao gồm:
-                </p>
+
+                <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
                 <ul>
-                  {data.description && data.description.trim() ? (
-                    <li>{data.description}</li>
-                  ) : (
-                    <li>Không có mô tả</li>
-                  )}
+                  <li>{data.description || "Không có mô tả"}</li>
                 </ul>
+
                 <Counter />
+
                 <Button
                   className="text-light p-2"
-                  style={{
-                    border: "none",
-                    borderRadius: "0",
-                    backgroundColor: "#e00000",
-                  }}
+                  style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
                   onClick={() => {
+                    const sizeInfo = data.sizes?.find((s) => s.name === selectedSize);
+                    const price = sizeInfo?.price.discount ?? sizeInfo?.price.original ?? 0;
+
                     console.log("Thêm vào giỏ:", {
                       productId: data._id,
                       name: data.name,
-                      size: typeof data.price === "object" ? selectedSize : null,
-                      price: typeof data.price === "number" ? data.price : selectedSize && data.price ? data.price[selectedSize] : 0,
+                      size: selectedSize,
+                      price,
                     });
                   }}
                 >
@@ -236,6 +195,7 @@ const ProductDetail = () => {
           </Row>
         </Container>
       </Container>
+
       <ProductList category="related" title="Sản phẩm liên quan" limit={6} />
     </>
   );
