@@ -49,14 +49,25 @@ export default function ProductList({
 
     async function fetchProducts() {
       try {
-        const endpoint =
-          category === "hot"
-            ? "http://localhost:5000/products/hot"
-            : `http://localhost:5000/products${category ? `?category=${category}` : ""}`;
+        let endpoint = "http://localhost:5000/products";
+
+        if (category === "hot") {
+          endpoint = "http://localhost:5000/products/hot";
+        } else if (category === "discount") {
+          endpoint = "http://localhost:5000/products/discount";
+        } else if (category) {
+          endpoint = `http://localhost:5000/products?category=${category}`;
+        }
 
         const res = await fetch(endpoint, { signal });
         const data = await res.json();
-        const productList = data.result || data;
+        const productList = Array.isArray(data)
+          ? data
+          : Array.isArray(data.result)
+            ? data.result
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
 
         setProducts(productList);
       } catch (error: any) {
@@ -70,6 +81,7 @@ export default function ProductList({
 
     return () => controller.abort();
   }, [category]);
+
 
   return (
     <Container
