@@ -73,8 +73,8 @@ router.post("/addProduct", async (req, res) => {
   } catch (error) {
     const statusCode =
       error.message.includes("Thiếu trường") ||
-      error.message.includes("Danh mục không tồn tại") ||
-      error.message.includes("Hình ảnh phải là URL")
+        error.message.includes("Danh mục không tồn tại") ||
+        error.message.includes("Hình ảnh phải là URL")
         ? 400
         : 500;
     res.status(statusCode).json({ status: false, message: error.message });
@@ -138,7 +138,19 @@ router.get("/hot", async (req, res) => {
     return res.status(500).json({ status: false, message: "Lỗi hệ thống" });
   }
 });
+// sp discount
+// http://localhost:5000/products/discount
+router.get("/discount", async (req, res) => {
+  try {
+    const result = await productsController.getDiscountProduct();
 
+    res.status(200).json({ status: true, result});
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm giảm giá:", error);
+    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+  }
+});
+// không đc viết các router lấy sp sau api id
 // Lấy chi tiết sản phẩm theo ID
 // http://localhost:5000/products/685c215d94fac3b3a5e7d7bf
 router.get("/:id", async (req, res) => {
