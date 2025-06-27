@@ -8,6 +8,7 @@ var logger = require("morgan");
 var indexRouter = require("./routes/index");
 var productRouter = require("./routes/product");
 var usersRouter = require("./routes/users");
+var cartRouter = require("./routes/cart");
 var categoriesRouter = require("./routes/categories");
 const mongoose = require("mongoose");
 
@@ -40,6 +41,7 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/products", productRouter);
 app.use("/categories", categoriesRouter);
+app.use("/cart",cartRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
