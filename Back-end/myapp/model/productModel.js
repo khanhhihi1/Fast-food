@@ -1,19 +1,19 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-// Schema cho từng size
+
 const sizeSchema = new Schema(
   {
-    name: { type: String, required: true }, // Ví dụ: "Nhỏ", "Vừa", "Lớn"
+    name: { type: String, required: true }, 
     price: {
       original: { type: Number, required: true },
-      discount: { type: Number }, // Optional
+      discount: { type: Number }, 
     },
   },
   { _id: false }
 );
 
-// Schema chính cho sản phẩm
+
 const productSchema = new Schema({
   name: { type: String, required: true },
   categoryId: {
@@ -32,7 +32,6 @@ const productSchema = new Schema({
   sizes: { type: [sizeSchema], required: true },
 });
 
-// Export model
 module.exports =
   mongoose.models.products || mongoose.model("products", productSchema);
 
