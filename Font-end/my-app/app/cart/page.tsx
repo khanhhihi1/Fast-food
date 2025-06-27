@@ -12,18 +12,77 @@ import {
 import { useEffect, useState } from "react";
 import ProtectedRoute from "../component/ProtectedRoute";
 
+export interface Product {
+  _id: string;
+  name: string;
+  categoryId: string;
+  image: string;
+  description?: string;
+  taste?: string[];
+  quantity: number;
+  status: boolean;
+  saleOff?: boolean;
+  time?: string;
+  view?: number;
+  rating?: number;
+  sizes: {
+    name: string;
+    price: {
+      original: number;
+      discount?: number;
+    };
+  }[];
+}
+
+interface CartItem {
+  id: string;
+  productId: string;
+  name: string;
+  imageUrl: string;
+  quantity: number;
+  sizeName: string;
+  price: number;
+  taste?: string[];
+}
+
 export default function Cart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
-    const cartData = localStorage.getItem("cart");
-    setCartItems(cartData ? JSON.parse(cartData) : []);
+    const fetchCart = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/cart", {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!res.ok) {
+          const text = await res.text(); // trả về nội dung lỗi để debug
+          throw new Error("Lỗi API: " + text);
+        }
+        const data = await res.json();
+        setCartItems(data.items || []);
+      } catch (error) {
+        console.error("Lỗi tải giỏ hàng:", error);
+      }
+    };
+
+    fetchCart();
   }, []);
-  const handleRemove = (id: string) => {
-    const updatedCart = cartItems.filter((item) => item.id !== id);
-    setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+
+  const handleRemove = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/cart/remove/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setCartItems((prev) => prev.filter((item) => item.id !== id));
+      }
+    } catch (error) {
+      console.error("Lỗi khi xóa sản phẩm:", error);
+    }
   };
+
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
@@ -43,6 +102,8 @@ export default function Cart() {
                     <th>Tên</th>
                     <th>Giá</th>
                     <th>Số lượng</th>
+                    <th>Kích cỡ</th>
+                    <th>Hương vị</th>
                     <th>Thành tiền</th>
                     <th>Hành động</th>
                   </tr>
@@ -54,12 +115,19 @@ export default function Cart() {
                         <Image
                           src={item.imageUrl}
                           style={{ width: "80px", height: "80px" }}
+                          alt={item.name}
                         />
                       </td>
                       <td>{item.name}</td>
-                      <td>{item.price}₫</td>
+                      <td>{item.price.toLocaleString()}₫</td>
                       <td>{item.quantity}</td>
-                      <td>{item.price * item.quantity}₫</td>
+                      <td>{item.sizeName}</td>
+                      <td>
+                        {item.taste?.[0] === "Không"
+                          ? "Không có"
+                          : item.taste?.join(", ")}
+                      </td>
+                      <td>{(item.price * item.quantity).toLocaleString()}₫</td>
                       <td>
                         <Button
                           variant="danger"
@@ -79,9 +147,8 @@ export default function Cart() {
             <Card className="shadow p-4">
               <h4>Tổng đơn hàng</h4>
               <p>
-                <strong>Tổng giá:</strong> {totalPrice}₫
+                <strong>Tổng giá:</strong> {totalPrice.toLocaleString()} ₫
               </p>
-
               <Button variant="dark" className="w-100">
                 Thanh toán
               </Button>

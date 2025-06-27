@@ -22,14 +22,6 @@ interface Product {
   description?: string | string[];
   taste?: string[] | Record<string, number>;
 }
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
-
 interface ProductItemsProps {
   product: Product;
   layout?: "vertical" | "horizontal" | "default";
@@ -60,31 +52,45 @@ export default function ProductItem({
   product,
   layout = "vertical",
 }: ProductItemsProps) {
-  const addToCart = (product: Product) => {
-  const cartData = localStorage.getItem("cart");
-  const currentCart: CartItem[] = cartData ? JSON.parse(cartData) : [];
+ const addToCart = async (product: Product) => {
+  try {
+    const firstSize = product.sizes?.[0];
 
-  const existingItem = currentCart.find((item) => item.id === product.id);
+    if (!firstSize || !firstSize.price?.original) {
+      toast.error("Sản phẩm không có thông tin giá.");
+      return;
+    }
 
-  // 👉 Lấy giá đầu tiên từ sizes
-  const priceInfo = product.sizes?.[0]?.price;
-  const finalPrice = priceInfo?.discount ?? priceInfo?.original ?? 0;
-
-  if (existingItem) {
-    existingItem.quantity += 1;
-  } else {
-    currentCart.push({
-      id: product.id,
-      name: product.name,
-      price: finalPrice, 
-      image: product.image,
+    const body = {
+      productId: product._id || product.id,
+      sizeName: firstSize.name ?? "default",
       quantity: 1,
-    });
-  }
+      price: firstSize.price,
+    };
 
-  localStorage.setItem("cart", JSON.stringify(currentCart));
-  toast.success(`${product.name} đã được thêm vào giỏ hàng!`);
+    const response = await fetch("http://localhost:5000/cart/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // nếu bạn dùng token trong cookie
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
+    } else {
+      toast.error(result.message || "Thêm vào giỏ hàng thất bại.");
+    }
+  } catch (error) {
+    toast.error("Lỗi kết nối đến máy chủ.");
+    console.error("Thêm giỏ hàng lỗi:", error);
+  }
 };
+
+
 
 
   return (
