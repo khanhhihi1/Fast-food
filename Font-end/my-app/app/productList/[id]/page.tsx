@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import Counter from "@/app/count/count";
 import "./productList.css";
 import ProductList from "../productList";
+import { toast } from "react-toastify";
 
 interface SizeType {
   name: string;
@@ -45,6 +46,8 @@ const ProductDetail = () => {
   const { id } = useParams();
   const [productId, setProductId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedTaste, setSelectedTaste] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
 
   useEffect(() => {
     if (id && typeof id === "string") {
@@ -52,15 +55,13 @@ const ProductDetail = () => {
     }
   }, [id]);
 
- const fetcher = async (url: string) => {
-  console.log("Fetching:", url);
-  const res = await fetch(url);
-  const data = await res.json();
-  console.log("Response:", data);
-  if (!res.ok) throw new Error(`Lỗi ${res.status}: ${data.message || data}`);
-  if (!data.result) throw new Error("API không trả về 'result'");
-  return data.result;
-};
+  const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(`Lỗi ${res.status}: ${data.message || data}`);
+    if (!data.result) throw new Error("API không trả về 'result'");
+    return data.result;
+  };
 
   const { data, error, isLoading } = useSWR(
     productId ? `http://localhost:5000/products/${productId}` : null,
@@ -74,12 +75,6 @@ const ProductDetail = () => {
       setSelectedSize(null);
     }
   }, [data]);
-  useEffect(() => {
-    console.log("useParams id:", id);
-    if (id && typeof id === "string") {
-      setProductId(id);
-    }
-  }, [id]);
 
   const renderPrice = () => {
     if (!data?.sizes || data.sizes.length === 0) return "Giá không khả dụng";
@@ -99,6 +94,44 @@ const ProductDetail = () => {
         )}
       </span>
     );
+  };
+
+  const handleAddToCart = async (product: ProductType) => {
+    if (!selectedSize || !data?._id) {
+      alert("Vui lòng chọn size");
+      return;
+    }
+
+    const sizeInfo = data.sizes?.find((s) => s.name === selectedSize);
+    const price = {
+      original: sizeInfo?.price.original ?? 0,
+      discount: sizeInfo?.price.discount,
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/cart/add", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: data._id,
+          sizeName: selectedSize,
+          taste: selectedTaste ? [selectedTaste] : ["Không"],
+          quantity,
+          price,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Lỗi không xác định");
+
+       toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
+    } catch (error: any) {
+       toast.error("Thêm giỏ hàng thất bại.");
+      console.error(error);
+    }
   };
 
   if (isLoading) return <p>Đang tải...</p>;
@@ -157,8 +190,12 @@ const ProductDetail = () => {
                     data.taste.map((item, index) => (
                       <Form.Check
                         key={index}
-                        id={`taste-checkbox-${index}`}
+                        id={`taste-radio-${index}`}
                         label={item}
+                        type="radio"
+                        name="taste"
+                        checked={selectedTaste === item}
+                        onChange={() => setSelectedTaste(item)}
                       />
                     ))
                   ) : (
@@ -171,22 +208,12 @@ const ProductDetail = () => {
                   <li>{data.description || "Không có mô tả"}</li>
                 </ul>
 
-                <Counter />
+                <Counter value={quantity} setValue={setQuantity} />
 
                 <Button
                   className="text-light p-2"
                   style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
-                  onClick={() => {
-                    const sizeInfo = data.sizes?.find((s) => s.name === selectedSize);
-                    const price = sizeInfo?.price.discount ?? sizeInfo?.price.original ?? 0;
-
-                    console.log("Thêm vào giỏ:", {
-                      productId: data._id,
-                      name: data.name,
-                      size: selectedSize,
-                      price,
-                    });
-                  }}
+                  onClick={handleAddToCart}
                 >
                   Thêm vào giỏ
                 </Button>
