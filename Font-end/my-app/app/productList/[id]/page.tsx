@@ -98,14 +98,19 @@ const ProductDetail = () => {
 
   const handleAddToCart = async (product: ProductType) => {
     if (!selectedSize || !data?._id) {
-      alert("Vui lòng chọn size");
+      toast.error("Vui lòng chọn kích cỡ");
       return;
     }
 
     const sizeInfo = data.sizes?.find((s) => s.name === selectedSize);
+    if (!sizeInfo) {
+      toast.error("Kích cỡ không hợp lệ");
+      return;
+    }
+
     const price = {
-      original: sizeInfo?.price.original ?? 0,
-      discount: sizeInfo?.price.discount,
+      original: sizeInfo.price.original,
+      discount: sizeInfo.price.discount,
     };
 
     try {
@@ -118,7 +123,7 @@ const ProductDetail = () => {
         body: JSON.stringify({
           productId: data._id,
           sizeName: selectedSize,
-          taste: selectedTaste ? [selectedTaste] : ["Không"],
+          taste: selectedTaste ? [selectedTaste] : [],
           quantity,
           price,
         }),
@@ -127,10 +132,10 @@ const ProductDetail = () => {
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Lỗi không xác định");
 
-       toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
+      toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
     } catch (error: any) {
-       toast.error("Thêm giỏ hàng thất bại.");
-      console.error(error);
+      toast.error(`Thêm giỏ hàng thất bại: ${error.message}`);
+      console.error("Lỗi khi thêm giỏ hàng:", error);
     }
   };
 
@@ -187,17 +192,28 @@ const ProductDetail = () => {
                 <p className="m-0">Chọn vị:</p>
                 <Form>
                   {Array.isArray(data.taste) && data.taste.length > 0 ? (
-                    data.taste.map((item, index) => (
+                    <>
                       <Form.Check
-                        key={index}
-                        id={`taste-radio-${index}`}
-                        label={item}
+                        key="no-taste"
+                        id="taste-radio-no"
+                        label="Không"
                         type="radio"
                         name="taste"
-                        checked={selectedTaste === item}
-                        onChange={() => setSelectedTaste(item)}
+                        checked={selectedTaste === null}
+                        onChange={() => setSelectedTaste(null)}
                       />
-                    ))
+                      {data.taste.map((item, index) => (
+                        <Form.Check
+                          key={index}
+                          id={`taste-radio-${index}`}
+                          label={item}
+                          type="radio"
+                          name="taste"
+                          checked={selectedTaste === item}
+                          onChange={() => setSelectedTaste(item)}
+                        />
+                      ))}
+                    </>
                   ) : (
                     <p>Không có lựa chọn vị</p>
                   )}
@@ -213,7 +229,7 @@ const ProductDetail = () => {
                 <Button
                   className="text-light p-2"
                   style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
-                  onClick={handleAddToCart}
+                  onClick={() => handleAddToCart(data)}
                 >
                   Thêm vào giỏ
                 </Button>
