@@ -152,7 +152,7 @@ router.get("/discount", async (req, res) => {
 });
 // không đc viết các router lấy sp sau api id
 // Lấy chi tiết sản phẩm theo ID
-// http://localhost:5000/products/685c215d94fac3b3a5e7d7bf
+// http://localhost:5000/products/685cb8c8d73334a073c656a4
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
