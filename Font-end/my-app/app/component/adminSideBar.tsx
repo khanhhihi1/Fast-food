@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function AdminSideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [openProductMenu, setOpenProductMenu] = useState(false);
+
   return (
     <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <h3 className="text-center">
@@ -32,6 +33,7 @@ export default function AdminSideBar() {
       </h3>
       <div className="navbar">
         <div className="nav-item">
+          {/* Dashboard */}
           <div className="nav-link1">
             <FontAwesomeIcon
               icon={faHouse}
@@ -39,6 +41,8 @@ export default function AdminSideBar() {
             />
             <Link href="/admin">Dashboard</Link>
           </div>
+
+          {/* Quản lý sản phẩm */}
           <div
             className="nav-link flex items-center justify-between text-gray-700 hover:text-blue-600 cursor-pointer transition"
             onClick={() => setOpenProductMenu(!openProductMenu)}
@@ -62,6 +66,7 @@ export default function AdminSideBar() {
             />
           </div>
 
+          {/* Menu con quản lý sản phẩm */}
           <AnimatePresence>
             {openProductMenu && (
               <motion.div
@@ -86,6 +91,7 @@ export default function AdminSideBar() {
             )}
           </AnimatePresence>
 
+          {/* Quản lý đơn hàng */}
           <div className="nav-link">
             <FontAwesomeIcon
               icon={faCartShopping}
@@ -97,12 +103,13 @@ export default function AdminSideBar() {
             />
             <Link
               style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="#"
+              href="/admin/cartmanagement"
             >
               Quản lý đơn hàng
             </Link>
           </div>
 
+          {/* Quản lý voucher */}
           <div className="nav-link">
             <FontAwesomeIcon
               icon={faTicket}
@@ -120,6 +127,7 @@ export default function AdminSideBar() {
             </Link>
           </div>
 
+          {/* Quản lý người dùng */}
           <div className="nav-link">
             <FontAwesomeIcon
               icon={faCircleUser}
@@ -137,6 +145,7 @@ export default function AdminSideBar() {
             </Link>
           </div>
 
+          {/* Thống kê */}
           <div className="nav-link">
             <FontAwesomeIcon
               icon={faChartSimple}
@@ -154,6 +163,7 @@ export default function AdminSideBar() {
             </Link>
           </div>
 
+          {/* Đánh giá */}
           <div className="nav-link">
             <FontAwesomeIcon
               icon={faComments}
@@ -170,22 +180,8 @@ export default function AdminSideBar() {
               Đánh giá
             </Link>
           </div>
-          <div className="nav-link">
-            <FontAwesomeIcon
-              icon={faCartShopping}
-              style={{
-                marginTop: "8px",
-                marginLeft: "5px",
-                color: "rgb(135, 136, 140)",
-              }}
-            />
-            <Link
-              style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="#"
-            >
-              Quản lý đơn hàng
-            </Link>
-          </div>
+
+          {/* Đăng xuất */}
           <div className="nav-link">
             <FontAwesomeIcon
               icon={faRightFromBracket}

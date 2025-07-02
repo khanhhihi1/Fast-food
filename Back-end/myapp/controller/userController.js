@@ -88,9 +88,12 @@ async function loginUser(data) {
       throw new Error("Tên đăng nhập hoặc mật khẩu không đúng");
     }
 
-    const token = jwt.sign({ id: user._id }, "secret_key", {
-      expiresIn: "1d",
-    });
+    // Hợp nhất đoạn bị conflict
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      "secret_key",
+      { expiresIn: "1d" }
+    );
 
     return {
       user: {
@@ -215,7 +218,7 @@ async function getAllUser() {
   }
 }
 
-// cập nhật trạng thái
+// Cập nhật trạng thái (chỉ sửa một vài trường)
 async function patchUserByAdmin(id, data) {
   try {
     const user = await userModel.findById(id);
