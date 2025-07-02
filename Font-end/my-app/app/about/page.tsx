@@ -32,7 +32,7 @@ export default function About() {
               Chào mừng bạn đến với Fried King - điểm đến lý tưởng cho những
               người yêu thưởng thức pizza tại thành phố! Fried King tự hào là
               địa chỉ pizza hàng đầu, nổi tiếng với chất lượng món ăn tuyệt vời,
-              dịch vụ tận tâm và mức độ hài lòng cao từ phía khách hàng.
+              dịch vụ tận tâm và mức độ hài lòng cao từ phía khách hàng!
             </p>
             <div className="d-flex gap-3">
               <Image
