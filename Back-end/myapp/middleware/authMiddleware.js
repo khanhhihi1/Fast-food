@@ -9,7 +9,12 @@ function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, "secret_key");
-   req.userId = decoded._id || decoded.id || decoded.userId;
+
+    // ✅ Gán cả id và role
+    req.userId = decoded._id || decoded.id || decoded.userId;
+    req.userRole = decoded.role || "user"; // mặc định user nếu không có
+    req.user = decoded; // hoặc gán toàn bộ nếu cần
+
     next();
   } catch (error) {
     return res

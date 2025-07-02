@@ -85,7 +85,11 @@ async function loginUser(data) {
       throw new Error("Email hoặc mật khẩu không đúng");
     }
 
-    const token = jwt.sign({ id: user._id }, "secret_key", { expiresIn: "1d" });
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      "secret_key",
+      { expiresIn: "1d" }
+    );
 
     return { user, token };
   } catch (error) {

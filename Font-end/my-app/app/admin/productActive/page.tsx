@@ -90,40 +90,40 @@ export default function ShowAdmin() {
   };
 
   const renderSizes = (sizes?: PostType["sizes"]) => {
-  if (!sizes || sizes.length === 0) return "Không có";
+    if (!sizes || sizes.length === 0) return "Không có";
 
-  // Nếu chỉ có 1 size và tên là "default" thì hiển thị giá không kèm chữ "default"
-  if (sizes.length === 1 && sizes[0].name === "default") {
-    const s = sizes[0].price;
-    return s.discount ? (
+    // Nếu chỉ có 1 size và tên là "default" thì hiển thị giá không kèm chữ "default"
+    if (sizes.length === 1 && sizes[0].name === "default") {
+      const s = sizes[0].price;
+      return s.discount ? (
+        <>
+          <del>{s.original.toLocaleString()}đ</del>{" "}
+          <strong>{s.discount.toLocaleString()}đ</strong>
+        </>
+      ) : (
+        <>{s.original.toLocaleString()}đ</>
+      );
+    }
+
+    // Ngược lại hiển thị từng size như S, M, L
+    return (
       <>
-        <del>{s.original.toLocaleString()}đ</del>{" "}
-        <strong>{s.discount.toLocaleString()}đ</strong>
+        {sizes.map((s) => (
+          <div key={s.name}>
+            {s.name}:{" "}
+            {s.price.discount ? (
+              <>
+                <del>{s.price.original.toLocaleString()}đ</del>{" "}
+                <strong>{s.price.discount.toLocaleString()}đ</strong>
+              </>
+            ) : (
+              <>{s.price.original.toLocaleString()}đ</>
+            )}
+          </div>
+        ))}
       </>
-    ) : (
-      <>{s.original.toLocaleString()}đ</>
     );
-  }
-
-  // Ngược lại hiển thị từng size như S, M, L
-  return (
-    <>
-      {sizes.map((s) => (
-        <div key={s.name}>
-          {s.name}:{" "}
-          {s.price.discount ? (
-            <>
-              <del>{s.price.original.toLocaleString()}đ</del>{" "}
-              <strong>{s.price.discount.toLocaleString()}đ</strong>
-            </>
-          ) : (
-            <>{s.price.original.toLocaleString()}đ</>
-          )}
-        </div>
-      ))}
-    </>
-  );
-};
+  };
 
 
   const totalPages = Math.ceil(posts.length / productsPerPage);
@@ -136,9 +136,8 @@ export default function ShowAdmin() {
       <AdminSideBar />
       <Container
         fluid
-        className={`content w-100 container-content ${
-          collapsed ? "collapsed-content" : ""
-        }`}
+        className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
+          }`}
       >
         <AdminNavbar />
         <h4 className="text-center mt-4">Danh sách sản phẩm đang bán</h4>
@@ -183,7 +182,7 @@ export default function ShowAdmin() {
                   {typeof product.categoryId === "object"
                     ? product.categoryId.name
                     : categories.find((c) => c._id === product.categoryId)
-                        ?.name || "Không rõ"}
+                      ?.name || "Không rõ"}
                 </td>
                 <td>
                   <Button
