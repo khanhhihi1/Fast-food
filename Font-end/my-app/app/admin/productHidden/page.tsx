@@ -16,7 +16,7 @@ import {
   faPlus,
   faPenToSquare,
   faEye,
-  faRotate
+  faRotate,
 } from "@fortawesome/free-solid-svg-icons";
 import { FaSearch } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -91,7 +91,7 @@ export default function ShowInactiveProducts() {
   const handleShowProduct = async (id: string) => {
     try {
       await fetch(`http://localhost:5000/products/show/${id}`, {
-        method: "PATCH",
+        method: "PUT",
       });
       fetchPosts();
       toast.success("Hiện sản phẩm thành công");
@@ -137,8 +137,7 @@ export default function ShowInactiveProducts() {
       >
         <AdminNavbar />
         <h4 className="text-center mt-4">Danh sách sản phẩm ngưng bán</h4>
-        <div className="d-flex justify-content-end mb-2">
-        </div>
+        <div className="d-flex justify-content-end mb-2"></div>
 
         <Table striped bordered hover responsive className="mt-3 text-center">
           <thead>
