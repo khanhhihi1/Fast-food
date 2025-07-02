@@ -81,7 +81,7 @@ export default function AdminSideBar() {
                             icon={faCartShopping}
                             style={{ marginTop: '8px', marginLeft: '5px', color: 'rgb(135, 136, 140)' }}
                         />
-                        <Link style={{ marginLeft: '2px', color: 'rgb(135, 136, 140)' }} href="#">
+                        <Link style={{ marginLeft: '2px', color: 'rgb(135, 136, 140)' }} href="/admin/cartmanagement">
                             Quản lý đơn hàng
                         </Link>
                     </div>
@@ -130,7 +130,7 @@ export default function AdminSideBar() {
                             icon={faCartShopping}
                             style={{ marginTop: '8px', marginLeft: '5px', color: 'rgb(135, 136, 140)' }}
                         />
-                        <Link style={{ marginLeft: '2px', color: 'rgb(135, 136, 140)' }} href="#">
+                        <Link style={{ marginLeft: '2px', color: 'rgb(135, 136, 140)' }} href="/admin/cartmanagement">
                             Quản lý đơn hàng
                         </Link>
                     </div>

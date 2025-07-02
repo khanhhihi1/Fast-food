@@ -9,6 +9,7 @@ var indexRouter = require("./routes/index");
 var productRouter = require("./routes/product");
 var usersRouter = require("./routes/users");
 var cartRouter = require("./routes/cart");
+var orderRouter = require("./routes/order");
 var categoriesRouter = require("./routes/categories");
 const mongoose = require("mongoose");
 
@@ -41,7 +42,8 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/products", productRouter);
 app.use("/categories", categoriesRouter);
-app.use("/cart",cartRouter)
+app.use("/cart",cartRouter);
+app.use("/orders",orderRouter)
   const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
