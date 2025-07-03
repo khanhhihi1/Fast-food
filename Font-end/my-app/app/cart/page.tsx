@@ -13,7 +13,8 @@ import {
 import { useEffect, useState } from "react";
 import ProtectedRoute from "../component/ProtectedRoute";
 import { toast } from "react-toastify";
-
+import { Link } from "lucide-react";
+import { useRouter } from "next/navigation";
 export interface Product {
   _id: string;
   name: string;
@@ -63,40 +64,64 @@ export default function Cart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const router = useRouter();
   const fetchCart = async () => {
-  try {
-    setIsLoading(true);
-    setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    const res = await fetch("http://localhost:5000/cart", {
-      method: "GET",
-      credentials: "include",
-    });
+      const res = await fetch("http://localhost:5000/cart", {
+        method: "GET",
+        credentials: "include",
+      });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Lỗi API giỏ hàng: ${res.status} - ${errorText}`);
-    }
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Lỗi API giỏ hàng: ${res.status} - ${errorText}`);
+      }
 
-    const data = await res.json();
-    console.log("Cart API response:", data);
+      const data = await res.json();
+      console.log("Cart API response:", data);
 
-    if (!data.status) {
-      throw new Error(data.message || "Không thể tải giỏ hàng");
-    }
+      if (!data.status) {
+        throw new Error(data.message || "Không thể tải giỏ hàng");
+      }
 
-    const items = data.result.items || [];
+      const items = data.result.items || [];
 
-    const itemsWithProduct = await Promise.all(
-      items.map(async (item: CartItem) => {
-        try {
-          const productRes = await fetch(
-            `http://localhost:5000/products/${item.productId}`
-          );
+      const itemsWithProduct = await Promise.all(
+        items.map(async (item: CartItem) => {
+          try {
+            const productRes = await fetch(
+              `http://localhost:5000/products/${item.productId}`
+            );
 
-          if (!productRes.ok) {
-            console.error(`Không thể lấy sản phẩm ${item.productId}: ${productRes.status}`);
+            if (!productRes.ok) {
+              console.error(`Không thể lấy sản phẩm ${item.productId}: ${productRes.status}`);
+              return {
+                ...item,
+                availableSizes: [],
+                availableTastes: [],
+                fullPrice: { original: item.price },
+              };
+            }
+
+            const productJson = await productRes.json();
+            const productData: Product = productJson.result;
+
+            console.log(`productData for ${item.productId}:`, productData);
+
+            const selectedSize = productData.sizes?.find((s) => s.name === item.sizeName);
+
+            return {
+              ...item,
+              availableSizes: productData.sizes || [],
+              availableTastes: productData.taste || [],
+              fullPrice: selectedSize?.price || { original: item.price },
+              price: selectedSize?.price.discount ?? selectedSize?.price.original ?? item.price,
+            };
+          } catch (error: any) {
+            console.error(`Lỗi khi lấy sản phẩm ${item.productId}:`, error.message);
             return {
               ...item,
               availableSizes: [],
@@ -104,41 +129,17 @@ export default function Cart() {
               fullPrice: { original: item.price },
             };
           }
+        })
+      );
 
-          const productJson = await productRes.json();
-          const productData: Product = productJson.result;
-
-          console.log(`productData for ${item.productId}:`, productData);
-
-          const selectedSize = productData.sizes?.find((s) => s.name === item.sizeName);
-
-          return {
-            ...item,
-            availableSizes: productData.sizes || [],
-            availableTastes: productData.taste || [],
-            fullPrice: selectedSize?.price || { original: item.price },
-            price: selectedSize?.price.discount ?? selectedSize?.price.original ?? item.price,
-          };
-        } catch (error: any) {
-          console.error(`Lỗi khi lấy sản phẩm ${item.productId}:`, error.message);
-          return {
-            ...item,
-            availableSizes: [],
-            availableTastes: [],
-            fullPrice: { original: item.price },
-          };
-        }
-      })
-    );
-
-    setCartItems(itemsWithProduct);
-  } catch (error: any) {
-    console.error("❌ Lỗi tải giỏ hàng:", error.message);
-    setError("Không thể tải giỏ hàng. Vui lòng thử lại.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+      setCartItems(itemsWithProduct);
+    } catch (error: any) {
+      console.error("❌ Lỗi tải giỏ hàng:", error.message);
+      setError("Không thể tải giỏ hàng. Vui lòng thử lại.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
   const syncCart = async () => {
@@ -211,31 +212,15 @@ export default function Cart() {
       toast.error("Không thể xóa sản phẩm. Vui lòng thử lại.");
     }
   };
-  const handleCheckout = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/orders", {
-        method: "POST",
-        credentials: "include",
-      });
+  const handleCheckout = () => {
+  if (cartItems.length === 0) {
+    toast.warning("Giỏ hàng trống!");
+    return;
+  }
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error("Lỗi khi tạo đơn hàng: " + text);
-      }
-
-      const data = await res.json();
-      toast.success("Đặt hàng thành công!");
-      console.log("📦 Đơn hàng:", data.order);
-
-      // Sau khi đặt hàng thành công, làm mới giỏ hàng
-      setCartItems([]);
-    } catch (error: any) {
-      console.error("❌ Lỗi khi thanh toán:", error.message);
-      toast.error("Không thể tạo đơn hàng. Vui lòng thử lại.");
-    }
-  };
-
-
+  localStorage.setItem("tempOrder", JSON.stringify(cartItems));
+  router.push("/checkout");
+};
   useEffect(() => {
     fetchCart();
   }, []);
@@ -387,9 +372,10 @@ export default function Cart() {
                 <p>
                   <strong>Tổng giá:</strong> {totalPrice.toLocaleString()} ₫
                 </p>
-                <Button variant="dark" className="w-100" onClick={handleCheckout}>
+               <Button variant="dark" className="w-100" onClick={handleCheckout}>
                   Thanh toán
                 </Button>
+
               </Card>
             </Col>
           </Row>
