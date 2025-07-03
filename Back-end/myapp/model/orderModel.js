@@ -30,10 +30,15 @@ const orderSchema = new Schema(
     total: { type: Number, required: true },
     shippingFee: { type: Number, default: 0 },
     tax: { type: Number, default: 0 },
+     paymentMethod: {
+      type: String,
+      enum: ["momo", "cod"],
+      default: "cod",
+    },
     status: {
       type: String,
-      enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"],
-      default: "Pending",
+      enum: ["Chờ xác nhận", "Đã xác nhận", "Đang vận chuyển", "Hoàn tất", "Hủy đơn hàng"],
+      default: "Chờ xác nhận",
     },
     createdAt: { type: Date, default: Date.now },
   },
