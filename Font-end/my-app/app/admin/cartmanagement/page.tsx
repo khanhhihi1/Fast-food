@@ -111,7 +111,7 @@ export default function CartManagementPage() {
         return "warning";
       case "delivered":
         return "success";
-      case "pending":
+      case "Chờ xác nhận":
         return "secondary";
       case "cancelled":
         return "danger";
@@ -223,7 +223,7 @@ export default function CartManagementPage() {
                           <h6>Thông tin đơn hàng</h6>
                           <p><strong>Ngày tạo:</strong> {new Date(order.createdAt).toLocaleString()}</p>
                           {/* Bạn có thể thêm ngày cập nhật cuối nếu có */}
-                          <p><strong>Trạng thái:</strong> <Badge bg={statusBadgeVariant(order.status)}>{order.status}</Badge></p>
+                          <p ><strong className="text-dark">Trạng thái:</strong> <Badge bg={statusBadgeVariant(order.status)}>{order.status}</Badge></p>
                         </Col>
                       </Row>
 
