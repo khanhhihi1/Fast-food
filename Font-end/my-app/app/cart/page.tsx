@@ -372,6 +372,9 @@ export default function Cart() {
                 <p>
                   <strong>Tổng giá:</strong> {totalPrice.toLocaleString()} ₫
                 </p>
+                 <p>
+                  <strong>chọn voucher:</strong> 
+                </p>
                <Button variant="dark" className="w-100" onClick={handleCheckout}>
                   Thanh toán
                 </Button>
