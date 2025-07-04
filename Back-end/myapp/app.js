@@ -11,6 +11,8 @@ var usersRouter = require("./routes/users");
 var cartRouter = require("./routes/cart");
 var orderRouter = require("./routes/order");
 var categoriesRouter = require("./routes/categories");
+var voucherRouter = require("./routes/voucher");
+
 const mongoose = require("mongoose");
 
 var app = express();
@@ -42,6 +44,8 @@ app.use("/products", productRouter);
 app.use("/categories", categoriesRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
+app.use("/voucher", voucherRouter);
+
 
 const PORT = process.env.PORT || 5000; 
 app.listen(PORT, () => {
