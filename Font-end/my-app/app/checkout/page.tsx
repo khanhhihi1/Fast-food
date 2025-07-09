@@ -1,325 +1,256 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Form, Button, Card, Image } from "react-bootstrap";
-import "./checkout.css";
+
+import "bootstrap/dist/css/bootstrap.min.css";
+import {
+  Container,
+  Card,
+  Button,
+  Row,
+  Col,
+  Form,
+  Alert,
+} from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
-interface TempCartItem {
-  productId: string;
+interface CartItem {
+  id: string;
   name: string;
   imageUrl: string;
   quantity: number;
   sizeName: string;
   price: number;
-  taste: string[];
+  taste?: string[];
+}
+
+interface Voucher {
+  _id: string;
+  code: string;
+  description: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  minOrderValue: number;
+  maxDiscount: number;
+  expiresAt: string;
+  isActive: boolean;
 }
 
 export default function Checkout() {
-  const [formData, setFormData] = useState({
-    email: "",
-    firstName: "",
-    lastName: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    paymentMethod: "momo",
-  });
-
-  const [orderItems, setOrderItems] = useState<TempCartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [selectedCode, setSelectedCode] = useState<string>("");
+  const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [finalTotal, setFinalTotal] = useState(0);
-  const [voucherCode, setVoucherCode] = useState<string | null>(null);
+  const [totalAfterDiscount, setTotalAfterDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
+  const router = useRouter();
 
-  useEffect(() => {
-    const saved = localStorage.getItem("tempOrder");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setOrderItems(Array.isArray(parsed.items) ? parsed.items : []);
-        setVoucherCode(parsed.voucherCode || null);
-        setFinalTotal(parsed.finalTotal || 0);
-        setDiscountAmount(parsed.discountAmount || 0);
-      } catch {
-        console.error("Lỗi đọc tempOrder từ localStorage");
-        setOrderItems([]);
-      }
+  const total = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const fetchCart = () => {
+    const temp = localStorage.getItem("tempOrder");
+    if (!temp) return;
+    const data = JSON.parse(temp);
+    setCartItems(data.items || []);
+    setTotalAfterDiscount(data.total || 0);
+    if (data.voucherCode) {
+      setSelectedCode(data.voucherCode);
     }
-  }, []);
-
-  const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalAfterDiscount = finalTotal > 0 ? finalTotal : total;
-
-  const handleInputChange = (e: React.ChangeEvent<any>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchVouchers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/orders", {
+      const res = await fetch("http://localhost:5000/voucher", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.status) setVouchers(data.result);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const applyVoucher = async () => {
+    if (!selectedCode) return;
+
+    const selected = vouchers.find((v) => v.code === selectedCode);
+    if (!selected) {
+      toast.warning("Voucher không tồn tại");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/voucher/apply", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          ...formData,
-          items: orderItems,
-          voucherCode: voucherCode || null,
+          code: selected.code,
+          orderTotal: total,
         }),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success("Đặt hàng thành công");
-        localStorage.removeItem("tempOrder");
-        setOrderItems([]);
-        setVoucherCode(null);
-        setDiscountAmount(0);
-        setFinalTotal(0);
-        setFormData({
-          email: "",
-          firstName: "",
-          lastName: "",
-          address: "",
-          city: "",
-          state: "",
-          zipCode: "",
-          paymentMethod: "momo",
-        });
+      const data = await res.json();
+      if (data.status) {
+        setAppliedVoucher(selected);
+        setDiscountAmount(data.result.discountAmount);
+        setTotalAfterDiscount(data.result.finalTotal);
+        toast.success("Áp dụng voucher thành công!");
       } else {
-        toast.error(data.message || "Lỗi khi đặt hàng");
+        toast.warning(data.message || "Voucher không hợp lệ");
       }
-    } catch (error) {
-      console.error("Lỗi khi gửi đơn hàng:", error);
-      toast.error("Có lỗi xảy ra khi đặt hàng.");
+    } catch (err) {
+      toast.error("Lỗi khi áp dụng voucher");
     }
   };
 
   const handleCancelVoucher = () => {
-    localStorage.setItem(
-      "tempOrder",
-      JSON.stringify({
-        items: orderItems,
-        total,
-        voucherCode: null,
-      })
-    );
-    setVoucherCode(null);
+    setAppliedVoucher(null);
     setDiscountAmount(0);
-    setFinalTotal(total);
-    toast.info("Đã hủy mã giảm giá");
+    setTotalAfterDiscount(total);
+    setSelectedCode("");
   };
 
+  const handleOrder = () => {
+    toast.success("Đặt hàng thành công!");
+    localStorage.removeItem("tempOrder");
+
+    // Gửi dữ liệu sang backend tại đây nếu cần
+    console.log("Phương thức thanh toán:", paymentMethod);
+
+    router.push("/");
+  };
+
+  useEffect(() => {
+    fetchCart();
+    fetchVouchers();
+  }, []);
+
+  useEffect(() => {
+    if (vouchers.length > 0 && selectedCode) {
+      applyVoucher();
+    }
+  }, [vouchers, selectedCode]);
+
   return (
-    <div className="checkout-container">
-      <div className="checkout-header">
-        <h1>Thanh toán</h1>
-      </div>
+    <Container className="py-5">
+      <Row className="justify-content-center">
+        <Col md={8}>
+          <Card className="shadow p-4">
+            <h4 className="mb-4">Thông tin đơn hàng</h4>
+            {cartItems.length === 0 ? (
+              <Alert variant="warning">
+                Không có sản phẩm nào trong đơn hàng
+              </Alert>
+            ) : (
+              <ul>
+                {cartItems.map((item) => (
+                  <li key={item.id}>
+                    {item.name} ({item.sizeName}) - {item.quantity} x{" "}
+                    {item.price.toLocaleString()} ₫
+                  </li>
+                ))}
+              </ul>
+            )}
 
-      <div className="checkout-content">
-        <div className="checkout-form">
-          <Card className="p-4 mb-4">
-            <Form onSubmit={handleSubmit}>
-              <div className="form-section">
-                <h2>Thông tin liên hệ</h2>
-                <Form.Group className="form-group">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="ban@example.com"
-                    required
-                  />
-                </Form.Group>
-              </div>
+            <hr />
 
-              <div className="form-section">
-                <h2>Địa chỉ giao hàng</h2>
-                <div className="form-row">
-                  <Form.Group className="form-group">
-                    <Form.Label>Họ</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      placeholder="Nguyễn"
-                      required
-                    />
-                  </Form.Group>
-                  <Form.Group className="form-group">
-                    <Form.Label>Tên</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      placeholder="Văn A"
-                      required
-                    />
-                  </Form.Group>
-                </div>
-
-                <Form.Group className="form-group">
-                  <Form.Label>Địa chỉ</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    placeholder="123 Đường ABC"
-                    required
-                  />
-                </Form.Group>
-
-                <div className="form-row">
-                  <Form.Group className="form-group">
-                    <Form.Label>Thành phố</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="form-group">
-                    <Form.Label>Tỉnh/Thành</Form.Label>
-                    <Form.Select
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Chọn...</option>
-                      <option value="HN">Hà Nội</option>
-                      <option value="HCM">Hồ Chí Minh</option>
-                      <option value="DN">Đà Nẵng</option>
-                    </Form.Select>
-                  </Form.Group>
-
-                  <Form.Group className="form-group">
-                    <Form.Label>Mã bưu điện</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleInputChange}
-                      placeholder="100000"
-                      required
-                    />
-                  </Form.Group>
-                </div>
-              </div>
-
-              <div className="form-section">
-                <h2>Phương thức thanh toán</h2>
-                <Form.Check
-                  type="radio"
-                  label="Thanh toán qua Momo"
-                  name="paymentMethod"
-                  value="momo"
-                  checked={formData.paymentMethod === "momo"}
-                  onChange={handleInputChange}
-                />
-                <Form.Check
-                  type="radio"
-                  label="Thanh toán khi nhận hàng"
-                  name="paymentMethod"
-                  value="cod"
-                  checked={formData.paymentMethod === "cod"}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <Button type="submit" className="place-order-btn w-100" variant="dark">
-                Đặt hàng - {totalAfterDiscount.toLocaleString()} ₫
+            {appliedVoucher ? (
+              <Button
+                variant="outline-danger"
+                className="w-100 mb-3"
+                onClick={handleCancelVoucher}
+              >
+                Hủy mã giảm giá ({appliedVoucher.code})
               </Button>
-            </Form>
-          </Card>
-        </div>
+            ) : (
+              <>
+                <Form.Label className="mt-2">Chọn mã giảm giá</Form.Label>
+                <Form.Select
+                  value={selectedCode}
+                  onChange={(e) => setSelectedCode(e.target.value)}
+                >
+                  <option value="">-- Chọn voucher --</option>
+                  {vouchers.map((voucher) => (
+                    <option key={voucher._id} value={voucher.code}>
+                      {voucher.code} - {voucher.description}
+                    </option>
+                  ))}
+                </Form.Select>
+              </>
+            )}
 
-        <div className="order-summary">
-          <Card className="p-3">
-            <h2>Tóm tắt đơn hàng</h2>
-            <div className="cart-items">
-              {orderItems.length === 0 ? (
-                <p>Giỏ hàng trống</p>
-              ) : (
-                orderItems.map((item, index) => (
-                  <div key={index} className="cart-item">
-                    <div className="item-image">
-                      <Image
-                        src={item.imageUrl || "/default-image.png"}
-                        style={{ width: "100px", height: "80px", objectFit: "cover" }}
-                        alt={item.name}
-                      />
-                    </div>
-                    <div className="item-details">
-                      <h3>{item.name}</h3>
-                      <p>Số lượng: {item.quantity}</p>
-                      <p>Kích cỡ: {item.sizeName}</p>
-                      {item.taste?.length > 0 && <p>Hương vị: {item.taste.join(", ")}</p>}
-                    </div>
-                    <div className="item-price">
-                      {(item.price * item.quantity).toLocaleString()} ₫
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <hr />
 
-            <div className="order-totals">
-              <div className="total-row">
+            <div className="order-summary mt-3">
+              <div className="total-row d-flex justify-content-between">
                 <span>Tạm tính:</span>
                 <span>{total.toLocaleString()} ₫</span>
               </div>
 
               {discountAmount > 0 && (
-                <div className="total-row">
-                  <span>Giảm giá ({voucherCode}):</span>
+                <div className="total-row d-flex justify-content-between text-success">
+                  <span>Khuyến mãi:</span>
                   <span>-{discountAmount.toLocaleString()} ₫</span>
                 </div>
               )}
 
-              <div className="total-row">
+              <div className="total-row d-flex justify-content-between">
                 <span>Phí vận chuyển:</span>
                 <span>0 ₫</span>
               </div>
 
-              <div className="total-row total-final">
+              <hr />
+
+              <div className="total-row total-final d-flex justify-content-between">
                 <strong>Tổng cộng:</strong>
                 <strong>{totalAfterDiscount.toLocaleString()} ₫</strong>
               </div>
             </div>
 
-            {voucherCode && (
-              <Button
-                variant="outline-danger"
-                className="w-100 mt-2"
-                onClick={handleCancelVoucher}
-              >
-                Hủy mã giảm giá
-              </Button>
-            )}
+            <Form.Group className="mt-4">
+              <Form.Label>Phương thức thanh toán</Form.Label>
+              <div>
+                <Form.Check
+                  className="cursor-pointer"
+                  type="radio"
+                  label="Thanh toán khi nhận hàng (COD)"
+                  name="paymentMethod"
+                  value="cod"
+                  checked={paymentMethod === "cod"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+                <Form.Check
+                  className="cursor-pointer"
+                  type="radio"
+                  label="Momo"
+                  name="paymentMethod"
+                  value="momo"
+                  checked={paymentMethod === "momo"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+                <Form.Check
+                  className="cursor-pointer"
+                  type="radio"
+                  label="VNPay"
+                  name="paymentMethod"
+                  value="vnpay"
+                  checked={paymentMethod === "vnpay"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+              </div>
+            </Form.Group>
 
-            <div className="security-badges mt-3">
-              <div className="security-badge">🔒 Thanh toán an toàn</div>
-              <div className="security-badge">✅ Mã hóa SSL</div>
-            </div>
+            <Button className="mt-4 w-100" onClick={handleOrder}>
+              Xác nhận đặt hàng
+            </Button>
           </Card>
-        </div>
-      </div>
-    </div>
+        </Col>
+      </Row>
+    </Container>
   );
 }
