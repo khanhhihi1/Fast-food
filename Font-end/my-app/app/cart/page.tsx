@@ -1,6 +1,16 @@
 "use client";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Container, Table, Button, Row, Col, Card, Image, Alert, Form } from "react-bootstrap";
+import {
+  Container,
+  Table,
+  Button,
+  Row,
+  Col,
+  Card,
+  Image,
+  Alert,
+  Form,
+} from "react-bootstrap";
 import { useEffect, useState } from "react";
 import ProtectedRoute from "../component/ProtectedRoute";
 import { toast } from "react-toastify";
@@ -70,48 +80,55 @@ export default function Cart() {
   const [finalTotal, setFinalTotal] = useState(0);
   const router = useRouter();
 
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+
+  useEffect(() => {
+    fetchCart();
+    fetchVouchers();
+
+    // Đọc voucher từ localStorage nếu có
+    const stored = localStorage.getItem("selectedVoucher");
+    if (stored) {
+      const parsed: Voucher = JSON.parse(stored);
+      setSelectedVoucher(parsed);
+      setTimeout(() => applyVoucher(parsed), 0);
+    }
+  }, []);
+
   const fetchCart = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       const res = await fetch("http://localhost:5000/cart", {
-        method: "GET",
         credentials: "include",
       });
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Lỗi API giỏ hàng: ${res.status} - ${errorText}`);
-      }
       const data = await res.json();
-      if (!data.status) {
+      if (!data.status)
         throw new Error(data.message || "Không thể tải giỏ hàng");
-      }
-      const items = data.result.items || [];
+
       const itemsWithProduct = await Promise.all(
-        items.map(async (item: CartItem) => {
+        data.result.items.map(async (item: CartItem) => {
           try {
-            const productRes = await fetch(`http://localhost:5000/products/${item.productId}`);
-            if (!productRes.ok) {
-              console.error(`Không thể lấy sản phẩm ${item.productId}: ${productRes.status}`);
-              return {
-                ...item,
-                availableSizes: [],
-                availableTastes: [],
-                fullPrice: { original: item.price },
-              };
-            }
-            const productJson = await productRes.json();
-            const productData: Product = productJson.result;
-            const selectedSize = productData.sizes?.find((s) => s.name === item.sizeName);
+            const productRes = await fetch(
+              `http://localhost:5000/products/${item.productId}`
+            );
+            const productData: Product = (await productRes.json()).result;
+            const selectedSize = productData.sizes?.find(
+              (s) => s.name === item.sizeName
+            );
             return {
               ...item,
-              available领: productData.sizes || [],
+              availableSizes: productData.sizes || [],
               availableTastes: productData.taste || [],
               fullPrice: selectedSize?.price || { original: item.price },
-              price: selectedSize?.price.discount ?? selectedSize?.price.original ?? item.price,
+              price:
+                selectedSize?.price.discount ??
+                selectedSize?.price.original ??
+                item.price,
             };
-          } catch (error: any) {
-            console.error(`Lỗi khi lấy sản phẩm ${item.productId}:`, error.message);
+          } catch {
             return {
               ...item,
               availableSizes: [],
@@ -122,8 +139,7 @@ export default function Cart() {
         })
       );
       setCartItems(itemsWithProduct);
-    } catch (error: any) {
-      console.error("Lỗi tải giỏ hàng:", error.message);
+    } catch {
       setError("Không thể tải giỏ hàng. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
@@ -133,82 +149,55 @@ export default function Cart() {
   const fetchVouchers = async () => {
     try {
       const res = await fetch("http://localhost:5000/voucher", {
-        method: "GET",
         credentials: "include",
       });
-      if (!res.ok) {
-        throw new Error(`Lỗi khi lấy voucher: ${res.status}`);
-      }
       const data = await res.json();
       if (data.status) {
         setVouchers(data.result || []);
       } else {
         toast.error(data.message || "Không thể tải danh sách voucher");
       }
-    } catch (error: any) {
-      console.error("Lỗi khi lấy voucher:", error.message);
+    } catch {
       toast.error("Không thể tải danh sách voucher");
     }
   };
 
-  const syncCart = async () => {
+  const updateItemLocallyAndSync = async (updatedItem: CartItem) => {
+    setCartItems((prev) =>
+      prev.map((p) => (p.id === updatedItem.id ? updatedItem : p))
+    );
     try {
-      const res = await fetch("http://localhost:5000/cart/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Lỗi đồng bộ giỏ hàng: ${errorText}`);
-      }
-      toast.success("Đã đồng bộ giỏ hàng thành công");
-      await fetchCart();
-    } catch (error: any) {
-      console.error("Lỗi khi đồng bộ giỏ hàng:", error.message);
-      toast.error("Không thể đồng bộ giỏ hàng. Vui lòng thử lại.");
-    }
-  };
-
-  const handleUpdate = async (item: CartItem) => {
-    try {
-      const selectedSize = item.availableSizes?.find((size) => size.name === item.sizeName);
-      const price = selectedSize?.price || { original: item.price };
-      const res = await fetch(`http://localhost:5000/cart/update/${item.id}`, {
+      const selectedSize = updatedItem.availableSizes?.find(
+        (s) => s.name === updatedItem.sizeName
+      );
+      const price = selectedSize?.price || { original: updatedItem.price };
+      await fetch(`http://localhost:5000/cart/update/${updatedItem.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          quantity: item.quantity,
-          taste: item.taste || [],
-          sizeName: item.sizeName,
+          quantity: updatedItem.quantity,
+          taste: updatedItem.taste || [],
+          sizeName: updatedItem.sizeName,
           price,
         }),
       });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error("Lỗi cập nhật: " + text);
-      }
-      toast.success("Cập nhật sản phẩm thành công");
-      await fetchCart();
-    } catch (error: any) {
-      console.error("Lỗi khi cập nhật:", error.message);
-      toast.error("Cập nhật sản phẩm không thành công");
+    } catch {
+      toast.error("Không thể cập nhật sản phẩm");
     }
   };
 
-  const applyVoucher = async () => {
-    if (!selectedVoucher) {
-      toast.warning("Vui lòng chọn voucher");
-      return;
-    }
+  const applyVoucher = async (voucherToApply?: Voucher) => {
+    const voucher = voucherToApply || selectedVoucher;
+    if (!voucher) return;
+
     try {
       const res = await fetch("http://localhost:5000/voucher/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          code: selectedVoucher.code,
+          code: voucher.code,
           orderTotal: totalPrice,
         }),
       });
@@ -220,8 +209,7 @@ export default function Cart() {
       } else {
         toast.warning(data.message || "Không thể áp dụng voucher");
       }
-    } catch (err: any) {
-      console.error("Lỗi khi áp dụng voucher:", err.message);
+    } catch {
       toast.error("Lỗi khi áp dụng voucher");
     }
   };
@@ -235,12 +223,9 @@ export default function Cart() {
       if (res.ok) {
         setCartItems((prev) => prev.filter((item) => item.id !== id));
         toast.success("Xóa sản phẩm thành công");
-      } else {
-        throw new Error("Lỗi khi xóa sản phẩm");
       }
-    } catch (error: any) {
-      console.error("Lỗi khi xóa sản phẩm:", error.message);
-      toast.error("Không thể xóa sản phẩm. Vui lòng thử lại.");
+    } catch {
+      toast.error("Không thể xóa sản phẩm");
     }
   };
 
@@ -257,21 +242,15 @@ export default function Cart() {
         voucherCode: selectedVoucher?.code || null,
       })
     );
+    localStorage.removeItem("selectedVoucher"); // Dọn dẹp sau thanh toán
     router.push("/checkout");
   };
-
-  useEffect(() => {
-    fetchCart();
-    fetchVouchers();
-  }, []);
-
-  const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
     <ProtectedRoute>
       <Container className="py-5">
         <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
-        <Button variant="primary" onClick={syncCart} className="mb-3">
+        <Button variant="primary" onClick={fetchCart} className="mb-3">
           Đồng bộ giỏ hàng
         </Button>
         {error && <Alert variant="danger">{error}</Alert>}
@@ -293,7 +272,7 @@ export default function Cart() {
                       <th>Kích cỡ</th>
                       <th>Hương vị</th>
                       <th>Thành tiền</th>
-                      <th>Hành động</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -302,11 +281,15 @@ export default function Cart() {
                         <td>
                           <Image
                             src={item.imageUrl || "/default-image.png"}
-                            style={{ width: "80px", height: "80px", objectFit: "cover" }}
+                            style={{
+                              width: "80px",
+                              height: "80px",
+                              objectFit: "cover",
+                            }}
                             alt={item.name}
                           />
                         </td>
-                        <td>{item.name || "Sản phẩm không xác định"}</td>
+                        <td>{item.name}</td>
                         <td>{item.price.toLocaleString()} ₫</td>
                         <td>
                           <input
@@ -315,38 +298,31 @@ export default function Cart() {
                             min={1}
                             onChange={(e) => {
                               const newQty = parseInt(e.target.value) || 1;
-                              setCartItems((prev) =>
-                                prev.map((p) =>
-                                  p.id === item.id ? { ...p, quantity: newQty } : p
-                                )
-                              );
+                              const updated = { ...item, quantity: newQty };
+                              updateItemLocallyAndSync(updated);
                             }}
                             style={{ width: "60px" }}
                           />
                         </td>
                         <td>
-                          <select
+                          <Form.Select
                             value={item.sizeName}
                             onChange={(e) => {
                               const newSize = e.target.value;
                               const selectedSize = item.availableSizes?.find(
-                                (size) => size.name === newSize
+                                (s) => s.name === newSize
                               );
-                              setCartItems((prev) =>
-                                prev.map((p) =>
-                                  p.id === item.id
-                                    ? {
-                                        ...p,
-                                        sizeName: newSize,
-                                        price:
-                                          selectedSize?.price.discount ??
-                                          selectedSize?.price.original ??
-                                          p.price,
-                                        fullPrice: selectedSize?.price ?? p.fullPrice,
-                                      }
-                                    : p
-                                )
-                              );
+                              const updated = {
+                                ...item,
+                                sizeName: newSize,
+                                price:
+                                  selectedSize?.price.discount ??
+                                  selectedSize?.price.original ??
+                                  item.price,
+                                fullPrice:
+                                  selectedSize?.price ?? item.fullPrice,
+                              };
+                              updateItemLocallyAndSync(updated);
                             }}
                           >
                             {item.availableSizes?.map((size) => (
@@ -354,24 +330,19 @@ export default function Cart() {
                                 {size.name}
                               </option>
                             ))}
-                          </select>
+                          </Form.Select>
                         </td>
                         <td>
-                          {item.availableTastes && item.availableTastes.length > 0 && (
-                            <select
+                          {item.availableTastes && (
+                            <Form.Select
                               value={item.taste?.[0] || "Không"}
                               onChange={(e) => {
-                                const newTaste = e.target.value;
-                                setCartItems((prev) =>
-                                  prev.map((p) =>
-                                    p.id === item.id
-                                      ? {
-                                          ...p,
-                                          taste: newTaste === "Không" ? [] : [newTaste],
-                                        }
-                                      : p
-                                  )
-                                );
+                                const val = e.target.value;
+                                const updated = {
+                                  ...item,
+                                  taste: val === "Không" ? [] : [val],
+                                };
+                                updateItemLocallyAndSync(updated);
                               }}
                             >
                               <option value="Không">Không</option>
@@ -380,18 +351,13 @@ export default function Cart() {
                                   {taste}
                                 </option>
                               ))}
-                            </select>
+                            </Form.Select>
                           )}
                         </td>
-                        <td>{(item.price * item.quantity).toLocaleString()} ₫</td>
                         <td>
-                          <Button
-                            variant="success"
-                            size="sm"
-                            onClick={() => handleUpdate(item)}
-                          >
-                            Cập nhật
-                          </Button>{" "}
+                          {(item.price * item.quantity).toLocaleString()} ₫
+                        </td>
+                        <td>
                           <Button
                             variant="danger"
                             size="sm"
@@ -417,29 +383,30 @@ export default function Cart() {
                       const code = e.target.value;
                       const found = vouchers.find((v) => v.code === code);
                       setSelectedVoucher(found || null);
+                      if (found) {
+                        localStorage.setItem(
+                          "selectedVoucher",
+                          JSON.stringify(found)
+                        );
+                        setTimeout(() => applyVoucher(found), 0);
+                      } else {
+                        localStorage.removeItem("selectedVoucher");
+                        setDiscount(0);
+                        setFinalTotal(0);
+                      }
                     }}
                   >
                     <option value="">-- Chọn voucher --</option>
-                    {vouchers.length === 0 ? (
-                      <option disabled>Không có voucher khả dụng</option>
-                    ) : (
-                      vouchers.map((voucher) => (
-                        <option key={voucher._id} value={voucher.code}>
-                          {voucher.code} - Giảm {voucher.discountValue.toLocaleString()} ₫
-                        </option>
-                      ))
-                    )}
+                    {vouchers.map((voucher) => (
+                      <option key={voucher._id} value={voucher.code}>
+                        {voucher.code} - Giảm{" "}
+                        {voucher.discountValue.toLocaleString()} ₫
+                      </option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
-                <Button
-                  variant="outline-primary"
-                  className="mb-2 w-100"
-                  onClick={applyVoucher}
-                >
-                  Áp dụng voucher
-                </Button>
                 <p>
-                  <strong>Tổng giá:</strong> {totalPrice.toLocaleString()} � atoms
+                  <strong>Tổng giá:</strong> {totalPrice.toLocaleString()} ₫
                 </p>
                 {discount > 0 && (
                   <>
@@ -447,11 +414,16 @@ export default function Cart() {
                       <strong>Giảm giá:</strong> -{discount.toLocaleString()} ₫
                     </p>
                     <p>
-                      <strong>Thành tiền:</strong> {finalTotal.toLocaleString()} ₫
+                      <strong>Thành tiền:</strong> {finalTotal.toLocaleString()}{" "}
+                      ₫
                     </p>
                   </>
                 )}
-                <Button variant="dark" className="w-100" onClick={handleCheckout}>
+                <Button
+                  variant="dark"
+                  className="w-100"
+                  onClick={handleCheckout}
+                >
                   Thanh toán
                 </Button>
               </Card>
