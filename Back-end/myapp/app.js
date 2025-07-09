@@ -46,17 +46,14 @@ app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/voucher", voucherRouter);
 
-
-const PORT = process.env.PORT || 5000; 
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-
 app.use(function (req, res, next) {
   next(createError(404));
 });
-
 
 app.use(function (err, req, res, next) {
   res.locals.message = err.message;
