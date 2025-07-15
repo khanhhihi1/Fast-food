@@ -26,6 +26,7 @@ interface Voucher {
     discountValue: number;
     discountType: string;
     minOrderValue: number;
+    maxDiscount: number;
     expiresAt: string;
     isActive: boolean;
 }
@@ -76,7 +77,16 @@ export default function VoucherPages() {
             console.error("Lỗi khi ẩn voucher:", error);
         }
     };
-
+    const handleVoucherUpdated = (updatedVoucher: Voucher) => {
+        setVouchers((prev) =>
+            prev.map((v) => (v._id === updatedVoucher._id ? updatedVoucher : v))
+        );
+        setShowUpdateModal(false);
+    };
+    const handleVoucherAdded = (newVoucher: Voucher) => {
+        setVouchers((prev) => [newVoucher, ...prev]);
+        setShowAddModal(false);
+    };
     // Handle restore voucher
     const handleRestoreVoucher = async (id: string) => {
         try {
@@ -188,6 +198,8 @@ export default function VoucherPages() {
                                     <tr>
                                         <th>Mã</th>
                                         <th>Giảm giá</th>
+                                        <th>Giá trị đơn hàng tối thiểu</th>
+                                        <th>Giảm giá tối đa</th>
                                         <th>Mô tả</th>
                                         <th>Hết hạn</th>
                                         <th>Trạng thái</th>
@@ -204,6 +216,8 @@ export default function VoucherPages() {
                                                     ? `${voucher.discountValue}%`
                                                     : `${voucher.discountValue.toLocaleString()}₫`}
                                             </td>
+                                            <td>{voucher.minOrderValue.toLocaleString()}đ</td>
+                                            <td>{voucher.maxDiscount.toLocaleString()}đ</td>
                                             <td>{voucher.description}</td>
                                             <td>{formatDate(voucher.expiresAt)}</td>
                                             <td>
@@ -263,12 +277,14 @@ export default function VoucherPages() {
             <VoucherFormModal
                 showModal={showAddModal}
                 setShowModal={setShowAddModal}
+                onAdded={handleVoucherAdded}
             />
             {selectedVoucher && (
                 <VoucherUpdateModal
                     showModal={showUpdateModal}
                     setShowModal={setShowUpdateModal}
                     voucher={selectedVoucher}
+                    onUpdated={handleVoucherUpdated}
                 />
             )}
         </div>
