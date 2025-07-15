@@ -1,8 +1,16 @@
 const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
 
-// ✅ Hàm nội bộ đồng bộ giỏ hàng với sản phẩm
-const syncCartWithProduct = async (cart) => {
+module.exports = {
+  addToCart,
+  getAllCart,
+  updateCartItem,
+  removeFromCart,
+  syncCart,
+};
+
+// Hàm nội bộ: Đồng bộ giỏ hàng với thông tin sản phẩm
+async function syncCartWithProduct(cart) {
   let isModified = false;
   const updatedItems = await Promise.all(
     cart.items.map(async (item) => {
@@ -14,20 +22,27 @@ const syncCartWithProduct = async (cart) => {
         let newPrice = item.price;
         let newTaste = item.taste;
 
-        const isValidSize = product.sizes.some((size) => size.name === item.sizeName);
+        const isValidSize = product.sizes.some(
+          (size) => size.name === item.sizeName
+        );
         if (!isValidSize) {
           newSizeName = product.sizes[0]?.name || item.sizeName;
-          const selectedSize = product.sizes.find((size) => size.name === newSizeName);
+          const selectedSize = product.sizes.find(
+            (size) => size.name === newSizeName
+          );
           newPrice = {
             original: selectedSize?.price.original || item.price.original,
             discount: selectedSize?.price.discount,
           };
           isModified = true;
         } else {
-          const selectedSize = product.sizes.find((size) => size.name === item.sizeName);
+          const selectedSize = product.sizes.find(
+            (size) => size.name === item.sizeName
+          );
           if (
             selectedSize.price.original !== item.price.original ||
-            (selectedSize.price.discount !== undefined && selectedSize.price.discount !== item.price.discount)
+            (selectedSize.price.discount !== undefined &&
+              selectedSize.price.discount !== item.price.discount)
           ) {
             newPrice = {
               original: selectedSize.price.original,
@@ -37,7 +52,9 @@ const syncCartWithProduct = async (cart) => {
           }
         }
 
-        const isValidTaste = item.taste.length === 0 || (item.taste.length === 1 && product.taste?.includes(item.taste[0]));
+        const isValidTaste =
+          item.taste.length === 0 ||
+          (item.taste.length === 1 && product.taste?.includes(item.taste[0]));
         if (!isValidTaste && item.taste.length > 0) {
           newTaste = [];
           isModified = true;
@@ -58,10 +75,10 @@ const syncCartWithProduct = async (cart) => {
   cart.items = updatedItems.filter((item) => item !== null);
   if (isModified) await cart.save();
   return cart;
-};
+}
 
-// ✅ Thêm sản phẩm vào giỏ hàng
-exports.addToCart = async (req) => {
+// Thêm sản phẩm vào giỏ hàng
+async function addToCart(req) {
   const userId = req.userId;
   const { productId, sizeName, quantity = 1, price, taste = [] } = req.body;
 
@@ -75,13 +92,18 @@ exports.addToCart = async (req) => {
   const isValidSize = product.sizes.some((size) => size.name === sizeName);
   if (!isValidSize) throw new Error(`Kích cỡ ${sizeName} không hợp lệ`);
 
-  const isValidTaste = taste.length === 0 || (taste.length === 1 && product.taste?.includes(taste[0]));
+  const isValidTaste =
+    taste.length === 0 ||
+    (taste.length === 1 && product.taste?.includes(taste[0]));
   if (!isValidTaste) throw new Error(`Hương vị ${taste[0]} không hợp lệ`);
 
   let cart = await Cart.findOne({ userId });
 
   if (!cart) {
-    cart = new Cart({ userId, items: [{ productId, sizeName, quantity, price, taste }] });
+    cart = new Cart({
+      userId,
+      items: [{ productId, sizeName, quantity, price, taste }],
+    });
   } else {
     const existingItem = cart.items.find(
       (item) =>
@@ -99,10 +121,10 @@ exports.addToCart = async (req) => {
 
   await cart.save();
   return { message: "Đã thêm vào giỏ hàng", cart };
-};
+}
 
-// ✅ Lấy tất cả mục trong giỏ hàng
-exports.getAllCart = async (req) => {
+// Lấy tất cả mục trong giỏ hàng
+async function getAllCart(req) {
   const userId = req.userId;
   let cart = await Cart.findOne({ userId }).populate("items.productId").exec();
 
@@ -127,11 +149,10 @@ exports.getAllCart = async (req) => {
   });
 
   return { items: transformedItems };
-};
+}
 
-
-// ✅ Cập nhật một mục trong giỏ hàng
-exports.updateCartItem = async (req) => {
+// Cập nhật một mục trong giỏ hàng
+async function updateCartItem(req) {
   const { id } = req.params;
   const { quantity, sizeName, price, taste } = req.body;
 
@@ -157,7 +178,9 @@ exports.updateCartItem = async (req) => {
   }
 
   if (taste !== undefined) {
-    const isValidTaste = taste.length === 0 || (taste.length === 1 && product.taste?.includes(taste[0]));
+    const isValidTaste =
+      taste.length === 0 ||
+      (taste.length === 1 && product.taste?.includes(taste[0]));
     if (!isValidTaste) throw new Error(`Hương vị ${taste[0]} không hợp lệ`);
     item.taste = taste;
   }
@@ -167,10 +190,10 @@ exports.updateCartItem = async (req) => {
 
   await cart.save();
   return { message: "Cập nhật thành công", item };
-};
+}
 
-// ✅ Xoá một mục khỏi giỏ hàng
-exports.removeFromCart = async (req) => {
+// Xoá một mục khỏi giỏ hàng
+async function removeFromCart(req) {
   const userId = req.userId;
   const itemId = req.params.id;
 
@@ -183,14 +206,14 @@ exports.removeFromCart = async (req) => {
   cart.items.splice(index, 1);
   await cart.save();
   return { message: "Đã xóa sản phẩm khỏi giỏ hàng", cart };
-};
+}
 
-// ✅ Đồng bộ giỏ hàng với sản phẩm
-exports.syncCart = async (req) => {
+// Đồng bộ giỏ hàng thủ công
+async function syncCart(req) {
   const userId = req.userId;
   let cart = await Cart.findOne({ userId });
   if (!cart) throw new Error("Không tìm thấy giỏ hàng");
 
   cart = await syncCartWithProduct(cart);
   return { message: "Đã đồng bộ giỏ hàng", cart };
-};
+}

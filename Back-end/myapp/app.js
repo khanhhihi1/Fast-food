@@ -12,6 +12,7 @@ var cartRouter = require("./routes/cart");
 var orderRouter = require("./routes/order");
 var categoriesRouter = require("./routes/categories");
 var voucherRouter = require("./routes/voucher");
+var tempOrderRoutes = require("./routes/tempOrder");
 
 const mongoose = require("mongoose");
 
@@ -45,6 +46,7 @@ app.use("/categories", categoriesRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/voucher", voucherRouter);
+app.use("/temp-order", tempOrderRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

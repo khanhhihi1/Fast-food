@@ -2,8 +2,15 @@ const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
 const Order = require("../model/orderModel.js");
 
+module.exports = {
+  createOrderFromCart,
+  getUserOrders,
+  getAllOrders,
+  updateOrderStatus,
+};
+
 // Tạo đơn hàng từ giỏ hàng của người dùng
-exports.createOrderFromCart = async (req) => {
+async function createOrderFromCart(req) {
   const userId = req.userId;
 
   if (!userId) {
@@ -22,13 +29,17 @@ exports.createOrderFromCart = async (req) => {
     const product = await Product.findById(item.productId);
 
     if (!product || product.status === false) {
-      console.warn(`Sản phẩm không hợp lệ hoặc đã ngừng bán: ${item.productId}`);
+      console.warn(
+        `Sản phẩm không hợp lệ hoặc đã ngừng bán: ${item.productId}`
+      );
       continue;
     }
 
     const selectedSize = product.sizes.find((s) => s.name === item.sizeName);
     if (!selectedSize) {
-      throw new Error(`Kích cỡ '${item.sizeName}' không hợp lệ với sản phẩm '${product.name}'`);
+      throw new Error(
+        `Kích cỡ '${item.sizeName}' không hợp lệ với sản phẩm '${product.name}'`
+      );
     }
 
     const price = selectedSize.price || { original: item.price.original };
@@ -56,7 +67,7 @@ exports.createOrderFromCart = async (req) => {
   const tax = Math.round(total * 0.1);
   const grandTotal = total + shippingFee + tax;
 
-  const paymentMethod = req.body.paymentMethod || "cod"; // Lấy từ frontend nếu có
+  const paymentMethod = req.body.paymentMethod || "cod";
 
   const newOrder = new Order({
     userId,
@@ -70,7 +81,6 @@ exports.createOrderFromCart = async (req) => {
 
   await newOrder.save();
 
-  // Xóa giỏ hàng sau khi đặt
   cart.items = [];
   await cart.save();
 
@@ -78,25 +88,25 @@ exports.createOrderFromCart = async (req) => {
     message: "Đặt hàng thành công",
     order: newOrder,
   };
-};
+}
 
 // Lấy danh sách đơn hàng của người dùng
-exports.getUserOrders = async (req) => {
+async function getUserOrders(req) {
   const userId = req.userId;
   const orders = await Order.find({ userId }).sort({ createdAt: -1 });
   return orders;
-};
+}
 
 // Lấy tất cả đơn hàng (admin)
-exports.getAllOrders = async () => {
+async function getAllOrders() {
   const orders = await Order.find()
     .populate("userId", "name email")
     .sort({ createdAt: -1 });
   return orders;
-};
+}
 
 // Cập nhật trạng thái đơn hàng (admin)
-exports.updateOrderStatus = async (req) => {
+async function updateOrderStatus(req) {
   const { id } = req.params;
   const { status } = req.body;
 
@@ -109,4 +119,4 @@ exports.updateOrderStatus = async (req) => {
     message: "Cập nhật trạng thái thành công",
     order: updated,
   };
-};
+}
