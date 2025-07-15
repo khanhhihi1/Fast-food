@@ -142,9 +142,9 @@
 
 .voucher-table th,
 .voucher-table td {
-  padding: 16px;
+  padding: 10px;
   text-align: left;
-  font-size: 14px;
+  font-size: 13px;
   color: #e2e8f0;
   border-bottom: 1px solid #334155;
 }
