@@ -6,7 +6,7 @@ const voucherSchema = new mongoose.Schema({
   discountValue: { type: Number, required: true }, // số tiền hoặc %
   discountType: { type: String, enum: ["fixed", "percentage"], required: true },
   minOrderValue: { type: Number, default: 0 }, // đơn hàng tối thiểu để áp dụng
-  maxDiscount: { type: Number }, // giới hạn nếu là phần trăm
+  maxDiscount: { type: Number,default: 0 }, // giới hạn nếu là phần trăm
   expiresAt: { type: Date, required: true },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
