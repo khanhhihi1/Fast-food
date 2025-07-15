@@ -85,18 +85,24 @@ export default function Cart() {
     0
   );
 
+  // Lần đầu tiên: load cart + voucher từ localStorage
   useEffect(() => {
     fetchCart();
     fetchVouchers();
 
-    // Đọc voucher từ localStorage nếu có
     const stored = localStorage.getItem("selectedVoucher");
     if (stored) {
       const parsed: Voucher = JSON.parse(stored);
       setSelectedVoucher(parsed);
-      setTimeout(() => applyVoucher(parsed), 0);
     }
   }, []);
+
+  // Khi cartItems và selectedVoucher đã có, mới apply voucher
+  useEffect(() => {
+    if (cartItems.length > 0 && selectedVoucher) {
+      applyVoucher(selectedVoucher);
+    }
+  }, [cartItems, selectedVoucher]);
 
   const fetchCart = async () => {
     try {
@@ -229,21 +235,36 @@ export default function Cart() {
     }
   };
 
-  const handleCheckout = () => {
+  // Trong hàm handleCheckout của trang Cart
+  const handleCheckout = async () => {
     if (cartItems.length === 0) {
       toast.warning("Giỏ hàng trống!");
       return;
     }
-    localStorage.setItem(
-      "tempOrder",
-      JSON.stringify({
-        items: cartItems,
-        total: finalTotal > 0 ? finalTotal : totalPrice,
-        voucherCode: selectedVoucher?.code || null,
-      })
-    );
-    localStorage.removeItem("selectedVoucher"); // Dọn dẹp sau thanh toán
-    router.push("/checkout");
+
+    try {
+      const res = await fetch("http://localhost:5000/temp-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          items: cartItems,
+          total: finalTotal > 0 ? finalTotal : totalPrice,
+          voucherCode: selectedVoucher?.code || null,
+          voucherData: selectedVoucher || null,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.status) {
+        // Tiếp tục đến bước nhập địa chỉ
+        router.push("/shippingInfo");
+      } else {
+        toast.error(data.message || "Không thể tạo đơn hàng tạm thời");
+      }
+    } catch {
+      toast.error("Lỗi khi tạo đơn hàng tạm thời");
+    }
   };
 
   return (
