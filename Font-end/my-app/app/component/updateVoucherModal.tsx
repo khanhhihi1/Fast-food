@@ -10,21 +10,24 @@ interface Voucher {
   discountType: string;
   minOrderValue: number;
   expiresAt: string;
+  maxDiscount: number;
 }
 
 interface Props {
   showModal: boolean;
   setShowModal: (value: boolean) => void;
   voucher: Voucher;
+  onUpdated: (updated: Voucher) => void;
 }
 
-function VoucherUpdateModal({ showModal, setShowModal, voucher }: Props) {
+function VoucherUpdateModal({ showModal, setShowModal, voucher, onUpdated }: Props) {
   const [code, setCode] = useState(voucher.code);
   const [description, setDescription] = useState(voucher.description);
   const [discountValue, setDiscountValue] = useState<number>(voucher.discountValue);
   const [discountType, setDiscountType] = useState(voucher.discountType);
   const [minOrderValue, setMinOrderValue] = useState<number>(voucher.minOrderValue);
   const [expiresAt, setExpiresAt] = useState(voucher.expiresAt.split("T")[0]);
+  const [maxDiscount, setMaxDiscount] = useState<number>(voucher.maxDiscount);
 
   useEffect(() => {
     setCode(voucher.code);
@@ -33,6 +36,7 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher }: Props) {
     setDiscountType(voucher.discountType);
     setMinOrderValue(voucher.minOrderValue);
     setExpiresAt(voucher.expiresAt.split("T")[0]);
+    setMaxDiscount(voucher.maxDiscount);
   }, [voucher]);
 
   const handleSubmit = async () => {
@@ -48,6 +52,7 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher }: Props) {
       discountType,
       minOrderValue,
       expiresAt,
+      maxDiscount,
     };
 
     try {
@@ -66,8 +71,8 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher }: Props) {
       }
 
       toast.success("🎉 Cập nhật voucher thành công!");
+      onUpdated(result.result || data); 
       handleClose();
-      window.location.reload(); // hoặc fetch lại nếu cần
     } catch (error: any) {
       toast.error(error.message || "❌ Cập nhật voucher thất bại");
     }
@@ -129,6 +134,17 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher }: Props) {
               type="number"
               value={minOrderValue}
               onChange={(e) => setMinOrderValue(Number(e.target.value))}
+              min={0}
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Giảm giá tối đa</Form.Label>
+            <Form.Control
+              type="number"
+              value={maxDiscount}
+              onChange={(e) => setMaxDiscount(Number(e.target.value))}
+              placeholder="VD: 100000"
               min={0}
             />
           </Form.Group>
