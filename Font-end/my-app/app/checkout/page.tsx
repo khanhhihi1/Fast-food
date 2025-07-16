@@ -175,42 +175,106 @@ export default function Checkout() {
     }
   };
 
+  const updatePaymentMethod = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/temp-order/update-payment",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ paymentMethod }),
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Không thể cập nhật phương thức thanh toán");
+      }
+    } catch {
+      toast.error("Không thể cập nhật phương thức thanh toán");
+    }
+  };
+
   const handleOrder = async () => {
-    if (cartItems.length === 0)
-      return toast.warning("Không có sản phẩm nào để đặt hàng");
-    if (!shippingInfo) {
-      toast.warning("Vui lòng nhập thông tin giao hàng");
-      router.push("/shipping-info");
+    if (cartItems.length === 0) {
+      toast.warning("Không có sản phẩm nào để đặt hàng");
       return;
     }
 
-    const orderData = {
-      items: cartItems,
-      total: totalAfterDiscount,
-      discount: discountAmount,
-      voucherCode: appliedVoucher?.code || null,
-      paymentMethod,
-      shippingInfo,
-    };
+    if (!shippingInfo) {
+      toast.warning("Vui lòng nhập thông tin giao hàng");
+      router.push("/shippingInfo");
+      return;
+    }
 
     try {
-      const res = await fetch("http://localhost:5000/order", {
+      // Cập nhật phương thức thanh toán
+      await updatePaymentMethod();
+
+      // Tạo đơn hàng từ temp-order
+      const orderRes = await fetch("http://localhost:5000/orders/from-temp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(orderData),
+        body: JSON.stringify({ paymentMethod }),
       });
-      const data = await res.json();
-      if (data.status) {
-        toast.success("Đặt hàng thành công!");
+
+      if (!orderRes.ok) {
+        const errorData = await orderRes.json();
+        toast.error(errorData.message || "Đặt hàng thất bại");
+        return;
+      }
+
+      const orderData = await orderRes.json();
+      if (orderData.status) {
+        // Xóa giỏ hàng
+        const clearCartRes = await fetch("http://localhost:5000/cart/clear", {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const clearCartData = await clearCartRes.json();
+        if (!clearCartRes.ok || !clearCartData.status) {
+          throw new Error(clearCartData.message || "Không thể xóa giỏ hàng");
+        }
+
+        // Xóa đơn hàng tạm thời
+        const clearTempOrderRes = await fetch(
+          "http://localhost:5000/temp-order",
+          {
+            method: "DELETE",
+            credentials: "include",
+          }
+        );
+        if (!clearTempOrderRes.ok) {
+          const errorData = await clearTempOrderRes.json();
+          throw new Error(
+            errorData.message || "Không thể xóa đơn hàng tạm thời"
+          );
+        }
+
+        // Xóa localStorage
         localStorage.removeItem("selectedVoucher");
         localStorage.removeItem("shippingInfo");
-        router.push("/");
+
+        // Reset state
+        setCartItems([]);
+        setAppliedVoucher(null);
+        setSelectedCode("");
+        setShippingInfo(null);
+        setDiscountAmount(0);
+        setTotalAfterDiscount(0);
+
+        toast.success("Đặt hàng thành công!");
+        router.push("/cart");
       } else {
-        toast.error(data.message || "Đặt hàng thất bại");
+        toast.error(orderData.message || "Đặt hàng thất bại");
       }
-    } catch {
-      toast.error("Có lỗi khi gửi đơn hàng");
+    } catch (error) {
+      console.error("Lỗi khi gửi đơn hàng:", error);
+      if (error instanceof Error) {
+        toast.error(error.message || "Có lỗi khi gửi đơn hàng");
+      } else {
+        toast.error("Có lỗi khi gửi đơn hàng");
+      }
     }
   };
 
@@ -222,7 +286,7 @@ export default function Checkout() {
     if (shipping) setShippingInfo(JSON.parse(shipping));
     else {
       toast.warning("Bạn chưa nhập thông tin giao hàng");
-      router.push("/shipping-info");
+      router.push("/shippingInfo");
     }
   }, []);
 
@@ -262,8 +326,7 @@ export default function Checkout() {
                 size="sm"
                 onClick={() => router.push("/shippingInfo")}
               >
-                {" "}
-                <FaRegEdit className="me-1" /> Sửa{" "}
+                <FaRegEdit className="me-1" /> Sửa
               </Button>
             </Card>
 
