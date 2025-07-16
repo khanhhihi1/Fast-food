@@ -23,13 +23,19 @@ const tempOrderSchema = new Schema(
     discount: { type: Number, default: 0 },
     voucherCode: { type: String },
     voucherData: {
-      code: String,
-      description: String,
-      discountType: String,
-      discountValue: Number,
-      minOrderValue: Number,
-      maxDiscount: Number,
-      expiresAt: String,
+      type: new Schema(
+        {
+          code: String,
+          description: String,
+          discountType: String,
+          discountValue: Number,
+          minOrderValue: Number,
+          maxDiscount: Number,
+          expiresAt: String,
+        },
+        { _id: false }
+      ),
+      default: null,
     },
     shippingInfo: {
       name: String,

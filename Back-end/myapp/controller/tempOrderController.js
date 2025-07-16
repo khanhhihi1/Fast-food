@@ -5,6 +5,7 @@ module.exports = {
   getTempOrderByUser,
   deleteTempOrder,
   updateShippingInfo,
+  updatePaymentMethod,
 };
 
 // Tạo đơn tạm thời
@@ -87,6 +88,11 @@ async function updateShippingInfo(req, res) {
         message: "Thiếu thông tin giao hàng",
       });
     }
+    if (!/^\d{9,11}$/.test(phone)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Số điện thoại không hợp lệ" });
+    }
 
     const tempOrder = await TempOrder.findOne({ userId });
     if (!tempOrder) {
@@ -102,6 +108,36 @@ async function updateShippingInfo(req, res) {
     res.json({
       status: true,
       message: "Cập nhật thông tin giao hàng thành công",
+    });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+}
+
+async function updatePaymentMethod(req, res) {
+  try {
+    const userId = req.userId;
+    const { paymentMethod } = req.body;
+
+    if (!paymentMethod) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Thiếu phương thức thanh toán" });
+    }
+
+    const tempOrder = await TempOrder.findOne({ userId });
+    if (!tempOrder) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Không tìm thấy đơn hàng tạm thời" });
+    }
+
+    tempOrder.paymentMethod = paymentMethod;
+    await tempOrder.save();
+
+    res.json({
+      status: true,
+      message: "Cập nhật phương thức thanh toán thành công",
     });
   } catch (err) {
     res.status(500).json({ status: false, message: err.message });
