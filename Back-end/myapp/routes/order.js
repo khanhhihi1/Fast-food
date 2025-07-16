@@ -45,4 +45,24 @@ router.put("/admin/:id", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
+// Người dùng tạo đơn hàng từ đơn tạm thời (TempOrder)
+router.post("/from-temp", authMiddleware, async (req, res) => {
+  try {
+    const result = await orderController.createOrderFromTempOrder(req);
+    res.json({ status: true, result });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+});
+
+// Người dùng hủy đơn hàng
+router.put("/:id/cancel", authMiddleware, async (req, res) => {
+  try {
+    const result = await orderController.cancelOrder(req);
+    res.json({ status: true, result });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+});
+
 module.exports = router;

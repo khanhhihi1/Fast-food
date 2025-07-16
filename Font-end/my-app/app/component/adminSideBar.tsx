@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
@@ -103,7 +104,7 @@ export default function AdminSideBar() {
             />
             <Link
               style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="/admin/cartmanagement"
+              href="/admin/order"
             >
               Quản lý đơn hàng
             </Link>
