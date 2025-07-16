@@ -85,25 +85,7 @@ export default function Cart() {
     0
   );
 
-  // Lần đầu tiên: load cart + voucher từ localStorage
-  useEffect(() => {
-    fetchCart();
-    fetchVouchers();
-
-    const stored = localStorage.getItem("selectedVoucher");
-    if (stored) {
-      const parsed: Voucher = JSON.parse(stored);
-      setSelectedVoucher(parsed);
-    }
-  }, []);
-
-  // Khi cartItems và selectedVoucher đã có, mới apply voucher
-  useEffect(() => {
-    if (cartItems.length > 0 && selectedVoucher) {
-      applyVoucher(selectedVoucher);
-    }
-  }, [cartItems, selectedVoucher]);
-
+  // Lấy giỏ hàng từ server
   const fetchCart = async () => {
     try {
       setIsLoading(true);
@@ -111,8 +93,10 @@ export default function Cart() {
         credentials: "include",
       });
       const data = await res.json();
-      if (!data.status)
+      if (!data.status) {
+        setCartItems([]); // Đặt rỗng nếu không có dữ liệu
         throw new Error(data.message || "Không thể tải giỏ hàng");
+      }
 
       const itemsWithProduct = await Promise.all(
         data.result.items.map(async (item: CartItem) => {
@@ -145,8 +129,14 @@ export default function Cart() {
         })
       );
       setCartItems(itemsWithProduct);
-    } catch {
-      setError("Không thể tải giỏ hàng. Vui lòng thử lại.");
+    } catch (error) {
+      setError(
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as { message?: string }).message ||
+              "Không thể tải giỏ hàng. Vui lòng thử lại."
+          : "Không thể tải giỏ hàng. Vui lòng thử lại."
+      );
+      setCartItems([]); // Đặt rỗng trong trường hợp lỗi
     } finally {
       setIsLoading(false);
     }
@@ -177,17 +167,23 @@ export default function Cart() {
         (s) => s.name === updatedItem.sizeName
       );
       const price = selectedSize?.price || { original: updatedItem.price };
-      await fetch(`http://localhost:5000/cart/update/${updatedItem.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          quantity: updatedItem.quantity,
-          taste: updatedItem.taste || [],
-          sizeName: updatedItem.sizeName,
-          price,
-        }),
-      });
+      const res = await fetch(
+        `http://localhost:5000/cart/update/${updatedItem.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            quantity: updatedItem.quantity,
+            taste: updatedItem.taste || [],
+            sizeName: updatedItem.sizeName,
+            price,
+          }),
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Không thể cập nhật sản phẩm");
+      }
     } catch {
       toast.error("Không thể cập nhật sản phẩm");
     }
@@ -229,13 +225,19 @@ export default function Cart() {
       if (res.ok) {
         setCartItems((prev) => prev.filter((item) => item.id !== id));
         toast.success("Xóa sản phẩm thành công");
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Không thể xóa sản phẩm");
       }
-    } catch {
-      toast.error("Không thể xóa sản phẩm");
+    } catch (error) {
+      const errorMsg =
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as { message?: string }).message || "Không thể xóa sản phẩm"
+          : "Không thể xóa sản phẩm";
+      toast.error(errorMsg);
     }
   };
 
-  // Trong hàm handleCheckout của trang Cart
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       toast.warning("Giỏ hàng trống!");
@@ -257,7 +259,6 @@ export default function Cart() {
 
       const data = await res.json();
       if (data.status) {
-        // Tiếp tục đến bước nhập địa chỉ
         router.push("/shippingInfo");
       } else {
         toast.error(data.message || "Không thể tạo đơn hàng tạm thời");
@@ -266,6 +267,23 @@ export default function Cart() {
       toast.error("Lỗi khi tạo đơn hàng tạm thời");
     }
   };
+
+  useEffect(() => {
+    fetchCart();
+    fetchVouchers();
+
+    const stored = localStorage.getItem("selectedVoucher");
+    if (stored) {
+      const parsed: Voucher = JSON.parse(stored);
+      setSelectedVoucher(parsed);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (cartItems.length > 0 && selectedVoucher) {
+      applyVoucher(selectedVoucher);
+    }
+  }, [cartItems, selectedVoucher]);
 
   return (
     <ProtectedRoute>

@@ -7,6 +7,7 @@ module.exports = {
   updateCartItem,
   removeFromCart,
   syncCart,
+  clearCart,
 };
 
 // Hàm nội bộ: Đồng bộ giỏ hàng với thông tin sản phẩm
@@ -216,4 +217,16 @@ async function syncCart(req) {
 
   cart = await syncCartWithProduct(cart);
   return { message: "Đã đồng bộ giỏ hàng", cart };
+}
+
+// Xóa toàn bộ giỏ hàng
+async function clearCart(req) {
+  const userId = req.userId;
+  const cart = await Cart.findOne({ userId });
+  if (!cart) {
+    return { message: "Giỏ hàng đã rỗng", cart: { items: [] } };
+  }
+
+  await Cart.deleteOne({ userId });
+  return { message: "Đã xóa toàn bộ giỏ hàng", cart: { items: [] } };
 }

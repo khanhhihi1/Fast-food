@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -26,6 +27,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./account.css";
 import ProtectedRoute from "../component/ProtectedRoute";
+import { toast } from "react-toastify";
 
 interface User {
   _id: string;
@@ -35,32 +37,127 @@ interface User {
   role: string;
 }
 
+interface OrderItem {
+  productId: string;
+  name: string;
+  image?: string;
+  sizeName: string;
+  taste: string[];
+  quantity: number;
+  price: {
+    original: number;
+    discount?: number;
+  };
+  finalPrice: number;
+}
+
+interface Order {
+  _id: string;
+  userId: string;
+  items: OrderItem[];
+  total: number;
+  discount: number;
+  voucherCode?: string;
+  voucherData?: {
+    code: string;
+    description: string;
+    discountType: string;
+    discountValue: number;
+    minOrderValue: number;
+    maxDiscount: number;
+    expiresAt: string;
+  };
+  shippingInfo: {
+    name: string;
+    phone: string;
+    address: string;
+  };
+  shippingFee: number;
+  tax: number;
+  paymentMethod: string;
+  isPaid: boolean;
+  status: number;
+  createdAt: string;
+}
+
+const OrderStatusText = {
+  0: "Chờ xác nhận",
+  1: "Chờ thanh toán",
+  2: "Đã xác nhận",
+  3: "Đang vận chuyển",
+  4: "Hoàn tất",
+  5: "Hủy đơn hàng",
+};
+
 const UserProfile = () => {
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndOrders = async () => {
       try {
-        const res = await fetch("http://localhost:5000/users/profile", {
+        setLoading(true);
+
+        // Fetch user profile
+        const userRes = await fetch("http://localhost:5000/users/profile", {
           credentials: "include",
         });
-        const data = await res.json();
-        if (res.ok && data.status) {
-          setUser(data.result);
+        const userData = await userRes.json();
+        if (userRes.ok && userData.status) {
+          setUser(userData.result);
         } else {
           setUser(null);
         }
+
+        // Fetch orders
+        const ordersRes = await fetch("http://localhost:5000/orders", {
+          credentials: "include",
+        });
+        const ordersData = await ordersRes.json();
+        if (ordersRes.ok && ordersData.status) {
+          setOrders(ordersData.result || []);
+        } else {
+          setOrders([]);
+        }
       } catch (err) {
-        console.error("Fetch user error:", err);
+        console.error("Fetch error:", err);
         setUser(null);
+        setOrders([]);
+        toast.error("Có lỗi khi tải dữ liệu");
       } finally {
         setLoading(false);
       }
     };
-    fetchUser();
+    fetchUserAndOrders();
   }, []);
+
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm("Bạn có chắc muốn hủy đơn hàng này?")) return;
+    try {
+      const res = await fetch(
+        `http://localhost:5000/orders/${orderId}/cancel`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể hủy đơn hàng");
+      }
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status: 5 } : order
+        )
+      );
+      toast.success("Hủy đơn hàng thành công!");
+    } catch (error: any) {
+      toast.error(error.message || "Có lỗi khi hủy đơn hàng");
+    }
+  };
 
   if (loading) {
     return (
@@ -172,7 +269,121 @@ const UserProfile = () => {
                         />
                         Lịch sử đơn hàng
                       </h5>
-                      <p>Chưa có đơn hàng nào.</p>
+                      {orders.length === 0 ? (
+                        <p>Chưa có đơn hàng nào.</p>
+                      ) : (
+                        <Table
+                          striped
+                          bordered
+                          hover
+                          responsive
+                          className="mt-3 text-center"
+                        >
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Sản phẩm</th>
+                              <th>Thông tin giao hàng</th>
+                              <th>Voucher</th>
+                              <th>Thành tiền</th>
+                              <th>Phương thức thanh toán</th>
+                              <th>Trạng thái</th>
+                              <th>Ngày tạo</th>
+                              <th>Hành động</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {orders.map((order, idx) => (
+                              <tr key={order._id}>
+                                <td>{idx + 1}</td>
+                                <td>
+                                  <div>
+                                    {order.items.map((item) => (
+                                      <div key={item.productId + item.sizeName}>
+                                        <strong>Tên:</strong> {item.name} (
+                                        {item.sizeName}, {item.quantity} x{" "}
+                                        {item.finalPrice.toLocaleString()} ₫)
+                                        {item.taste.length > 0 && (
+                                          <>
+                                            <br />
+                                            <strong>Hương vị:</strong>{" "}
+                                            {item.taste.join(", ")}
+                                          </>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div>
+                                    <strong>Tên:</strong>{" "}
+                                    {order.shippingInfo.name}
+                                    <br />
+                                    <strong>SĐT:</strong>{" "}
+                                    {order.shippingInfo.phone}
+                                    <br />
+                                    <strong>Địa chỉ:</strong>{" "}
+                                    {order.shippingInfo.address}
+                                  </div>
+                                </td>
+                                <td>
+                                  {order.voucherCode ? (
+                                    <div>
+                                      <strong>Mã:</strong> {order.voucherCode}
+                                      <br />
+                                      <strong>Mô tả:</strong>{" "}
+                                      {order.voucherData?.description || "N/A"}
+                                      <br />
+                                      <strong>Giảm giá:</strong>{" "}
+                                      {order.discount.toLocaleString()} ₫
+                                    </div>
+                                  ) : (
+                                    "Không áp dụng"
+                                  )}
+                                </td>
+                                <td>{order.total.toLocaleString()} ₫</td>
+                                <td className="text-capitalize">
+                                  {order.paymentMethod}
+                                </td>
+                                <td
+                                  className={`fw-bold ${
+                                    order.status === 0
+                                      ? "text-warning"
+                                      : order.status === 1
+                                      ? "text-info"
+                                      : order.status === 2
+                                      ? "text-primary"
+                                      : order.status === 3
+                                      ? "text-secondary"
+                                      : order.status === 4
+                                      ? "text-success"
+                                      : "text-danger"
+                                  }`}
+                                >
+                                  {OrderStatusText[order.status]}
+                                </td>
+                                <td>
+                                  {new Date(order.createdAt).toLocaleDateString(
+                                    "vi-VN"
+                                  )}
+                                </td>
+                                <td>
+                                  {(order.status === 0 ||
+                                    order.status === 1) && (
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => cancelOrder(order._id)}
+                                    >
+                                      Hủy đơn
+                                    </Button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      )}
                     </Card>
                   </Tab.Pane>
 
