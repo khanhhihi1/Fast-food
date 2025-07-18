@@ -1,3 +1,4 @@
+/* Giao diện tổng thể */
 .cart-admin {
   min-height: 100vh;
   color: #f8fafc;
@@ -10,7 +11,7 @@
   margin: 0 auto;
 }
 
-/* Header Styles */
+/* Header */
 .admin-header {
   margin-bottom: 30px;
 }
@@ -26,6 +27,7 @@
   text-align: center;
 }
 
+/* Thống kê */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -65,7 +67,7 @@
   color: #f8fafc;
 }
 
-/* Filter Buttons */
+/* Nút lọc */
 .filters {
   display: flex;
   gap: 10px;
@@ -96,34 +98,53 @@
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
-/* Table Styles */
+/* Wrapper scroll bảng */
+.orders-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+/* Bảng đơn hàng */
 .orders-table {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
   backdrop-filter: blur(10px);
+  min-width: 800px;
 }
 
-.table-header {
+.table-header,
+.table-row {
   display: grid;
-  grid-template-columns: 80px 200px 150px 80px 80px 100px 120px 100px 200px;
-  background: rgba(255, 255, 255, 0.05);
+  grid-template-columns: 1fr 2fr 2fr 1.5fr 2fr;
   padding: 0;
 }
 
-.header-cell {
+.header-cell,
+.table-cell {
   padding: 16px 12px;
-  font-weight: 600;
   font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #cbd5e1;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  text-align: center;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.header-cell:last-child {
+.header-cell:last-child,
+.table-cell:last-child {
   border-right: none;
+}
+
+.table-header {
+  background: rgba(255, 255, 255, 0.05);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #cbd5e1;
+  letter-spacing: 0.5px;
 }
 
 .table-body {
@@ -132,8 +153,6 @@
 }
 
 .table-row {
-  display: grid;
-  grid-template-columns: 80px 200px 150px 80px 80px 100px 120px 100px 200px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.2s ease;
 }
@@ -142,28 +161,7 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.table-row:last-child {
-  border-bottom: none;
-}
-
-.table-cell {
-  padding: 16px 12px;
-  font-size: 0.875rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-}
-
-.table-cell:last-child {
-  border-right: none;
-}
-
-.product-name {
-  font-weight: 500;
-  color: #e2e8f0;
-}
-
-/* Status Badge */
+/* Status badge */
 .status-badge {
   padding: 4px 12px;
   border-radius: 20px;
@@ -172,9 +170,10 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: white;
+  display: inline-block;
 }
 
-/* Action Buttons */
+/* Nút hành động */
 .action-btn {
   padding: 6px 12px;
   border: none;
@@ -220,7 +219,7 @@
   transform: translateY(-1px);
 }
 
-/* Scrollbar Styling */
+/* Scrollbar đẹp */
 .table-body::-webkit-scrollbar {
   width: 8px;
 }
@@ -238,47 +237,38 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 70px 180px 130px 70px 70px 90px 110px 90px 180px;
-  }
-}
-
+/* Responsive */
 @media (max-width: 768px) {
   .cart-admin {
     padding: 10px;
   }
-  
+
   .admin-header h1 {
     font-size: 2rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .filters {
     justify-content: center;
   }
-  
+
   .table-header,
   .table-row {
     grid-template-columns: 1fr;
     gap: 10px;
   }
-  
+
   .header-cell,
   .table-cell {
+    justify-content: space-between;
+    text-align: left;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
-  
-  .table-cell {
-    justify-content: space-between;
-  }
-  
+
   .table-cell::before {
     content: attr(data-label);
     font-weight: 600;
@@ -286,5 +276,6 @@
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.5px;
+    margin-right: 8px;
   }
 }
