@@ -28,13 +28,13 @@ import {
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./cart.css";
-import "../admin.css";
 import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";
 import useDarkMode from "../useDarkMode/page";
 import AdminNavbar from "@/app/component/adminNavbar";
 import { Collapse } from "react-bootstrap";
 import { toast } from "react-toastify";
+import OderDetailModal from "@/app/component/modalOderAdmin";
 
 interface OrderItem {
   productId: string;
@@ -93,6 +93,7 @@ const OrderStatusText = {
 };
 
 export default function CartManagementPage() {
+  const [showModal, setShowModal] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +103,7 @@ export default function CartManagementPage() {
   const ordersPerPage = 10;
   const { isDarkMode } = useDarkMode();
   const router = useRouter();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -180,7 +182,7 @@ export default function CartManagementPage() {
   const totalPages = Math.ceil(orders.length / ordersPerPage);
   const indexOfLast = currentPage * ordersPerPage;
   const indexOfFirst = indexOfLast - ordersPerPage;
-  
+
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
     switch (filter) {
@@ -208,7 +210,7 @@ export default function CartManagementPage() {
         <div className="cart-admin">
           <div className="admin-container">
             <header className="admin-header">
-              <h1>🛒 Quản lý giỏ hàng - Admin</h1>
+              <h1>🛒 Quản lý đơn hàng</h1>
               <div className="stats-grid">
                 <div className="stat-card">
                   <span className="stat-label">Tổng đơn hàng</span>
@@ -261,60 +263,54 @@ export default function CartManagementPage() {
                 Đã hủy
               </button>
             </div>
+            <div className="orders-table-wrapper">
+              <div className="orders-table">
+                <div className="table-header">
+                  <div className="header-cell">Mã đơn</div>
+                  <div className="header-cell">Khách hàng</div>
+                  <div className="header-cell">Trạng thái</div>
+                  <div className="header-cell">Ngày đặt</div>
+                  <div className="header-cell">Thao tác</div>
+                </div>
 
-            <div className="orders-table">
-              <div className="table-header">
-                <div className="header-cell">Mã đơn</div>
-                <div className="header-cell">Sản phẩm</div>
-                <div className="header-cell">Khách hàng</div>
-                <div className="header-cell">Số lượng</div>
-                <div className="header-cell">Giá</div>
-                <div className="header-cell">Tổng tiền</div>
-                <div className="header-cell">Trạng thái</div>
-                <div className="header-cell">Ngày đặt</div>
-                <div className="header-cell">Thao tác</div>
-              </div>
-
-              <div className="table-body">
-                {currentOrders.map((order) => (
-                  <div key={order._id} className="table-row">
-                    <div className="table-cell">#{order._id.slice(-4)}</div>
-                    <div className="table-cell product-name">
-                      {order.items.map(item => item.name).join(', ')}
+                <div className="table-body">
+                  {currentOrders.map((order) => (
+                    <div key={order._id} className="table-row">
+                      <div className="table-cell">#{order._id.slice(-4)}</div>
+                      <div className="table-cell">{order.userId.name}</div>
+                      <div className="table-cell">
+                        <span
+                          className="status-badge"
+                          style={{ backgroundColor: getStatusColor(order.status) }}
+                        >
+                          {OrderStatusText[order.status as keyof typeof OrderStatusText]}
+                        </span>
+                      </div>
+                      <div className="table-cell">
+                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                      </div>
+                      <div className="table-cell">
+                       
+                          <Button onClick={() => {
+                            setSelectedOrder(order);
+                            setShowModal(true);
+                          }}>
+                            Xem chi tiết
+                          </Button>
+                        
+                       
+                      </div>
                     </div>
-                    <div className="table-cell">{order.userId.name}</div>
-                    <div className="table-cell">
-                      {order.items.reduce((sum, item) => sum + item.quantity, 0)}
-                    </div>
-                    <div className="table-cell">
-                      {order.items[0]?.price.original.toLocaleString('vi-VN')} VNĐ
-                    </div>
-                    <div className="table-cell">
-                      {order.total.toLocaleString('vi-VN')} VNĐ
-                    </div>
-                    <div className="table-cell">
-                      <span
-                        className="status-badge"
-                        style={{ backgroundColor: getStatusColor(order.status) }}
-                      >
-                        {OrderStatusText[order.status as keyof typeof OrderStatusText]}
-                      </span>
-                    </div>
-                    <div className="table-cell">
-                      {new Date(order.createdAt).toLocaleDateString('vi-VN')}
-                    </div>
-                    <div className="table-cell">
-                      <button className="action-btn view" onClick={() => router.push(`/admin/orders/${order._id}`)}>Xem</button>
-                      <button className="action-btn edit" onClick={() => router.push(`/admin/orders/edit/${order._id}`)}>Sửa</button>
-                      <button className="action-btn delete" onClick={() => updateOrderStatus(order._id, 5)}>Xóa</button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </Container>
+       <OderDetailModal show={showModal} onHide={() => setShowModal(false)} order={selectedOrder} />
     </div>
+    
   );
 }
