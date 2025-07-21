@@ -39,7 +39,7 @@ interface ProductType {
   quantity: number;
   taste?: string[];
   sizes?: SizeType[];
-  categoryId?: CategoryInfo;
+  categoryId?: string | CategoryInfo; // Allow categoryId to be a string or object
 }
 
 const ProductDetail = () => {
@@ -63,22 +63,46 @@ const ProductDetail = () => {
     return data.result;
   };
 
-  const { data, error, isLoading } = useSWR(
+  const { data: product, error: productError, isLoading: productLoading } = useSWR(
     productId ? `http://localhost:5000/products/${productId}` : null,
     fetcher
   );
 
+  const { data: categories, error: categoryError, isLoading: categoryLoading } = useSWR(
+    "http://localhost:5000/categories",
+    fetcher
+  );
+
   useEffect(() => {
-    if (data?.sizes && data.sizes.length > 0) {
-      setSelectedSize(data.sizes[0].name);
+    if (product?.sizes && product.sizes.length > 0) {
+      setSelectedSize(product.sizes[0].name);
     } else {
       setSelectedSize(null);
     }
-  }, [data]);
+  }, [product]);
+
+  useEffect(() => {
+    if (categories) {
+      console.log("Fetched categories:", categories);
+    }
+    if (categoryError) {
+      console.error("Category fetch error:", categoryError);
+    }
+  }, [categories, categoryError]);
+
+  // Find the category name based on product.categoryId
+  const getCategoryName = () => {
+    if (!product || !categories) return "Danh mục";
+    if (typeof product.categoryId === "string") {
+      const category = categories.find((cat: CategoryInfo) => cat._id === product.categoryId);
+      return category?.name || "Danh mục";
+    }
+    return (product.categoryId as CategoryInfo)?.name || "Danh mục";
+  };
 
   const renderPrice = () => {
-    if (!data?.sizes || data.sizes.length === 0) return "Giá không khả dụng";
-    const size = data.sizes.find((s) => s.name === selectedSize);
+    if (!product?.sizes || product.sizes.length === 0) return "Giá không khả dụng";
+    const size = product.sizes.find((s) => s.name === selectedSize);
     if (!size) return "Không có size phù hợp";
 
     const { original, discount } = size.price;
@@ -97,12 +121,12 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async (product: ProductType) => {
-    if (!selectedSize || !data?._id) {
+    if (!selectedSize || !product?._id) {
       toast.error("Vui lòng chọn kích cỡ");
       return;
     }
 
-    const sizeInfo = data.sizes?.find((s) => s.name === selectedSize);
+    const sizeInfo = product.sizes?.find((s) => s.name === selectedSize);
     if (!sizeInfo) {
       toast.error("Kích cỡ không hợp lệ");
       return;
@@ -121,7 +145,7 @@ const ProductDetail = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productId: data._id,
+          productId: product._id,
           sizeName: selectedSize,
           taste: selectedTaste ? [selectedTaste] : [],
           quantity,
@@ -139,9 +163,10 @@ const ProductDetail = () => {
     }
   };
 
-  if (isLoading) return <p>Đang tải...</p>;
-  if (error) return <p>Lỗi khi tải sản phẩm: {error.message}</p>;
-  if (!data || !data._id) return <p>Không tìm thấy sản phẩm</p>;
+  if (productLoading || categoryLoading) return <p>Đang tải...</p>;
+  if (productError) return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
+  if (categoryError) return <p>Lỗi khi tải danh mục: {categoryError.message}</p>;
+  if (!product || !product._id) return <p>Không tìm thấy sản phẩm</p>;
 
   return (
     <>
@@ -151,27 +176,27 @@ const ProductDetail = () => {
             Trang chủ
           </Breadcrumb.Item>
           <Breadcrumb.Item href="" className="breadCrumbItem">
-            {data.categoryId?.name || "Danh mục"}
+            {getCategoryName()}
           </Breadcrumb.Item>
-          <Breadcrumb.Item active>{data.name}</Breadcrumb.Item>
+          <Breadcrumb.Item active>{product.name}</Breadcrumb.Item>
         </Breadcrumb>
 
         <Container fluid className="p-5">
           <Row>
             <Col xs={8} className="d-flex justify-content-center">
-              <Image src={data.image} fluid />
+              <Image src={product.image} fluid />
             </Col>
             <Col xs={4}>
               <Row className="d-flex flex-column" style={{ gap: "12px" }}>
-                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{data.name}</h1>
+                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{product.name}</h1>
 
                 <span>{renderPrice()}</span>
 
-                {data.sizes && data.sizes.length > 0 && (
+                {product.sizes && product.sizes.length > 0 && (
                   <>
                     <p className="m-0">Chọn kích thước:</p>
                     <Form>
-                      {data.sizes.map((size, index) => (
+                      {product.sizes.map((size, index) => (
                         <Form.Check
                           type="radio"
                           key={index}
@@ -186,12 +211,12 @@ const ProductDetail = () => {
                   </>
                 )}
 
-                <span>{data.time || "Thời gian không khả dụng"}</span>
+                <span>{product.time || "Thời gian không khả dụng"}</span>
                 <span>Đánh giá: 0 sao</span>
 
                 <p className="m-0">Chọn vị:</p>
                 <Form>
-                  {Array.isArray(data.taste) && data.taste.length > 0 ? (
+                  {Array.isArray(product.taste) && product.taste.length > 0 ? (
                     <>
                       <Form.Check
                         key="no-taste"
@@ -202,7 +227,7 @@ const ProductDetail = () => {
                         checked={selectedTaste === null}
                         onChange={() => setSelectedTaste(null)}
                       />
-                      {data.taste.map((item, index) => (
+                      {product.taste.map((item, index) => (
                         <Form.Check
                           key={index}
                           id={`taste-radio-${index}`}
@@ -221,7 +246,7 @@ const ProductDetail = () => {
 
                 <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
                 <ul>
-                  <li>{data.description || "Không có mô tả"}</li>
+                  <li>{product.description || "Không có mô tả"}</li>
                 </ul>
 
                 <Counter value={quantity} setValue={setQuantity} />
@@ -229,7 +254,7 @@ const ProductDetail = () => {
                 <Button
                   className="text-light p-2"
                   style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
-                  onClick={() => handleAddToCart(data)}
+                  onClick={() => handleAddToCart(product)}
                 >
                   Thêm vào giỏ
                 </Button>
