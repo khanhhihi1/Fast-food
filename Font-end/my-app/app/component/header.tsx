@@ -14,6 +14,7 @@ import {
   faSearch,
   faUser,
   faShoppingBag,
+  faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import styles from "../styles/header.module.css";
 
@@ -131,6 +132,13 @@ export default function Header() {
               <Link href="/cart">
                 <FontAwesomeIcon
                   icon={faShoppingBag}
+                  className="text-light me-2"
+                  style={{ fontSize: "16px" }}
+                />
+              </Link>
+               <Link href="/favoriteProduct">
+                <FontAwesomeIcon
+                  icon={faHeart}
                   className="text-light me-2"
                   style={{ fontSize: "16px" }}
                 />

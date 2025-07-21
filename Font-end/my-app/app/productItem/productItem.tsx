@@ -3,6 +3,9 @@ import { Image, Button } from "react-bootstrap";
 import Link from "next/link";
 import styles from "../styles/productList.module.css";
 import { toast } from "react-toastify";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart, faHeartBroken } from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useState } from "react";
 
 interface Product {
   id: string;
@@ -22,10 +25,12 @@ interface Product {
   description?: string | string[];
   taste?: string[] | Record<string, number>;
 }
+
 interface ProductItemsProps {
   product: Product;
   layout?: "vertical" | "horizontal" | "default";
 }
+
 const renderPrice = (sizes?: Product["sizes"]) => {
   if (!sizes || sizes.length === 0) return "Không rõ";
 
@@ -48,74 +53,108 @@ const renderPrice = (sizes?: Product["sizes"]) => {
   }
 };
 
-export default function ProductItem({
-  product,
-  layout = "vertical",
-}: ProductItemsProps) {
- const addToCart = async (product: Product) => {
-  try {
-    const firstSize = product.sizes?.[0];
+export default function ProductItem({ product, layout = "vertical" }: ProductItemsProps) {
+  const [isFavorite, setIsFavorite] = useState(false);
+  const productId = product._id || product.id;
 
-    if (!firstSize || !firstSize.price?.original) {
-      toast.error("Sản phẩm không có thông tin giá.");
-      return;
-    }
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/favoriteProduct/favorites", {
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
 
-    const body = {
-      productId: product._id || product.id,
-      sizeName: firstSize.name ?? "default",
-      quantity: 1,
-      price: firstSize.price,
+        const data = await res.json();
+
+        if (data.status && Array.isArray(data.result)) {
+          const isFav = data.result.some((fav: Product) => fav._id === productId);
+          setIsFavorite(isFav);
+        }
+      } catch (err) {
+        console.error("Lỗi khi kiểm tra yêu thích:", err);
+      }
     };
 
-    const response = await fetch("http://localhost:5000/cart/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include", // nếu bạn dùng token trong cookie
-      body: JSON.stringify(body),
-    });
+    fetchFavorites();
+  }, [productId]);
 
-    const result = await response.json();
+  const addToCart = async (product: Product) => {
+    try {
+      const firstSize = product.sizes?.[0];
 
-    if (response.ok) {
-      toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
-    } else {
-      toast.error(result.message || "Thêm vào giỏ hàng thất bại.");
+      if (!firstSize || !firstSize.price?.original) {
+        toast.error("Sản phẩm không có thông tin giá.");
+        return;
+      }
+
+      const body = {
+        productId: productId,
+        sizeName: firstSize.name ?? "default",
+        quantity: 1,
+        price: firstSize.price,
+      };
+
+      const response = await fetch("http://localhost:5000/cart/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
+      } else {
+        toast.error(result.message || "Thêm vào giỏ hàng thất bại.");
+      }
+    } catch (error) {
+      toast.error("Lỗi kết nối đến máy chủ.");
+      console.error("Thêm giỏ hàng lỗi:", error);
     }
-  } catch (error) {
-    toast.error("Lỗi kết nối đến máy chủ.");
-    console.error("Thêm giỏ hàng lỗi:", error);
-  }
-};
+  };
 
+  const toggleFavorite = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/favoriteProduct/toggle/${productId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
 
+      const result = await response.json();
 
+      if (response.ok) {
+        setIsFavorite((prev) => !prev);
+        toast.success(result.message || "Cập nhật yêu thích thành công");
+      } else {
+        toast.error(result.message || "Lỗi cập nhật yêu thích");
+      }
+    } catch (error) {
+      console.error("Lỗi yêu thích:", error);
+      toast.error("Không kết nối được đến server");
+    }
+  };
 
   return (
     <div className={`${styles.productList} ${styles[layout]}`}>
-      <Link href={`/productList/${product.id}`}>
-        <Image
-          src={product.image}
-          className={styles.productImg}
-          alt={product.name}
-          fluid
-        />
+      <Link href={`/productList/${productId}`}>
+        <Image src={product.image} className={styles.productImg} alt={product.name} fluid />
       </Link>
 
       <div>
         <p className={styles.productName}>{product.name}</p>
         <div className={styles.productBot}>
-          <p className={styles.productPrice}>
-            {renderPrice(product.sizes)}
-          </p>
-          <Button
-            className={styles.productButton}
-            onClick={() => addToCart(product)}
-          >
-            Thêm
-          </Button>
+          <p className={styles.productPrice}>{renderPrice(product.sizes)}</p>
+
+          {/* Nút yêu thích */}
+          <FontAwesomeIcon
+            icon={isFavorite ? faHeart : faHeartBroken}
+            style={{ color: isFavorite ? "red" : "#aaa", cursor: "pointer" }}
+            onClick={toggleFavorite}
+            title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+          />
         </div>
       </div>
     </div>
