@@ -50,7 +50,7 @@ app.use("/voucher", voucherRouter);
 app.use("/temp-order", tempOrderRoutes);
 app.use("/payment", paymentRouter);
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
