@@ -138,6 +138,15 @@ router.get("/hot", async (req, res) => {
     return res.status(500).json({ status: false, message: "Lỗi hệ thống" });
   }
 });
+router.get("/search", async (req, res) => {
+  try {
+    const result = await productsController.searchProducts(req);
+    res.status(200).json({ status: true, result, message: "Tìm kiếm thành công" });
+  } catch (error) {
+    console.error("Lỗi tìm kiếm:", error.message);
+    res.status(500).json({ status: false, message: "Lỗi hệ thống khi tìm kiếm sản phẩm" });
+  }
+});
 // sp discount
 // http://localhost:5000/products/discount
 router.get("/discount", async (req, res) => {
@@ -162,5 +171,6 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ status: false, message: "Lỗi hệ thống" });
   }
 });
+
 
 module.exports = router;
