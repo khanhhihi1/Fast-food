@@ -14,6 +14,7 @@ const orderRouter = require("./routes/order");
 const categoriesRouter = require("./routes/categories");
 const voucherRouter = require("./routes/voucher");
 const tempOrderRoutes = require("./routes/tempOrder");
+const paymentRouter = require("./routes/payment");
 const favoriteProductRoutes = require("./routes/favoriteProduct");
 
 const app = express();
@@ -29,7 +30,7 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "hbs");
 
 // Middleware
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
@@ -45,6 +46,7 @@ app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/voucher", voucherRouter);
 app.use("/temp-order", tempOrderRoutes);
+app.use("/payment", paymentRouter);
 app.use("/favoriteProduct", favoriteProductRoutes);
 
 // Xử lý 404

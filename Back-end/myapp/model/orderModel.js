@@ -63,6 +63,7 @@ const orderSchema = new Schema(
       enum: [0, 1, 2, 3, 4, 5], // Enum values
       default: 0, // 0 = Chờ xác nhận
     },
+    momoTransId: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

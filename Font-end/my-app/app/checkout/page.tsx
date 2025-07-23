@@ -229,36 +229,31 @@ export default function Checkout() {
         body: JSON.stringify({ paymentMethod }),
       });
 
-      if (!orderRes.ok) {
-        const errorData = await orderRes.json();
-        toast.error(errorData.message || "Đặt hàng thất bại");
+      const orderData = await orderRes.json();
+      console.log("orderRes data:", orderData);
+
+      if (!orderRes.ok || !orderData.status) {
+        toast.error(orderData.message || "Đặt hàng thất bại");
         return;
       }
 
-      const orderData = await orderRes.json();
-      if (orderData.status) {
-        const clearCartRes = await fetch("http://localhost:5000/cart/clear", {
+      const createdOrder = orderData.result.order;
+      if (!createdOrder || !createdOrder._id) {
+        toast.error("Dữ liệu đơn hàng không hợp lệ");
+        return;
+      }
+
+      // Nếu COD → xử lý như cũ
+      if (paymentMethod === "cod") {
+        await fetch("http://localhost:5000/cart/clear", {
           method: "DELETE",
           credentials: "include",
         });
-        const clearCartData = await clearCartRes.json();
-        if (!clearCartRes.ok || !clearCartData.status) {
-          throw new Error(clearCartData.message || "Không thể xóa giỏ hàng");
-        }
 
-        const clearTempOrderRes = await fetch(
-          "http://localhost:5000/temp-order",
-          {
-            method: "DELETE",
-            credentials: "include",
-          }
-        );
-        if (!clearTempOrderRes.ok) {
-          const errorData = await clearTempOrderRes.json();
-          throw new Error(
-            errorData.message || "Không thể xóa đơn hàng tạm thời"
-          );
-        }
+        await fetch("http://localhost:5000/temp-order", {
+          method: "DELETE",
+          credentials: "include",
+        });
 
         localStorage.removeItem("selectedVoucher");
         localStorage.removeItem("shippingInfo");
@@ -272,12 +267,37 @@ export default function Checkout() {
 
         toast.success("Đặt hàng thành công!");
         router.push("/cart");
-      } else {
-        toast.error(orderData.message || "Đặt hàng thất bại");
+      }
+
+      // Nếu MoMo → redirect sang trang thanh toán MoMo
+      if (paymentMethod === "momo") {
+        const momoRes = await fetch("http://localhost:5000/payment/momo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ orderId: createdOrder._id }),
+        });
+
+        const momoText = await momoRes.text();
+        console.log("MoMo response text:", momoText);
+
+        let momoData;
+        try {
+          momoData = JSON.parse(momoText);
+        } catch (err) {
+          toast.error("Phản hồi không hợp lệ từ server MoMo");
+          return;
+        }
+
+        if (momoData.status && momoData.payUrl) {
+          window.location.href = momoData.payUrl;
+        } else {
+          toast.error("Không thể tạo thanh toán MoMo");
+        }
       }
     } catch (error) {
-      console.error("Lỗi khi gửi đơn hàng:", error);
-      toast.error("Có lỗi khi gửi đơn hàng");
+      console.error("Lỗi khi xử lý đơn hàng:", error);
+      toast.error("Có lỗi xảy ra khi xử lý đơn hàng");
     }
   };
 
