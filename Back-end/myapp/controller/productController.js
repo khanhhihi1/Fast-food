@@ -284,16 +284,23 @@ async function getDiscountProduct() {
   }
 }
 //tiềm kiếm sản phẩm
+function normalizeVietnamese(str) {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 async function searchProducts(req) {
   try {
     const keyword = req.query.keyword || "";
-    const regex = new RegExp(keyword, "i");
-
+    const normalizedKeyword = normalizeVietnamese(keyword);
+    const regex = new RegExp(normalizedKeyword, "i");
     const products = await productsModel.find({
       $or: [
-        { name: regex },
-        { description: regex },
-        { taste: { $in: [regex] } },
+        { nameNoAccent: regex },
+        { descriptionNoAccent: regex },
+        { tasteNoAccent: { $in: [regex] } },
       ],
     });
 
