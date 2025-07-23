@@ -32,6 +32,5 @@ const productSchema = new Schema({
   sizes: { type: [sizeSchema], required: true },
 });
 
-module.exports =
-  mongoose.models.products || mongoose.model("products", productSchema);
+module.exports =mongoose.models.products || mongoose.model("products", productSchema);
 

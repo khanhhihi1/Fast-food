@@ -2,18 +2,6 @@ const categoriesModel = require("../model/categoriesModel.js");
 const productsModel = require("../model/productModel.js");
 const mongoose = require("mongoose");
 
-module.exports = {
-  getAllPro,
-  getDatailPro,
-  hideProduct,
-  showProduct,
-  addPro,
-  updateProduct,
-  getActiveProducts,
-  getInactiveProducts,
-  getHotProducts,
-  getDiscountProduct,
-};
 
 // Lấy tất cả sản phẩm
 async function getAllPro() {
@@ -263,13 +251,13 @@ async function getInactiveProducts() {
     throw new Error("Không thể lấy danh sách sản phẩm ngưng bán");
   }
 }
- // sp hot
+// sp hot
 async function getHotProducts() {
   try {
     const result = await productsModel
-      .find({})                 
-      .sort({ view: -1 })       
-      .limit(4);               
+      .find({})
+      .sort({ view: -1 })
+      .limit(4);
     return result;
   } catch (error) {
     console.log(error);
@@ -287,7 +275,7 @@ async function getDiscountProduct() {
         }
       }
     })
-    .limit(5);
+      .limit(5);
 
     return productsWithDiscount;
   } catch (error) {
@@ -295,3 +283,37 @@ async function getDiscountProduct() {
     throw new Error("Không thể lấy sản phẩm giảm giá");
   }
 }
+//tiềm kiếm sản phẩm
+async function searchProducts(req) {
+  try {
+    const keyword = req.query.keyword || "";
+    const regex = new RegExp(keyword, "i");
+
+    const products = await productsModel.find({
+      $or: [
+        { name: regex },
+        { description: regex },
+        { taste: { $in: [regex] } },
+      ],
+    });
+
+    return products;
+  } catch (error) {
+    console.error("Lỗi tìm kiếm sản phẩm:", error);
+    throw new Error("Không thể tìm kiếm sản phẩm");
+  }
+}
+module.exports = {
+  getAllPro,
+  getDatailPro,
+  hideProduct,
+  showProduct,
+  addPro,
+  updateProduct,
+  getActiveProducts,
+  getInactiveProducts,
+  getHotProducts,
+  getDiscountProduct,
+  searchProducts,
+};
+
