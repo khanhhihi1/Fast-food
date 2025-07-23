@@ -62,11 +62,13 @@ export default function Checkout() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Tính tổng tiền trước giảm giá
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
+  // Lấy thông tin đơn hàng tạm thời
   const fetchTempOrder = async () => {
     try {
       const res = await fetch("http://localhost:5000/temp-order", {
@@ -97,6 +99,7 @@ export default function Checkout() {
     }
   };
 
+  // Lấy danh sách voucher
   const fetchVouchers = async () => {
     try {
       const res = await fetch("http://localhost:5000/voucher", {
@@ -104,15 +107,20 @@ export default function Checkout() {
       });
       const data = await res.json();
       if (data.status) setVouchers(data.result);
+      else toast.error("Không thể tải danh sách voucher");
     } catch {
       toast.error("Không thể tải danh sách voucher");
     }
   };
 
+  // Áp dụng voucher
   const applyVoucher = async (voucherParam?: Voucher) => {
     const voucher =
       voucherParam || vouchers.find((v) => v.code === selectedCode);
-    if (!voucher) return;
+    if (!voucher) {
+      toast.warning("Vui lòng chọn voucher hợp lệ");
+      return;
+    }
 
     try {
       const res = await fetch("http://localhost:5000/voucher/apply", {
@@ -130,7 +138,7 @@ export default function Checkout() {
         setAppliedVoucher(voucher);
         setDiscountAmount(data.result.discountAmount);
         setTotalAfterDiscount(data.result.finalTotal);
-        toast.success("Áp dụng voucher thành công!");
+        toast.success(`Áp dụng voucher ${voucher.code} thành công!`);
 
         await fetch("http://localhost:5000/temp-order/update-voucher", {
           method: "PUT",
@@ -146,12 +154,14 @@ export default function Checkout() {
         toast.warning(data.message || "Voucher không hợp lệ");
         handleCancelVoucher();
       }
-    } catch {
+    } catch (error) {
+      console.error("Lỗi khi áp dụng voucher:", error);
       toast.error("Lỗi khi áp dụng voucher");
       handleCancelVoucher();
     }
   };
 
+  // Hủy voucher
   const handleCancelVoucher = async () => {
     setAppliedVoucher(null);
     setDiscountAmount(0);
@@ -170,11 +180,13 @@ export default function Checkout() {
           total,
         }),
       });
+      toast.success("Đã hủy voucher");
     } catch {
       toast.error("Không thể hủy voucher trong đơn hàng tạm thời");
     }
   };
 
+  // Cập nhật phương thức thanh toán
   const updatePaymentMethod = async () => {
     try {
       const res = await fetch(
@@ -194,31 +206,7 @@ export default function Checkout() {
     }
   };
 
-  const handlePostOrderSuccess = async () => {
-    await fetch("http://localhost:5000/cart/clear", {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    await fetch("http://localhost:5000/temp-order", {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    localStorage.removeItem("selectedVoucher");
-    localStorage.removeItem("shippingInfo");
-
-    setCartItems([]);
-    setAppliedVoucher(null);
-    setSelectedCode("");
-    setShippingInfo(null);
-    setDiscountAmount(0);
-    setTotalAfterDiscount(0);
-
-    toast.success("Đặt hàng thành công!");
-    router.push("/cart");
-  };
-
+  // Xử lý đặt hàng
   const handleOrder = async () => {
     if (cartItems.length === 0) {
       toast.warning("Không có sản phẩm nào để đặt hàng");
@@ -257,7 +245,28 @@ export default function Checkout() {
 
       // Nếu COD → xử lý như cũ
       if (paymentMethod === "cod") {
-        await handlePostOrderSuccess();
+        await fetch("http://localhost:5000/cart/clear", {
+          method: "DELETE",
+          credentials: "include",
+        });
+
+        await fetch("http://localhost:5000/temp-order", {
+          method: "DELETE",
+          credentials: "include",
+        });
+
+        localStorage.removeItem("selectedVoucher");
+        localStorage.removeItem("shippingInfo");
+
+        setCartItems([]);
+        setAppliedVoucher(null);
+        setSelectedCode("");
+        setShippingInfo(null);
+        setDiscountAmount(0);
+        setTotalAfterDiscount(0);
+
+        toast.success("Đặt hàng thành công!");
+        router.push("/cart");
       }
 
       // Nếu MoMo → redirect sang trang thanh toán MoMo
@@ -269,7 +278,7 @@ export default function Checkout() {
           body: JSON.stringify({ orderId: createdOrder._id }),
         });
 
-        const momoText = await momoRes.text(); // ✅ Chỉ đọc 1 lần
+        const momoText = await momoRes.text();
         console.log("MoMo response text:", momoText);
 
         let momoData;
@@ -287,11 +296,12 @@ export default function Checkout() {
         }
       }
     } catch (error) {
-      console.error("Lỗi khi đặt hàng:", error);
+      console.error("Lỗi khi xử lý đơn hàng:", error);
       toast.error("Có lỗi xảy ra khi xử lý đơn hàng");
     }
   };
 
+  // Tải dữ liệu khi component mount
   useEffect(() => {
     fetchTempOrder();
     fetchVouchers();
@@ -304,10 +314,13 @@ export default function Checkout() {
     }
   }, []);
 
+  // Áp dụng voucher tự động khi có selectedCode
   useEffect(() => {
     if (vouchers.length > 0 && selectedCode && !appliedVoucher) {
       const found = vouchers.find((v) => v.code === selectedCode);
-      if (found) applyVoucher(found);
+      if (found) {
+        applyVoucher(found);
+      }
     }
   }, [vouchers, selectedCode]);
 

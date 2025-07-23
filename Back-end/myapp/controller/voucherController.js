@@ -3,7 +3,7 @@ const Voucher = require("../model/voucherModel.js");
 // GET /vouchers - Lấy tất cả voucher
 exports.getAllVouchers = async (req, res) => {
   try {
-    const vouchers = await Voucher.find({ isActive: true });
+    const vouchers = await Voucher.find();
     res.json({
       status: true,
       result: vouchers,
@@ -49,7 +49,7 @@ exports.getVoucherByCode = async (req, res) => {
   }
 };
 
-// POST /vouchers - Tạo voucher mới
+// Tạo voucher mới
 exports.createVoucher = async (req, res) => {
   try {
     const newVoucher = new Voucher(req.body);
@@ -138,3 +138,94 @@ exports.applyVoucher = async (req, res) => {
     });
   }
 };
+//  Khôi phục
+exports.restoreVoucher = async (req, res) => {
+  try {
+    const restoredVoucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      { isActive: true },
+      { new: true }
+    );
+
+    if (!restoredVoucher) {
+      return res.status(404).json({
+        status: false,
+        result: null,
+        message: "Không tìm thấy voucher để khôi phục",
+      });
+    }
+
+    res.json({
+      status: true,
+      result: restoredVoucher,
+      message: "Khôi phục voucher thành công",
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: false,
+      result: null,
+      message: "Lỗi khi khôi phục voucher: " + error.message,
+    });
+  }
+};
+//  Ẩn voucher
+exports.hideVoucher = async (req, res) => {
+  try {
+    const hiddenVoucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      { isActive: false },
+      { new: true }
+    );
+
+    if (!hiddenVoucher) {
+      return res.status(404).json({
+        status: false,
+        result: null,
+        message: "Không tìm thấy voucher để ẩn",
+      });
+    }
+
+    res.json({
+      status: true,
+      result: hiddenVoucher,
+      message: "Ẩn voucher thành công",
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: false,
+      result: null,
+      message: "Lỗi khi ẩn voucher: " + error.message,
+    });
+  }
+};
+// Sửa voucher
+exports.updateVoucher = async (req, res) => {
+  try {
+    const updatedVoucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedVoucher) {
+      return res.status(404).json({
+        status: false,
+        result: null,
+        message: "Không tìm thấy voucher để cập nhật",
+      });
+    }
+
+    res.json({
+      status: true,
+      result: updatedVoucher,
+      message: "Cập nhật voucher thành công",
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: false,
+      result: null,
+      message: "Lỗi khi cập nhật voucher: " + error.message,
+    });
+  }
+};
+

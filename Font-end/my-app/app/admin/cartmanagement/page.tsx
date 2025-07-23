@@ -28,16 +28,18 @@ import {
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./cart.css";
-import "../admin.css";
+import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";
 import useDarkMode from "../useDarkMode/page";
 import AdminNavbar from "@/app/component/adminNavbar";
 import { Collapse } from "react-bootstrap";
+import { toast } from "react-toastify";
+import OderDetailModal from "@/app/component/modalOderAdmin";
 
 interface OrderItem {
   productId: string;
   name: string;
-  image: string;
+  image?: string;
   sizeName: string;
   taste: string[];
   quantity: number;
@@ -57,256 +59,258 @@ interface Order {
   };
   items: OrderItem[];
   total: number;
+  discount: number;
+  voucherCode?: string;
+  voucherData?: {
+    code: string;
+    description: string;
+    discountType: string;
+    discountValue: number;
+    minOrderValue: number;
+    maxDiscount: number;
+    expiresAt: string;
+  };
+  shippingInfo: {
+    name: string;
+    phone: string;
+    address: string;
+  };
   shippingFee: number;
   tax: number;
-  status: string;
+  paymentMethod: string;
+  isPaid: boolean;
+  status: number;
   createdAt: string;
 }
 
-export default function CartManagementPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const { isDarkMode } = useDarkMode();
+const OrderStatusText = {
+  0: "Chờ xác nhận",
+  1: "Chờ thanh toán",
+  2: "Đã xác nhận",
+  3: "Đang vận chuyển",
+  4: "Hoàn tất",
+  5: "Hủy đơn hàng",
+};
 
+export default function CartManagementPage() {
+  const [showModal, setShowModal] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
-  const [errorOrders, setErrorOrders] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filter, setFilter] = useState<string>('all');
+  const [collapsed, setCollapsed] = useState(false);
+  const ordersPerPage = 10;
+  const { isDarkMode } = useDarkMode();
+  const router = useRouter();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("http://localhost:5000/orders/admin/all", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể tải danh sách đơn hàng");
+      }
+
+      setOrders(data.result || []);
+    } catch (error: any) {
+      setError(error.message || "Có lỗi khi tải danh sách đơn hàng");
+      toast.error(error.message || "Có lỗi khi tải danh sách đơn hàng");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: string, status: number) => {
+    try {
+      if (status === 5 && !confirm("Bạn có chắc muốn hủy đơn hàng này?")) {
+        return;
+      }
+
+      const res = await fetch(`http://localhost:5000/orders/admin/${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể cập nhật trạng thái");
+      }
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status } : order
+        )
+      );
+      toast.success("Cập nhật trạng thái thành công!");
+    } catch (error: any) {
+      toast.error(error.message || "Có lỗi khi cập nhật trạng thái");
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/orders/admin/all", {
-          method: "GET",
-          credentials: "include",
-        });
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`Lỗi lấy đơn hàng: ${res.status} - ${text}`);
-        }
-        const data = await res.json();
-        if (data.status) {
-          setOrders(data.result);
-        } else {
-          throw new Error(data.message || "Lỗi không xác định");
-        }
-      } catch (err: any) {
-        console.error("❌ Lỗi tải đơn hàng:", err.message);
-        setErrorOrders("Không thể tải đơn hàng. Vui lòng thử lại.");
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-
     fetchOrders();
   }, []);
 
-  const toggleOrderDetails = (id: string) => {
-    setOpenOrderId(openOrderId === id ? null : id);
-  };
-
-  const statusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "processing":
-        return "warning";
-      case "delivered":
-        return "success";
-      case "Chờ xác nhận":
-        return "secondary";
-      case "cancelled":
-        return "danger";
+  const getStatusColor = (status: number) => {
+    switch (status) {
+      case 0:
+        return '#ffa500';
+      case 1:
+        return '#ff4500';
+      case 2:
+        return '#1e90ff';
+      case 3:
+        return '#9370db';
+      case 4:
+        return '#32cd32';
+      case 5:
+        return '#ff0000';
       default:
-        return "light";
+        return '#808080';
     }
   };
+
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+  const indexOfLast = currentPage * ordersPerPage;
+  const indexOfFirst = indexOfLast - ordersPerPage;
+
+  const filteredOrders = orders.filter(order => {
+    if (filter === 'all') return true;
+    switch (filter) {
+      case 'pending':
+        return order.status === 0 || order.status === 1;
+      case 'processing':
+        return order.status === 2 || order.status === 3;
+      case 'completed':
+        return order.status === 4;
+      case 'cancelled':
+        return order.status === 5;
+      default:
+        return true;
+    }
+  });
+
+  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const currentOrders = filteredOrders.slice(indexOfFirst, indexOfLast);
 
   return (
     <div className="d-flex dark-mode">
       <AdminSideBar />
       <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}>
         <AdminNavbar />
-        <Container fluid="xl">
-          <header>
-            <Row className="align-items-center justify-content-between">
-              <Col>
-                <h2 className="fw-bold text-white d-flex">
-                  <FaShoppingBag className="me-2" />
-                  Quản lý đơn hàng
-                </h2>
-              </Col>
-              <Col xs="auto" className="d-flex align-items-center gap-2">
-                <InputGroup>
-                  <InputGroup.Text>
-                    <FaSearch />
-                  </InputGroup.Text>
-                  <FormControl
-                    placeholder="Search orders..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </InputGroup>
-              </Col>
-            </Row>
-          </header>
-        </Container>
+        <div className="cart-admin">
+          <div className="admin-container">
+            <header className="admin-header">
+              <h1>🛒 Quản lý đơn hàng</h1>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <span className="stat-label">Tổng đơn hàng</span>
+                  <span className="stat-value">{orders.length}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Chờ xử lý</span>
+                  <span className="stat-value">{orders.filter(order => order.status === 0 || order.status === 1).length}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Đã hoàn thành</span>
+                  <span className="stat-value">{orders.filter(order => order.status === 4).length}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Doanh thu</span>
+                  <span className="stat-value">{totalRevenue.toLocaleString('vi-VN')} VNĐ</span>
+                </div>
+              </div>
+            </header>
 
-        <Container fluid="xl" className="py-4">
-          <Card className="mb-4">
-            <Card.Body>
-              <Row className="justify-content-between g-2">
-                <Col md="auto" className="d-flex gap-2">
-                  <Button variant="primary">Tất cả đơn hàng</Button>
-                  <Button variant="light">Hôm nay</Button>
-                  <Button variant="light">Trong tuần</Button>
-                  <Button variant="light">Trong tháng</Button>
-                </Col>
-                <Col md="auto">
-                  <Form.Select>
-                    <option>Trạng thái</option>
-                    <option>Chờ xác nhận</option>
-                    <option>Đã xác nhận</option>
-                    <option>Đang giao</option>
-                    <option>Đã nhận hàng</option>
-                    <option>Hủy đơn hàng</option>
-                  </Form.Select>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
+            <div className="filters">
+              <button
+                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+                onClick={() => setFilter('all')}
+              >
+                Tất cả
+              </button>
+              <button
+                className={`filter-btn ${filter === 'pending' ? 'active' : ''}`}
+                onClick={() => setFilter('pending')}
+              >
+                Chờ xử lý
+              </button>
+              <button
+                className={`filter-btn ${filter === 'processing' ? 'active' : ''}`}
+                onClick={() => setFilter('processing')}
+              >
+                Đang xử lý
+              </button>
+              <button
+                className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
+                onClick={() => setFilter('completed')}
+              >
+                Đã hoàn thành
+              </button>
+              <button
+                className={`filter-btn ${filter === 'cancelled' ? 'active' : ''}`}
+                onClick={() => setFilter('cancelled')}
+              >
+                Đã hủy
+              </button>
+            </div>
+            <div className="orders-table-wrapper">
+              <div className="orders-table">
+                <div className="table-header">
+                  <div className="header-cell">Mã đơn</div>
+                  <div className="header-cell">Khách hàng</div>
+                  <div className="header-cell">Trạng thái</div>
+                  <div className="header-cell">Ngày đặt</div>
+                  <div className="header-cell">Thao tác</div>
+                </div>
 
-          {loadingOrders ? (
-            <Alert variant="info">Đang tải danh sách đơn hàng...</Alert>
-          ) : errorOrders ? (
-            <Alert variant="danger">{errorOrders}</Alert>
-          ) : (
-            orders.map((order) => (
-              <Card className="mb-3" key={order._id}>
-                <Card.Body onClick={() => toggleOrderDetails(order._id)}>
-                  <div className="d-flex gap-3 align-items-center">
-                    <div className="rounded-circle bg-light p-3">
-                      <FaShoppingCart className="text-primary" />
-                    </div>
-                    <div>
-                      <h5 className="mb-1">Khách hàng #{order._id}</h5>
-                      <small className="text-white">Thời gian: {new Date(order.createdAt).toLocaleString()}</small>
-                    </div>
-                  </div>
-
-                  <div className="d-flex gap-4 align-items-center flex-wrap">
-                    <div>
-                      <div className="text-white small">Khách hàng</div>
-                      <div>{order.userId?.name}</div>
-                    </div>
-                    <div>
-                      <div className="text-white small">Tổng tiền</div>
-                      <div>{order.total.toLocaleString()}₫</div>
-                    </div>
-                    <div>
-                      <div className="text-white small">Trạng thái</div>
-                      <Badge bg={statusBadgeVariant(order.status)}>{order.status}</Badge>
-                    </div>
-                    <FaChevronDown className="text-white" />
-                  </div>
-                </Card.Body>
-
-                <Collapse in={openOrderId === order._id}>
-                  <div>
-                    <Card.Body className="bg-light border-top">
-                      <Row className="mb-4 text-dark">
-                        <Col md={6}>
-                          <h6>Thông tin khách hàng</h6>
-                          <p><strong>Tên:</strong> {order.userId.name}</p>
-                          <p><strong>Email:</strong> {order.userId.email}</p>
-                          {/* Nếu bạn có thêm thông tin như SĐT hay địa chỉ, hiển thị tại đây */}
-                        </Col>
-                        <Col md={6}>
-                          <h6>Thông tin đơn hàng</h6>
-                          <p><strong>Ngày tạo:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-                          {/* Bạn có thể thêm ngày cập nhật cuối nếu có */}
-                          <p ><strong className="text-dark">Trạng thái:</strong> <Badge bg={statusBadgeVariant(order.status)}>{order.status}</Badge></p>
-                        </Col>
-                      </Row>
-
-                      <h6>Sản phẩm trong đơn hàng</h6>
-                      <div className="table-responsive">
-                        <Table hover responsive>
-                          <thead>
-                            <tr>
-                              <th>Sản phẩm</th>
-                              <th>Đơn giá</th>
-                              <th>Số lượng</th>
-                              <th>Thành tiền</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {order.items.map((item, i) => (
-                              <tr key={i}>
-                                <td>
-                                  <div className="d-flex align-items-center">
-                                    <img
-                                      src={item.image}
-                                      alt={item.name}
-                                      width={60}
-                                      height={60}
-                                      className="me-3 rounded bg-light"
-                                    />
-                                    <div>
-                                      <p className="mb-0">{item.name}</p>
-                                      <small className="text-muted">
-                                        Size: {item.sizeName}, Hương vị: {item.taste.join(", ")}
-                                      </small>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td>{(item.price.discount ?? item.price.original).toLocaleString()}đ</td>
-                                <td>{item.quantity}</td>
-                                <td>{(item.quantity * (item.price.discount ?? item.price.original)).toLocaleString()}đ</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
+                <div className="table-body">
+                  {currentOrders.map((order) => (
+                    <div key={order._id} className="table-row">
+                      <div className="table-cell">#{order._id.slice(-4)}</div>
+                      <div className="table-cell">{order.userId.name}</div>
+                      <div className="table-cell">
+                        <span
+                          className="status-badge"
+                          style={{ backgroundColor: getStatusColor(order.status) }}
+                        >
+                          {OrderStatusText[order.status as keyof typeof OrderStatusText]}
+                        </span>
                       </div>
+                      <div className="table-cell">
+                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                      </div>
+                      <div className="table-cell">
+                       
+                          <Button onClick={() => {
+                            setSelectedOrder(order);
+                            setShowModal(true);
+                          }}>
+                            Xem chi tiết
+                          </Button>
+                        
+                       
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-                      <Row className="mt-3">
-                        <Col md={6}>
-                          <Card>
-                            <Card.Body>
-                              <h6>Ghi chú</h6>
-                              <p>Khách hàng muốn kiểm tra sản phẩm trước khi thanh toán</p> {/* hoặc bạn lấy từ DB nếu có */}
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                        <Col md={6}>
-                          <Card>
-                            <Card.Body>
-                              <h6>Tổng thanh toán</h6>
-                              <div className="d-flex justify-content-between">
-                                <span>Tạm tính:</span>
-                                <span>{order.total.toLocaleString()}đ</span>
-                              </div>
-                              <div className="d-flex justify-content-between">
-                                <span>Phí ship:</span>
-                                <span>{order.shippingFee.toLocaleString()}đ</span>
-                              </div>
-                              <hr />
-                              <div className="d-flex justify-content-between fw-bold">
-                                <span>Tổng cộng:</span>
-                                <span>{(order.total + order.shippingFee + order.tax).toLocaleString()}đ</span>
-                              </div>
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                      </Row>
-                    </Card.Body>
-                  </div>
-                </Collapse>
-
-
-              </Card>
-            ))
-          )}
-        </Container>
+          </div>
+        </div>
       </Container>
+       <OderDetailModal show={showModal} onHide={() => setShowModal(false)} order={selectedOrder} />
     </div>
+    
   );
 }
