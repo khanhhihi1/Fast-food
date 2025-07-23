@@ -117,7 +117,7 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
 
   const toggleFavorite = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/favoriteProduct/toggle/${productId}`, {
+      const response = await fetch(`http://localhost:5000/favoriteProduct/favorites/${productId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

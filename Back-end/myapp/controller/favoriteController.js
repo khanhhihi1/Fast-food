@@ -2,9 +2,12 @@ const User = require("../model/userModel.js");
 const Product = require("../model/productModel.js");
 exports.toggleFavorite = async (req, res) => {
     try {
-      const userId = req.userId;
+        const userId = req.userId;
         const { productId } = req.params;
-
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ status: false, message: "Sản phẩm không tồn tại" });
+        }
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ status: false, message: "Người dùng không tồn tại" });
 
@@ -27,7 +30,7 @@ exports.toggleFavorite = async (req, res) => {
 
 exports.getFavorites = async (req, res) => {
     try {
-     const userId = req.userId;
+        const userId = req.userId;
 
 
         const user = await User.findById(userId).populate("favorites");
