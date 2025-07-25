@@ -39,7 +39,7 @@ interface ProductType {
   quantity: number;
   taste?: string[];
   sizes?: SizeType[];
-  categoryId?: string | CategoryInfo; // Allow categoryId to be a string or object
+  categoryId?: string | CategoryInfo;
 }
 
 const ProductDetail = () => {
@@ -90,7 +90,6 @@ const ProductDetail = () => {
     }
   }, [categories, categoryError]);
 
-  // Find the category name based on product.categoryId
   const getCategoryName = () => {
     if (!product || !categories) return "Danh mục";
     if (typeof product.categoryId === "string") {
@@ -170,9 +169,9 @@ const ProductDetail = () => {
 
   return (
     <>
-      <Container fluid className="mt-4">
-        <Breadcrumb className="ms-5">
-          <Breadcrumb.Item href="/" className="breadCrumbItem">
+      <Container fluid style={{ padding: "0px" }}>
+        <Breadcrumb className="m-0" style={{ backgroundColor: "#ddd", padding: "10px 110px" }}>
+          <Breadcrumb.Item href="/" className="breadCrumbItem" style={{ margin: "0px" }}>
             Trang chủ
           </Breadcrumb.Item>
           <Breadcrumb.Item href="" className="breadCrumbItem">
@@ -189,7 +188,6 @@ const ProductDetail = () => {
             <Col xs={4}>
               <Row className="d-flex flex-column" style={{ gap: "12px" }}>
                 <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{product.name}</h1>
-
                 <span>{renderPrice()}</span>
 
                 {product.sizes && product.sizes.length > 0 && (
@@ -201,7 +199,11 @@ const ProductDetail = () => {
                           type="radio"
                           key={index}
                           id={`size-${index}`}
-                          label={`${size.name} (${size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()}đ)`}
+                          label={`${size.name} (${
+                            size.price.discount
+                              ? size.price.discount.toLocaleString()
+                              : size.price.original.toLocaleString()
+                          }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}

@@ -2,13 +2,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Dropdown } from "react-bootstrap";
-import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
-import Image from "react-bootstrap/Image";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
+import { Dropdown, Navbar, Nav, NavDropdown, Container, Image, Row, Col } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import debounce from "lodash/debounce";
 import {
   faPhone,
   faClock,
@@ -17,7 +12,9 @@ import {
   faShoppingBag,
   faHeart,
 } from "@fortawesome/free-solid-svg-icons";
+import debounce from "lodash/debounce";
 import styles from "../styles/header.module.css";
+
 interface Product {
   id: string;
   _id?: string;
@@ -65,6 +62,7 @@ export default function Header() {
       return `${original.toLocaleString()}đ`;
     }
   };
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -137,12 +135,10 @@ export default function Header() {
     }
   };
 
-  // Sử dụng debounce để giới hạn số lần gọi API khi nhập
   const debouncedSearch = debounce((keyword: string) => {
     fetchSearchResults(keyword);
   }, 400);
 
-  // Tự động tìm kiếm khi gõ
   useEffect(() => {
     if (showSearch) {
       debouncedSearch(searchKeyword);
@@ -150,15 +146,14 @@ export default function Header() {
       setSearchResults([]);
     }
 
-    // Cleanup debounce khi component unmount
     return () => {
       debouncedSearch.cancel();
     };
   }, [searchKeyword, showSearch]);
 
-
   return (
     <>
+      {/* Thanh thông tin */}
       <Container fluid style={{ backgroundColor: "#c10a28" }} className="p-2">
         <Container>
           <Row className="d-flex align-items-center">
@@ -175,12 +170,7 @@ export default function Header() {
             <Col className="d-flex justify-content-end align-items-center" style={{ gap: "10px" }}>
               {user ? (
                 <Dropdown>
-                  <Dropdown.Toggle
-                    variant="link"
-                    id="dropdown-user"
-                    className="text-white p-0 border-0"
-                    style={{ fontSize: "16px" }}
-                  >
+                  <Dropdown.Toggle variant="link" className="text-white p-0 border-0" style={{ fontSize: "18px" }}>
                     <FontAwesomeIcon icon={faUser} />
                   </Dropdown.Toggle>
                   <Dropdown.Menu align="end">
@@ -193,18 +183,18 @@ export default function Header() {
               ) : (
                 <Link
                   href="/login"
-                  style={{ textDecoration: "none", color: "white", fontSize: "16px", fontWeight: "600" }}
+                  style={{ textDecoration: "none", color: "white", fontSize: "18px", fontWeight: "600" }}
                 >
                   <FontAwesomeIcon icon={faUser} />
                 </Link>
               )}
 
-              {/* 🔍 Tìm kiếm */}
+              {/* Tìm kiếm */}
               <div className="d-flex align-items-center position-relative">
                 <FontAwesomeIcon
                   icon={faSearch}
                   className="text-light"
-                  style={{ fontSize: "16px", cursor: "pointer" }}
+                  style={{ fontSize: "18px", cursor: "pointer" }}
                   onClick={() => {
                     setShowSearch(!showSearch);
                     setSearchResults([]);
@@ -230,7 +220,6 @@ export default function Header() {
                   />
                 )}
 
-                {/* Hiển thị kết quả tìm kiếm */}
                 {showSearch && searchResults.length > 0 && (
                   <div
                     style={{
@@ -271,10 +260,10 @@ export default function Header() {
               </div>
 
               <Link href="/cart">
-                <FontAwesomeIcon icon={faShoppingBag} className="text-light me-2" style={{ fontSize: "16px" }} />
+                <FontAwesomeIcon icon={faShoppingBag} className="text-light me-2" style={{ fontSize: "18px" }} />
               </Link>
               <Link href="/favoriteProduct">
-                <FontAwesomeIcon icon={faHeart} className="text-light me-2" style={{ fontSize: "16px" }} />
+                <FontAwesomeIcon icon={faHeart} className="text-light me-2" style={{ fontSize: "18px" }} />
               </Link>
             </Col>
           </Row>
@@ -283,14 +272,7 @@ export default function Header() {
 
       {/* Menu chính */}
       <Container fluid className={styles.box}>
-        <Container
-          style={{
-            paddingLeft: "100px",
-            paddingRight: "100px",
-            height: "150px",
-            paddingTop: "20px",
-          }}
-        >
+        <Container style={{ paddingLeft: "100px", paddingRight: "100px", height: "auto" }}>
           <Row>
             <Col xs={5} className="d-flex align-items-center justify-content-center" style={{ gap: "30px" }}>
               <Link href="/" className={styles.aLink}>TRANG CHỦ</Link>
@@ -301,7 +283,7 @@ export default function Header() {
               <Image src="/Logo.png" alt="Logo" style={{ width: "130px", height: "130px" }} />
             </Col>
             <Col xs={5} className="d-flex align-items-center justify-content-center" style={{ gap: "30px" }}>
-              <Link href="/" className={styles.aLink}>TIN TỨC</Link>
+              <Link href="/news" className={styles.aLink}>TIN TỨC</Link>
               <Link href="/" className={styles.aLink}>LIÊN HỆ</Link>
               <Link href="/" className={styles.aLink}>NHƯỢNG QUYỀN</Link>
             </Col>

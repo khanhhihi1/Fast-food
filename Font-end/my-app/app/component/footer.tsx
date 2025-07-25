@@ -8,6 +8,7 @@ import Image from "react-bootstrap/Image";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
+import InputGroup from "react-bootstrap/InputGroup";
 import {
   faPhone,
   faSearch,
@@ -41,54 +42,57 @@ const Footer = () => {
   if (!menu) return <div>Loading...</div>;
   return (
     <>
-      <Container className="d-flex p-3 ">
-        <Col xs={3} className="d-flex align-items-center">
-          <FontAwesomeIcon
-            icon={faEnvelope}
-            className="text-dark me-2"
-            style={{ fontSize: "20px" }}
-          />
-          <h1 style={{ fontSize: "18px", margin: "0" }}> Đăng kí nhận tin</h1>
-        </Col>
-        <Col xs={5} className=" d-flex align-items-center">
-          <Form.Control
-            placeholder="Nhập email của bạn"
-            aria-label="Nhập email của bạn"
-            aria-describedby="basic-addon2"
-            className="no-focus-style"
-          />
-          <Button
-            style={{
-              width: "108px",
-              height: "40px",
-              borderRadius: "0",
-              fontSize: "13px",
-              backgroundColor: "#e00000",
-              border: "none",
-            }}
-          >
-            ĐĂNG KÍ
-          </Button>
-        </Col>
-        <Col xs={4} className="d-flex align-items-center ms-3">
-          <FontAwesomeIcon
-            icon={faPhone}
-            className="text-dark me-2"
-            style={{ fontSize: "16px" }}
-          />
-          <span style={{ fontSize: "16px", margin: "0", color: "#252a2b" }}>
-            Đặt hàng/ Hỗ trợ:
-          </span>
-          <Link
-            href="/contact"
-            style={{ color: "red", textDecoration: "none" }}
-            className="ms-1"
-          >
-            19009480
-          </Link>
-        </Col>
-      </Container>
-      <Container fluid className="bg-dark p-5 ">
+      {/* <Container fluid style={{ backgroundColor: "#c10a28" }}>
+        <Container className="p-5">
+          <Row>
+            <Col xs={3}>
+              <Image src="/vege.webp"></Image>
+            </Col>
+            <Col
+              xs={6}
+              style={{
+                color: "white",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <h1>Đăng ký nhận tin</h1>
+              <p>
+                Nhập email của bạn và nhận nhiều chương trình ưu đãi hấp dẫn từ
+                cửa hàng
+              </p>
+              <InputGroup className="mb-3">
+                <Form.Control placeholder="Nhập email nhận tin khuyến mãi" />
+                <InputGroup.Text
+                  style={{
+                    backgroundColor: "#f64563",
+                    border: "#f64563",
+                    color: "white",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Đăng Ký
+                </InputGroup.Text>
+              </InputGroup>
+            </Col>
+            <Col xs={3}>
+              <Image src="/vege2.webp"></Image>
+            </Col>
+          </Row>
+        </Container>
+      </Container> */}
+      <Container
+        fluid
+        className=" p-5 "
+        style={{
+          backgroundImage: `url('/footerbg.png')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
         <Container className="d-flex text-white  flex-column">
           <Row>
             <Col style={{ width: "20%" }}>
