@@ -12,22 +12,25 @@ import About from "./about/page";
 import styles from "./styles/home.module.css";
 import SalePage from "./sale/salePage";
 import DiscountPage from "./discount/discount";
-import Slide from "./component/main/slide";
+import SlideImage from "./component/main/slideImage";
+import ContactPage from "./contactme/contact";
 export default function Home() {
   return (
     <>
-      <Slide />
+      <SlideImage />
       <Service />
       <About />
-      <ProductList
+      {/* <ProductList
         category="hot"
         title="🔥Sản phẩm Hot"
         layout="horizontal"
         limit={4}
-      />
+      /> */}
       <SalePage />
       <DiscountPage />
       <ProductList category="related" title="Thức Ăn Kèm" />
+
+      <ContactPage />
     </>
   );
 }

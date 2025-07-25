@@ -46,7 +46,7 @@ export default function Service() {
       </Row>
 
       <Row className="d-flex p-3" style={{ gap: "10px" }}>
-        {service.map((item) => (
+        {service.slice(0, 4).map((item) => (
           <Col
             key={item._id}
             className={`d-flex align-items-center justify-content-between ${styles.service} p-3`}

@@ -97,7 +97,7 @@ export default function Header() {
                     variant="link"
                     id="dropdown-user"
                     className="text-white p-0 border-0"
-                    style={{ fontSize: "16px" }}
+                    style={{ fontSize: "18px" }}
                   >
                     <FontAwesomeIcon icon={faUser} />
                   </Dropdown.Toggle>
@@ -116,7 +116,7 @@ export default function Header() {
                   style={{
                     textDecoration: "none",
                     color: "white",
-                    fontSize: "16px",
+                    fontSize: "18px",
                     fontWeight: "600",
                   }}
                 >
@@ -126,26 +126,25 @@ export default function Header() {
               <FontAwesomeIcon
                 icon={faSearch}
                 className="text-light"
-                style={{ fontSize: "16px" }}
+                style={{ fontSize: "18px" }}
               />
               <Link href="/cart">
                 <FontAwesomeIcon
                   icon={faShoppingBag}
                   className="text-light me-2"
-                  style={{ fontSize: "16px" }}
+                  style={{ fontSize: "18px" }}
                 />
               </Link>
             </Col>
           </Row>
         </Container>
       </Container>
-      <Container fluid className={styles.box}>
+      <Container fluid>
         <Container
           style={{
             paddingLeft: "100px",
             paddingRight: "100px",
-            height: "150px",
-            paddingTop: "20px",
+            height: "auto",
           }}
         >
           <Row>
@@ -171,7 +170,7 @@ export default function Header() {
               <Image
                 src="/Logo.png"
                 alt="Logo"
-                style={{ width: "130px", height: "130px" }}
+                style={{ width: "150px", height: "150px" }}
               />
             </Col>
             <Col
@@ -179,7 +178,7 @@ export default function Header() {
               className="d-flex align-items-center justify-content-center"
               style={{ gap: "30px" }}
             >
-              <Link href="/" className={`${styles.aLink}`}>
+              <Link href="/news" className={`${styles.aLink}`}>
                 TIN TỨC
               </Link>
               <Link href="/" className={`${styles.aLink}`}>

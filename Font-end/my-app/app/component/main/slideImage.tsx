@@ -9,7 +9,7 @@ interface Props {
   text: string;
 }
 
-export default function SlideImage({ text }: Props) {
+export default function SlideImage() {
   return (
     <Container fluid className="m-0 p-0">
       <Row className="m-0">

@@ -145,9 +145,19 @@ const ProductDetail = () => {
 
   return (
     <>
-      <Container fluid className="mt-4">
-        <Breadcrumb className="ms-5">
-          <Breadcrumb.Item href="/" className="breadCrumbItem">
+      <Container fluid style={{ padding: "0px" }}>
+        <Breadcrumb
+          className="m-0"
+          style={{
+            backgroundColor: "#ddd",
+            padding: "10px 110px",
+          }}
+        >
+          <Breadcrumb.Item
+            href="/"
+            className="breadCrumbItem"
+            style={{ margin: "0px" }}
+          >
             Trang chủ
           </Breadcrumb.Item>
           <Breadcrumb.Item href="" className="breadCrumbItem">
@@ -163,7 +173,9 @@ const ProductDetail = () => {
             </Col>
             <Col xs={4}>
               <Row className="d-flex flex-column" style={{ gap: "12px" }}>
-                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{data.name}</h1>
+                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>
+                  {data.name}
+                </h1>
 
                 <span>{renderPrice()}</span>
 
@@ -176,7 +188,11 @@ const ProductDetail = () => {
                           type="radio"
                           key={index}
                           id={`size-${index}`}
-                          label={`${size.name} (${size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()}đ)`}
+                          label={`${size.name} (${
+                            size.price.discount
+                              ? size.price.discount.toLocaleString()
+                              : size.price.original.toLocaleString()
+                          }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}
@@ -219,7 +235,9 @@ const ProductDetail = () => {
                   )}
                 </Form>
 
-                <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
+                <p className="m-0" style={{ color: "orange" }}>
+                  Combo bao gồm:
+                </p>
                 <ul>
                   <li>{data.description || "Không có mô tả"}</li>
                 </ul>
@@ -228,7 +246,11 @@ const ProductDetail = () => {
 
                 <Button
                   className="text-light p-2"
-                  style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
+                  style={{
+                    border: "none",
+                    borderRadius: "0",
+                    backgroundColor: "#e00000",
+                  }}
                   onClick={() => handleAddToCart(data)}
                 >
                   Thêm vào giỏ
