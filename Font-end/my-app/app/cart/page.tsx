@@ -65,9 +65,12 @@ interface Voucher {
   _id: string;
   code: string;
   description: string;
+  discountType: "fixed" | "percentage";
   discountValue: number;
   minOrderValue: number;
+  maxDiscount?: number;
   expiresAt: string;
+  isActive?: boolean;
 }
 
 export default function Cart() {
@@ -79,6 +82,7 @@ export default function Cart() {
   const [discount, setDiscount] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
   const router = useRouter();
+  const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
 
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
@@ -94,7 +98,7 @@ export default function Cart() {
       });
       const data = await res.json();
       if (!data.status) {
-        setCartItems([]); // Đặt rỗng nếu không có dữ liệu
+        setCartItems([]);
         throw new Error(data.message || "Không thể tải giỏ hàng");
       }
 
@@ -133,15 +137,16 @@ export default function Cart() {
       setError(
         typeof error === "object" && error !== null && "message" in error
           ? (error as { message?: string }).message ||
-              "Không thể tải giỏ hàng. Vui lòng thử lại."
+            "Không thể tải giỏ hàng. Vui lòng thử lại."
           : "Không thể tải giỏ hàng. Vui lòng thử lại."
       );
-      setCartItems([]); // Đặt rỗng trong trường hợp lỗi
+      setCartItems([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Lấy danh sách voucher
   const fetchVouchers = async () => {
     try {
       const res = await fetch("http://localhost:5000/voucher", {
@@ -158,6 +163,7 @@ export default function Cart() {
     }
   };
 
+  // Cập nhật sản phẩm trong giỏ hàng
   const updateItemLocallyAndSync = async (updatedItem: CartItem) => {
     setCartItems((prev) =>
       prev.map((p) => (p.id === updatedItem.id ? updatedItem : p))
@@ -189,9 +195,12 @@ export default function Cart() {
     }
   };
 
+  // Áp dụng voucher
   const applyVoucher = async (voucherToApply?: Voucher) => {
     const voucher = voucherToApply || selectedVoucher;
     if (!voucher) return;
+
+    setIsApplyingVoucher(true);
 
     try {
       const res = await fetch("http://localhost:5000/voucher/apply", {
@@ -203,19 +212,25 @@ export default function Cart() {
           orderTotal: totalPrice,
         }),
       });
+
       const data = await res.json();
       if (data.status) {
         setFinalTotal(data.result.finalTotal);
         setDiscount(data.result.discountAmount);
-        toast.success("Áp dụng voucher thành công");
+        if (!isApplyingVoucher) {
+          toast.success(`Áp dụng voucher ${voucher.code} thành công!`);
+        }
       } else {
         toast.warning(data.message || "Không thể áp dụng voucher");
       }
     } catch {
       toast.error("Lỗi khi áp dụng voucher");
+    } finally {
+      setIsApplyingVoucher(false);
     }
   };
 
+  // Xóa sản phẩm khỏi giỏ hàng
   const handleRemove = async (id: string) => {
     try {
       const res = await fetch(`http://localhost:5000/cart/remove/${id}`, {
@@ -238,6 +253,7 @@ export default function Cart() {
     }
   };
 
+  // Xử lý thanh toán
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       toast.warning("Giỏ hàng trống!");
@@ -268,6 +284,7 @@ export default function Cart() {
     }
   };
 
+  // Tải dữ liệu khi component mount
   useEffect(() => {
     fetchCart();
     fetchVouchers();
@@ -279,6 +296,7 @@ export default function Cart() {
     }
   }, []);
 
+  // Áp dụng voucher khi giỏ hàng hoặc voucher thay đổi
   useEffect(() => {
     if (cartItems.length > 0 && selectedVoucher) {
       applyVoucher(selectedVoucher);
@@ -289,9 +307,6 @@ export default function Cart() {
     <ProtectedRoute>
       <Container className="py-5">
         <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
-        <Button variant="primary" onClick={fetchCart} className="mb-3">
-          Đồng bộ giỏ hàng
-        </Button>
         {error && <Alert variant="danger">{error}</Alert>}
         {isLoading ? (
           <Alert variant="info">Đang tải giỏ hàng...</Alert>
@@ -427,7 +442,7 @@ export default function Cart() {
                           "selectedVoucher",
                           JSON.stringify(found)
                         );
-                        setTimeout(() => applyVoucher(found), 0);
+                        applyVoucher(found);
                       } else {
                         localStorage.removeItem("selectedVoucher");
                         setDiscount(0);
@@ -439,7 +454,9 @@ export default function Cart() {
                     {vouchers.map((voucher) => (
                       <option key={voucher._id} value={voucher.code}>
                         {voucher.code} - Giảm{" "}
-                        {voucher.discountValue.toLocaleString()} ₫
+                        {voucher.discountType === "fixed"
+                          ? `${voucher.discountValue.toLocaleString()} ₫`
+                          : `${voucher.discountValue}%`}
                       </option>
                     ))}
                   </Form.Select>
@@ -472,4 +489,4 @@ export default function Cart() {
       </Container>
     </ProtectedRoute>
   );
-}
+}  
