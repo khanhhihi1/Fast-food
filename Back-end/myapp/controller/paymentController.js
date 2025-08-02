@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const axios = require("axios");
 const { Order, OrderStatus } = require("../model/orderModel");
+const Stripe = require("stripe");
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const MOMO_CONFIG = {
   partnerCode: "MOMO",
@@ -140,6 +142,123 @@ exports.refundMomo = async (req, res) => {
       data: momoRes.data,
     });
   } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.createStripePayment = async (req, res) => {
+  const { orderId } = req.body;
+
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Đơn hàng không tồn tại" });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      success_url:
+        "http://localhost:3000/payment-success?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: "http://localhost:3000/payment-cancelled",
+      line_items: order.items.map((item) => ({
+        price_data: {
+          currency: "vnd",
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: Math.round(item.finalPrice),
+        },
+        quantity: item.quantity,
+      })),
+      metadata: {
+        orderId: order._id.toString(),
+      },
+    });
+
+    res.json({ status: true, checkoutUrl: session.url });
+  } catch (error) {
+    console.error("Stripe Payment Error:", error.message);
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.stripeWebhook = async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error("Webhook Error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const orderId = session.metadata.orderId;
+
+    await Order.findByIdAndUpdate(orderId, {
+      isPaid: true,
+      status: OrderStatus.CONFIRMED,
+      stripeSessionId: session.id,
+    });
+
+    console.log(`✅ Stripe đã thanh toán thành công cho đơn hàng ${orderId}`);
+  }
+
+  res.status(200).json({ received: true });
+};
+
+exports.getStripeSession = async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(
+      req.params.sessionId
+    );
+
+    res.json({
+      status: true,
+      session,
+    });
+  } catch (error) {
+    console.error("Lỗi lấy Stripe session:", error.message);
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.refundStripe = async (req, res) => {
+  const { orderId } = req.body;
+
+  try {
+    const order = await Order.findById(orderId);
+    if (!order || !order.stripePaymentIntentId) {
+      return res.status(400).json({
+        status: false,
+        message: "Không tìm thấy thanh toán Stripe để hoàn tiền",
+      });
+    }
+
+    const refund = await stripe.refunds.create({
+      payment_intent: order.stripePaymentIntentId,
+      reason: "Yêu cầu từ khách hàng", // hoặc "duplicate" / "fraudulent"
+    });
+
+    // Cập nhật trạng thái hoàn tiền nếu muốn
+    await Order.findByIdAndUpdate(orderId, { isRefunded: true });
+
+    res.json({
+      status: true,
+      message: "Hoàn tiền thành công",
+      refund,
+    });
+  } catch (error) {
+    console.error("Lỗi hoàn tiền Stripe:", error.message);
     res.status(500).json({ status: false, message: error.message });
   }
 };

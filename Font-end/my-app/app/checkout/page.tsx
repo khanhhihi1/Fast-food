@@ -198,10 +198,13 @@ export default function Checkout() {
           body: JSON.stringify({ paymentMethod }),
         }
       );
+
+      const data = await res.json();
       if (!res.ok) {
-        throw new Error("Không thể cập nhật phương thức thanh toán");
+        console.error("Lỗi cập nhật phương thức thanh toán:", data);
+        throw new Error(data.message || "Không thể cập nhật");
       }
-    } catch {
+    } catch (err) {
       toast.error("Không thể cập nhật phương thức thanh toán");
     }
   };
@@ -293,6 +296,24 @@ export default function Checkout() {
           window.location.href = momoData.payUrl;
         } else {
           toast.error("Không thể tạo thanh toán MoMo");
+        }
+      }
+
+      // Nếu Stripe → tạo session và chuyển hướng
+      if (paymentMethod === "stripe") {
+        const stripeRes = await fetch("http://localhost:5000/payment/stripe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ orderId: createdOrder._id }),
+        });
+
+        const stripeData = await stripeRes.json();
+
+        if (stripeData.status && stripeData.checkoutUrl) {
+          window.location.href = stripeData.checkoutUrl; // Chuyển đến trang thanh toán Stripe
+        } else {
+          toast.error("Không thể tạo thanh toán Stripe");
         }
       }
     } catch (error) {
@@ -463,6 +484,15 @@ export default function Checkout() {
                 name="paymentMethod"
                 value="vnpay"
                 checked={paymentMethod === "vnpay"}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+
+              <Form.Check
+                type="radio"
+                label="Stripe"
+                name="paymentMethod"
+                value="stripe"
+                checked={paymentMethod === "stripe"}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               />
 

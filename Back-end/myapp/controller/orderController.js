@@ -3,15 +3,6 @@ const Product = require("../model/productModel.js");
 const { Order, OrderStatus } = require("../model/orderModel.js");
 const TempOrder = require("../model/tempOrderModel.js");
 
-module.exports = {
-  createOrderFromCart,
-  createOrderFromTempOrder,
-  getUserOrders,
-  getAllOrders,
-  updateOrderStatus,
-  cancelOrder,
-};
-
 // Tạo đơn hàng từ giỏ hàng của người dùng
 async function createOrderFromCart(req) {
   const userId = req.userId;
@@ -230,3 +221,35 @@ async function cancelOrder(req) {
     order,
   };
 }
+
+const getOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Không tìm thấy đơn hàng" });
+    }
+
+    res.json({
+      status: true,
+      isPaid: order.isPaid,
+      currentStatus: order.status,
+    });
+  } catch (error) {
+    console.error("Lỗi kiểm tra trạng thái đơn hàng:", error.message);
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+module.exports = {
+  createOrderFromCart,
+  createOrderFromTempOrder,
+  getUserOrders,
+  getAllOrders,
+  updateOrderStatus,
+  cancelOrder,
+  getOrderStatus,
+};

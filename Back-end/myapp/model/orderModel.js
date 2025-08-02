@@ -55,7 +55,7 @@ const orderSchema = new Schema(
     isPaid: { type: Boolean, default: false },
     paymentMethod: {
       type: String,
-      enum: ["momo", "cod", "vnpay"], // Thêm "vnpay" nếu bạn hỗ trợ
+      enum: ["momo", "cod", "vnpay", "stripe"], // Thêm "vnpay" nếu bạn hỗ trợ
       default: "cod",
     },
     status: {
@@ -63,6 +63,8 @@ const orderSchema = new Schema(
       enum: [0, 1, 2, 3, 4, 5], // Enum values
       default: 0, // 0 = Chờ xác nhận
     },
+    stripeSessionId: { type: String },
+    stripePaymentIntentId: { type: String },
     momoTransId: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
