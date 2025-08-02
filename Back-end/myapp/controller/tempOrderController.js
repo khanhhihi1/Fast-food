@@ -43,6 +43,10 @@ async function createTempOrder(req, res) {
     await tempOrder.save();
     res.json({ status: true, result: tempOrder });
   } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ status: false, message: err.message });
+    }
+
     res.status(500).json({ status: false, message: err.message });
   }
 }

@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const mongoose = require("mongoose");
+require("dotenv").config();
 
 const indexRouter = require("./routes/index");
 const productRouter = require("./routes/product");
@@ -29,6 +30,8 @@ mongoose
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "hbs");
 
+app.use("/payment/stripe/webhook", express.raw({ type: "application/json" }));
+
 // Middleware
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -46,8 +49,8 @@ app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/voucher", voucherRouter);
 app.use("/temp-order", tempOrderRoutes);
-app.use("/payment", paymentRouter);
 app.use("/favoriteProduct", favoriteProductRoutes);
+app.use("/payment", paymentRouter);
 
 // Xử lý 404
 app.use((req, res, next) => {
