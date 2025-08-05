@@ -54,3 +54,27 @@
     top: 10px;
     right: 10px;
 }
+.order-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+
+.order-card .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #eaeaea;
+  padding: 12px 20px;
+}
+
+.order-card .product-img {
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+

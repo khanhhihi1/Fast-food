@@ -65,6 +65,4 @@ router.put("/:id/cancel", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/:orderId/status", authMiddleware, orderController.getOrderStatus);
-
 module.exports = router;

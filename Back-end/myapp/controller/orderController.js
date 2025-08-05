@@ -2,6 +2,15 @@ const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
 const { Order, OrderStatus } = require("../model/orderModel.js");
 const TempOrder = require("../model/tempOrderModel.js");
+const Voucher= require("../model/voucherModel.js")
+module.exports = {
+  createOrderFromCart,
+  createOrderFromTempOrder,
+  getUserOrders,
+  getAllOrders,
+  updateOrderStatus,
+  cancelOrder,
+};
 
 // Tạo đơn hàng từ giỏ hàng của người dùng
 async function createOrderFromCart(req) {
@@ -87,8 +96,24 @@ async function createOrderFromCart(req) {
 // Lấy danh sách đơn hàng của người dùng
 async function getUserOrders(req) {
   const userId = req.userId;
-  const orders = await Order.find({ userId }).sort({ createdAt: -1 });
-  return orders;
+  const orders = await Order.find({ userId })
+    .populate({
+      path: 'items.productId',
+      select: 'name image', // Lấy trường name và image từ Product
+    })
+    .sort({ createdAt: -1 });
+
+  // Format dữ liệu để bao gồm image từ Product
+  const formattedOrders = orders.map(order => ({
+    ...order._doc,
+    items: order.items.map(item => ({
+      ...item._doc,
+      name: item.productId ? item.productId.name : item.name,
+      image: item.productId ? item.productId.image : item.image || '', // Ưu tiên image từ Product
+    })),
+  }));
+
+  return formattedOrders;
 }
 
 // Lấy tất cả đơn hàng (admin)
@@ -221,35 +246,3 @@ async function cancelOrder(req) {
     order,
   };
 }
-
-const getOrderStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const order = await Order.findById(orderId);
-
-    if (!order) {
-      return res
-        .status(404)
-        .json({ status: false, message: "Không tìm thấy đơn hàng" });
-    }
-
-    res.json({
-      status: true,
-      isPaid: order.isPaid,
-      currentStatus: order.status,
-    });
-  } catch (error) {
-    console.error("Lỗi kiểm tra trạng thái đơn hàng:", error.message);
-    res.status(500).json({ status: false, message: error.message });
-  }
-};
-
-module.exports = {
-  createOrderFromCart,
-  createOrderFromTempOrder,
-  getUserOrders,
-  getAllOrders,
-  updateOrderStatus,
-  cancelOrder,
-  getOrderStatus,
-};

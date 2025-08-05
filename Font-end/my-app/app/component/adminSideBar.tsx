@@ -176,7 +176,7 @@ export default function AdminSideBar() {
             />
             <Link
               style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="#"
+              href="/admin/commentmanagement"
             >
               Đánh giá
             </Link>
