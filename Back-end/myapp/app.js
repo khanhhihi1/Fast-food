@@ -5,7 +5,6 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const mongoose = require("mongoose");
-require("dotenv").config();
 
 const indexRouter = require("./routes/index");
 const productRouter = require("./routes/product");
@@ -14,6 +13,7 @@ const cartRouter = require("./routes/cart");
 const orderRouter = require("./routes/order");
 const categoriesRouter = require("./routes/categories");
 const voucherRouter = require("./routes/voucher");
+const commentRouter = require("./routes/comment");
 const tempOrderRoutes = require("./routes/tempOrder");
 const paymentRouter = require("./routes/payment");
 const favoriteProductRoutes = require("./routes/favoriteProduct");
@@ -30,8 +30,6 @@ mongoose
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "hbs");
 
-app.use("/payment/stripe/webhook", express.raw({ type: "application/json" }));
-
 // Middleware
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -47,10 +45,11 @@ app.use("/products", productRouter);
 app.use("/categories", categoriesRouter);
 app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
+app.use("/comment", commentRouter);
 app.use("/voucher", voucherRouter);
 app.use("/temp-order", tempOrderRoutes);
-app.use("/favoriteProduct", favoriteProductRoutes);
 app.use("/payment", paymentRouter);
+app.use("/favoriteProduct", favoriteProductRoutes);
 
 // Xử lý 404
 app.use((req, res, next) => {

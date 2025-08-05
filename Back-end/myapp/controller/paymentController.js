@@ -1,8 +1,8 @@
 const crypto = require("crypto");
 const axios = require("axios");
-const { Order, OrderStatus } = require("../model/orderModel");
-const Stripe = require("stripe");
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const { Order, OrderStatus } = require("../model/orderModel.js");
+// const Stripe = require("stripe");
+// const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const MOMO_CONFIG = {
   partnerCode: "MOMO",
