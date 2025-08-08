@@ -1,3 +1,4 @@
+require("dotenv").config();
 const createError = require("http-errors");
 const express = require("express");
 const path = require("path");
@@ -5,6 +6,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
 
 const indexRouter = require("./routes/index");
 const productRouter = require("./routes/product");
@@ -32,7 +34,15 @@ app.set("view engine", "hbs");
 
 // Middleware
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+// app.use(express.json());
+// Áp dụng express.json() cho các tuyến đường cụ thể, trừ webhook
+app.use((req, res, next) => {
+  if (req.originalUrl === "/payment/stripe/webhook") {
+    next(); // Bỏ qua express.json() cho webhook
+  } else {
+    express.json()(req, res, next); // Áp dụng express.json() cho các tuyến đường khác
+  }
+});
 app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

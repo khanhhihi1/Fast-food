@@ -20,6 +20,9 @@ export default function PaymentSuccessPage() {
           `http://localhost:5000/payment/stripe/session/${sessionId}`,
           {
             credentials: "include",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token nếu cần
+            },
           }
         );
         const data = await res.json();
@@ -32,13 +35,16 @@ export default function PaymentSuccessPage() {
           `http://localhost:5000/orders/${orderId}/status`,
           {
             credentials: "include",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token nếu cần
+            },
           }
         );
         const orderData = await orderRes.json();
 
         console.log("Kiểm tra đơn:", orderData);
 
-        if (orderData.status && orderData.isPaid) {
+        if (orderData.status && orderData.result.isPaid === true) {
           setStatus("success");
         } else {
           setStatus("fail");

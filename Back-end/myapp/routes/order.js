@@ -65,4 +65,14 @@ router.put("/:id/cancel", authMiddleware, async (req, res) => {
   }
 });
 
+// Lấy trạng thái đơn hàng
+router.get("/:id/status", authMiddleware, async (req, res) => {
+  try {
+    const result = await orderController.getOrderStatus(req);
+    res.json({ status: true, result });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+});
+
 module.exports = router;
