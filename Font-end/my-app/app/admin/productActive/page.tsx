@@ -1,20 +1,17 @@
 "use client";
-import React from "react";
-import { Button, Container, Table } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faPenToSquare,
-  faEyeSlash,
-} from "@fortawesome/free-solid-svg-icons";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { Button, Container, Table, Form, Image } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ModalsAdmin from "@/app/component/create.model.admin";
 import UpdateModelAdmin from "@/app/component/update-model-admin";
 import useDarkMode from "../useDarkMode/page";
 import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
-import "../admin.css"
+import styles from "../styles/product.module.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEyeSlash, faPenToSquare, faPlus, faRotate } from "@fortawesome/free-solid-svg-icons";
+import { FaSearch } from "react-icons/fa";
+
 export default function ShowAdmin() {
   interface PostType {
     _id: string;
@@ -31,68 +28,167 @@ export default function ShowAdmin() {
       };
     }[];
     description: string;
-    isHidden?: boolean;
+    status?: boolean; // Thay isHidden thành status để khớp với backend
   }
 
   const [posts, setPosts] = useState<PostType[]>([]);
   const [post, setPost] = useState<PostType | null>(null);
-  const [showModal, setShowModal] = useState<boolean>(false);
-  const [showUpdateModal, setUpdateModal] = useState<boolean>(false);
-  const [categories, setCategories] = useState<{ _id: string; name: string }[]>(
-    []
-  );
+  const [showModal, setShowModal] = useState(false);
+  const [showUpdateModal, setUpdateModal] = useState(false);
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const { isDarkMode } = useDarkMode();
 
-  const fetchPosts = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/products/active");
-      const data = await res.json();
-      if (data?.result) setPosts(data.result);
-    } catch (e) {
-      toast.error("Lỗi tải sản phẩm");
-    }
-  };
+  const productsPerPage = 10;
 
-  const fetchCategories = async () => {
+  const fetchAllProducts = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/products");
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      if (data?.result) {
+        // Ánh xạ status thành isHidden
+        const mappedPosts = data.result.map((p: any) => ({
+          ...p,
+          isHidden: !p.status, // Chuyển status thành isHidden
+        }));
+        setPosts(mappedPosts);
+      } else {
+        toast.error("Không có dữ liệu sản phẩm");
+        setPosts([]);
+      }
+    } catch (e) {
+      toast.error(`Lỗi tải sản phẩm: ${(e as Error).message}`);
+      setPosts([]);
+    }
+  }, []);
+
+  const fetchInactiveProducts = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/products/inactive");
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      if (data?.result) {
+        // Ánh xạ status thành isHidden
+        const mappedPosts = data.result.map((p: any) => ({
+          ...p,
+          isHidden: !p.status, // Chuyển status thành isHidden
+        }));
+        setPosts(mappedPosts);
+      } else {
+        toast.error("Không có dữ liệu sản phẩm không hoạt động");
+        setPosts([]);
+      }
+    } catch (e) {
+      toast.error(`Lỗi tải sản phẩm: ${(e as Error).message}`);
+      setPosts([]);
+    }
+  }, []);
+
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch("http://localhost:5000/categories");
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       const list = Array.isArray(data) ? data : data.result;
-      setCategories(list);
+      setCategories(list || []);
     } catch (e) {
-      toast.error("Lỗi tải danh mục");
+      toast.error(`Lỗi tải danh mục: ${(e as Error).message}`);
+      setCategories([]);
     }
-  };
+  }, []);
+
+  const fetchPosts = useCallback(() => {
+    if (filter === "inactive") {
+      fetchInactiveProducts();
+    } else {
+      fetchAllProducts();
+    }
+  }, [filter, fetchAllProducts, fetchInactiveProducts]);
 
   useEffect(() => {
     fetchPosts();
     fetchCategories();
-  }, []);
+  }, [fetchPosts, fetchCategories]);
+
+  const filteredProducts = useMemo(
+    () =>
+      posts
+        .filter((p) => {
+          if (filter === "active") return p.status; // Sử dụng status
+          if (filter === "inactive") return !p.status; // Sử dụng status
+          return true;
+        })
+        .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [posts, filter, searchTerm]
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handleEdit = (product: PostType) => {
     setPost(product);
     setUpdateModal(true);
   };
 
+  const handleShowProduct = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/products/show/${id}`, { method: "PUT" });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.message || "Không rõ"}`);
+      }
+      const data = await res.json();
+      if (data?.success) { // Kiểm tra data.success thay vì data.status
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p._id === id ? { ...p, status: true, isHidden: false } : p
+          )
+        );
+        window.location.reload();
+        toast.success("Khôi phục sản phẩm thành công");
+      } else {
+        throw new Error(data?.message || "API response indicated failure");
+      }
+    } catch (e) {
+      toast.error(`Khôi phục sản phẩm thất bại: ${(e as Error).message}`);
+    }
+  };
+
   const handleHideProduct = async (id: string) => {
     try {
-      await fetch(`http://localhost:5000/products/hide/${id}`, {
-        method: "DELETE",
-      });
-      fetchPosts();
-      toast.success("Ẩn sản phẩm thành công");
+      const res = await fetch(`http://localhost:5000/products/hide/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.message || "Không rõ"}`);
+      }
+      const data = await res.json();
+      if (data?.success) { // Kiểm tra data.success thay vì data.status
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p._id === id ? { ...p, status: false, isHidden: true } : p
+          )
+        );
+        window.location.reload();
+        toast.success("Ẩn sản phẩm thành công");
+      } else {
+        throw new Error(data?.message || "API response indicated failure");
+      }
     } catch (e) {
-      toast.error("Ẩn sản phẩm thất bại");
+      toast.error(`Ẩn sản phẩm thất bại: ${(e as Error).message}`);
     }
   };
 
   const renderSizes = (sizes?: PostType["sizes"]) => {
     if (!sizes || sizes.length === 0) return "Không có";
-
-    // Nếu chỉ có 1 size và tên là "default" thì hiển thị giá không kèm chữ "default"
     if (sizes.length === 1 && sizes[0].name === "default") {
       const s = sizes[0].price;
       return s.discount ? (
@@ -104,8 +200,6 @@ export default function ShowAdmin() {
         <>{s.original.toLocaleString()}đ</>
       );
     }
-
-    // Ngược lại hiển thị từng size như S, M, L
     return (
       <>
         {sizes.map((s) => (
@@ -125,119 +219,148 @@ export default function ShowAdmin() {
     );
   };
 
-
-  const totalPages = Math.ceil(posts.length / productsPerPage);
   const indexOfLast = currentPage * productsPerPage;
   const indexOfFirst = indexOfLast - productsPerPage;
-  const current = posts.slice(indexOfFirst, indexOfLast);
+  const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
 
   return (
-    <div className="d-flex dark-mode">
+    <div className={`d-flex ${isDarkMode ? "dark-mode" : "light-mode"}`}>
       <AdminSideBar />
-      <Container
-        fluid
-        className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
-          }`}
-      >
+      <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{minHeight:"100vh"}}>
         <AdminNavbar />
-        <h4 className="text-center mt-4">Danh sách sản phẩm đang bán</h4>
-        <div className="d-flex justify-content-end">
-          <Button onClick={() => setShowModal(true)}>
-            <FontAwesomeIcon icon={faPlus} /> Thêm sản phẩm
-          </Button>
-        </div>
-        <Table striped bordered hover responsive className="mt-3 text-center">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Ảnh</th>
-              <th>Tên</th>
-              <th>Giá (các size)</th>
-              <th>Số lượng</th>
-              <th>Vị</th>
-              <th>Danh mục</th>
-              <th>Chức năng</th>
-            </tr>
-          </thead>
-          <tbody>
-            {current.map((product, idx) => (
-              <tr key={product._id}>
-                <td>{idx + 1}</td>
-                <td>
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    style={{ width: "60px" }}
+        <div className={styles["admin-product-container"]}>
+          <h2>Quản lý sản phẩm</h2>
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Tổng sản phẩm</span>
+              <span className={styles.statValue}>{posts.length}</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Sản phẩm hoạt động</span>
+              <span className={styles.statValue}>{filteredProducts.filter((p) => p.status).length}</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Sản phẩm ngưng hoạt động</span>
+              <span className={styles.statValue}>{filteredProducts.filter((p) => !p.status).length}</span>
+            </div>
+          </div>
+          <div className={styles["adminHeader"] + " mb-4"}>
+            <div className={styles.meNu}>
+              <div className={styles.filters}>
+                <button
+                  className={`${styles.filterBtn} ${filter === "all" ? styles.active : ""}`}
+                  onClick={() => setFilter("all")}
+                >
+                  Tất cả
+                </button>
+                <button
+                  className={`${styles.filterBtn} ${filter === "active" ? styles.active : ""}`}
+                  onClick={() => setFilter("active")}
+                >
+                  Đang hoạt động
+                </button>
+                <button
+                  className={`${styles.filterBtn} ${filter === "inactive" ? styles.active : ""}`}
+                  onClick={() => setFilter("inactive")}
+                >
+                  Ngưng hoạt động
+                </button>
+                
+                 <Button onClick={() => setShowModal(true)}>
+                <FontAwesomeIcon icon={faPlus} /> Thêm sản phẩm
+              </Button>
+              </div>
+              <Form className={styles.fromInput} onSubmit={(e) => e.preventDefault()}>
+                <div className="input-group">
+                  <input
+                    className="form-control search-input"
+                    type="search"
+                    placeholder="Tìm kiếm..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                </td>
-                <td>{product.name}</td>
-                <td>{renderSizes(product.sizes)}</td>
-                <td>{product.quantity}</td>
-                <td>
-                  {product.taste?.[0] === "Không"
-                    ? "Không có"
-                    : product.taste?.join(", ")}
-                </td>
-                <td>
-                  {typeof product.categoryId === "object"
-                    ? product.categoryId.name
-                    : categories.find((c) => c._id === product.categoryId)
-                      ?.name || "Không rõ"}
-                </td>
-                <td>
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleEdit(product)}
-                  >
-                    <FontAwesomeIcon icon={faPenToSquare} />
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleHideProduct(product._id)}
-                  >
-                    <FontAwesomeIcon icon={faEyeSlash} />
-                  </Button>
-                </td>
+                  <button className="btn search-button" type="submit">
+                    <FaSearch />
+                  </button>
+                </div>
+              </Form>
+              
+             
+            </div>
+          </div>
+
+          <Table striped bordered hover className={styles.table}>
+            <thead>
+              <tr className="text-center">
+                <th>#</th>
+                <th>Tên sản phẩm</th>
+                <th>Hình ảnh</th>
+                <th>Giá (VNĐ)</th>
+                <th>Số lượng</th>
+                <th>Vị</th>
+                <th>Danh mục</th>
+                <th>Trạng thái</th>
+                <th>Chức năng</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {currentProducts.map((product, index) => (
+                <tr key={product._id} className="text-center">
+                  <td>{indexOfFirst + index + 1}</td>
+                  <td>{product.name}</td>
+                  <td>
+                    <Image src={product.image} alt={product.name} width={60} height={60} rounded className={styles["product-img"]} />
+                  </td>
+                  <td>{renderSizes(product.sizes)}</td>
+                  <td>{product.quantity}</td>
+                  <td>{product.taste?.join(", ") || "Không có"}</td>
+                  <td>
+                    {typeof product.categoryId === "object" && product.categoryId
+                      ? product.categoryId.name
+                      : categories.find((c) => c._id === product.categoryId)?.name || "Không rõ"}
+                  </td>
+                  <td>
+                    <span className={`${styles["status-badge"]} ${product.status ? styles.active : styles.inactive}`}>
+                      {product.status ? "Hoạt động" : "Ngừng bán"}
+                    </span>
+                  </td>
+                  <td>
+                    <Button variant="outline-warning" size="sm" className="me-2" onClick={() => handleEdit(product)}>
+                      <FontAwesomeIcon icon={faPenToSquare} />
+                    </Button>
+                    {product.status ? (
+                      <Button variant="outline-danger" size="sm" onClick={() => handleHideProduct(product._id)}>
+                        <FontAwesomeIcon icon={faEyeSlash} />
+                      </Button>
+                    ) : (
+                      <Button variant="outline-success" size="sm" onClick={() => handleShowProduct(product._id)}>
+                        <FontAwesomeIcon icon={faRotate} />
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+
         <div className="d-flex justify-content mt-3 gap-2">
-          <Button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            variant="outline-secondary"
-          >
+          <Button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} variant="outline-secondary">
             Trang trước
           </Button>
           {Array.from({ length: totalPages }, (_, i) => (
-            <Button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              variant={currentPage === i + 1 ? "primary" : "outline-secondary"}
-            >
+            <Button key={i} onClick={() => setCurrentPage(i + 1)} variant={currentPage === i + 1 ? "primary" : "outline-secondary"}>
               {i + 1}
             </Button>
           ))}
-          <Button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            variant="outline-secondary"
-          >
+          <Button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} variant="outline-secondary">
             Trang sau
           </Button>
         </div>
+
+        <ModalsAdmin showModal={showModal} setShowModal={setShowModal} fetchPosts={fetchPosts} />
+        <UpdateModelAdmin showUpdateModal={showUpdateModal} setUpdateModal={setUpdateModal} post={post} fetchPosts={fetchPosts} />
       </Container>
-      <ModalsAdmin showModal={showModal} setShowModal={setShowModal} />
-      <UpdateModelAdmin
-        showUpdateModal={showUpdateModal}
-        setUpdateModal={setUpdateModal}
-        post={post}
-        fetchPosts={fetchPosts}
-      />
     </div>
   );
 }

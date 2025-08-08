@@ -253,8 +253,8 @@ export default function ShowAdmin() {
                       <thead>
                         <tr>
                           <th></th>
-                          <th>Tên sản phẩm</th>
-                          <th>Sự phổ biến</th>
+                          <th style={{color:"white"}}>Tên sản phẩm</th>
+                          <th style={{color:"white"}}>Sự phổ biến</th>
                           <th></th>
                         </tr>
                       </thead>

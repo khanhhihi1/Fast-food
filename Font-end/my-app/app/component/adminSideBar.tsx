@@ -81,9 +81,7 @@ export default function AdminSideBar() {
                   <Link href="/admin/productActive" className="nav-link2">
                     Sản phẩm đang bán
                   </Link>
-                  <Link href="/admin/productHidden" className="nav-link2">
-                    Sản phẩm ngưng bán
-                  </Link>
+                 
                   <Link href="/admin/productCategory" className="nav-link2">
                     Danh mục sản phẩm
                   </Link>

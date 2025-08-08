@@ -7,12 +7,15 @@ import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Image from "react-bootstrap/Image";
+import Card from "react-bootstrap/Card";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Counter from "@/app/count/count";
 import "./productList.css";
 import ProductList from "../productList";
 import { toast } from "react-toastify";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
 
 interface SizeType {
   name: string;
@@ -39,7 +42,20 @@ interface ProductType {
   quantity: number;
   taste?: string[];
   sizes?: SizeType[];
-  categoryId?: string | CategoryInfo; // Allow categoryId to be a string or object
+  categoryId?: string | CategoryInfo;
+}
+
+interface CommentType {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+  };
+  productId: string;
+  orderId: string;
+  comment: string;
+  rating: number;
+  createdAt: string;
 }
 
 const ProductDetail = () => {
@@ -56,9 +72,12 @@ const ProductDetail = () => {
   }, [id]);
 
   const fetcher = async (url: string) => {
-    const res = await fetch(url);
+    const res = await fetch(url, { credentials: "include" });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text}`);
+    }
     const data = await res.json();
-    if (!res.ok) throw new Error(`Lỗi ${res.status}: ${data.message || data}`);
     if (!data.result) throw new Error("API không trả về 'result'");
     return data.result;
   };
@@ -72,6 +91,23 @@ const ProductDetail = () => {
     "http://localhost:5000/categories",
     fetcher
   );
+
+  const { data: comments, error: commentError, isLoading: commentLoading } = useSWR(
+  productId ? `http://localhost:5000/comment/${productId}` : null,
+  async (url: string) => {
+    console.log("Fetching comments from:", url);
+    const res = await fetch(url, { credentials: "include" });
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Fetch error:", { status: res.status, body: text });
+      throw new Error(`Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text}`);
+    }
+    const data = await res.json();
+    console.log("Comments response:", data);
+    if (!data.result) throw new Error("API không trả về 'result'");
+    return data.result;
+  }
+);
 
   useEffect(() => {
     if (product?.sizes && product.sizes.length > 0) {
@@ -88,9 +124,14 @@ const ProductDetail = () => {
     if (categoryError) {
       console.error("Category fetch error:", categoryError);
     }
-  }, [categories, categoryError]);
+    if (comments) {
+      console.log("Fetched comments:", comments);
+    }
+    if (commentError) {
+      console.error("Comment fetch error:", commentError);
+    }
+  }, [categories, categoryError, comments, commentError]);
 
-  // Find the category name based on product.categoryId
   const getCategoryName = () => {
     if (!product || !categories) return "Danh mục";
     if (typeof product.categoryId === "string") {
@@ -116,6 +157,20 @@ const ProductDetail = () => {
         ) : (
           <>{original.toLocaleString()}đ</>
         )}
+      </span>
+    );
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <span>
+        {[...Array(5)].map((_, index) => (
+          <FontAwesomeIcon
+            key={index}
+            icon={faStar}
+            style={{ color: index < rating ? "#ffc107" : "#e4e5e9" }}
+          />
+        ))}
       </span>
     );
   };
@@ -163,16 +218,17 @@ const ProductDetail = () => {
     }
   };
 
-  if (productLoading || categoryLoading) return <p>Đang tải...</p>;
+  if (productLoading || categoryLoading || commentLoading) return <p>Đang tải...</p>;
   if (productError) return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
   if (categoryError) return <p>Lỗi khi tải danh mục: {categoryError.message}</p>;
+  if (commentError) return <p>Lỗi khi tải bình luận: {commentError.message}</p>;
   if (!product || !product._id) return <p>Không tìm thấy sản phẩm</p>;
 
   return (
     <>
-      <Container fluid className="mt-4">
-        <Breadcrumb className="ms-5">
-          <Breadcrumb.Item href="/" className="breadCrumbItem">
+      <Container fluid style={{ padding: "0px" }}>
+        <Breadcrumb className="m-0" style={{ backgroundColor: "#ddd", padding: "10px 110px" }}>
+          <Breadcrumb.Item href="/" className="breadCrumbItem" style={{ margin: "0px" }}>
             Trang chủ
           </Breadcrumb.Item>
           <Breadcrumb.Item href="" className="breadCrumbItem">
@@ -189,7 +245,6 @@ const ProductDetail = () => {
             <Col xs={4}>
               <Row className="d-flex flex-column" style={{ gap: "12px" }}>
                 <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{product.name}</h1>
-
                 <span>{renderPrice()}</span>
 
                 {product.sizes && product.sizes.length > 0 && (
@@ -201,7 +256,10 @@ const ProductDetail = () => {
                           type="radio"
                           key={index}
                           id={`size-${index}`}
-                          label={`${size.name} (${size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()}đ)`}
+                          label={`${size.name} (${size.price.discount
+                              ? size.price.discount.toLocaleString()
+                              : size.price.original.toLocaleString()
+                            }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}
@@ -212,7 +270,9 @@ const ProductDetail = () => {
                 )}
 
                 <span>{product.time || "Thời gian không khả dụng"}</span>
-                <span>Đánh giá: 0 sao</span>
+                <span>
+                  Đánh giá: {comments?.length ? renderStars(comments.reduce((acc: number, c: CommentType) => acc + c.rating, 0) / comments.length) : "Chưa có đánh giá"}
+                </span>
 
                 <p className="m-0">Chọn vị:</p>
                 <Form>
@@ -259,6 +319,33 @@ const ProductDetail = () => {
                   Thêm vào giỏ
                 </Button>
               </Row>
+            </Col>
+          </Row>
+
+          {/* Section hiển thị bình luận */}
+          <Row className="mt-5">
+            <Col xs={12}>
+              <h3>Bình luận về sản phẩm</h3>
+              {comments?.length > 0 ? (
+                comments.map((comment: CommentType) => (
+                  <Card key={comment._id} className="mb-3">
+                    <Card.Body>
+                      <div className="d-flex justify-content-between">
+                        <div>
+                          <strong>{comment.userId.name}</strong>
+                          <div>{renderStars(comment.rating)}</div>
+                        </div>
+                        <small className="text-muted">
+                          {new Date(comment.createdAt).toLocaleDateString("vi-VN")} {new Date(comment.createdAt).toLocaleTimeString("vi-VN")}
+                        </small>
+                      </div>
+                      <p className="mt-2">{comment.comment}</p>
+                    </Card.Body>
+                  </Card>
+                ))
+              ) : (
+                <p>Chưa có bình luận nào cho sản phẩm này.</p>
+              )}
             </Col>
           </Row>
         </Container>
