@@ -89,11 +89,9 @@ async function loginUser(data) {
     }
 
     // Hợp nhất đoạn bị conflict
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      "secret_key",
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, "secret_key", {
+      expiresIn: "1d",
+    });
 
     return {
       user: {
@@ -214,7 +212,7 @@ async function getAllUser() {
       .select("-password");
     return users;
   } catch (error) {
-    throw new Error("Không thể lấy danh sách người dùng");
+    throw new Error("Không thể lấy danh sách người dùng!");
   }
 }
 
@@ -222,7 +220,7 @@ async function getAllUser() {
 async function patchUserByAdmin(id, data) {
   try {
     const user = await userModel.findById(id);
-    if (!user) throw new Error("Không tìm thấy người dùng");
+    if (!user) throw new Error("Không tìm thấy người dùng!");
 
     // Không cho chỉnh sửa nếu là admin
     if (
