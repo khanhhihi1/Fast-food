@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Container, Spinner, Alert } from "react-bootstrap";
+import Link from "next/link";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -71,7 +72,12 @@ export default function PaymentSuccessPage() {
       )}
       {status === "success" && (
         <Alert variant="success">
-          🎉 Thanh toán thành công! Cảm ơn bạn đã đặt hàng.
+          🎉 Thanh toán thành công! Cảm ơn bạn đã đặt hàng. Bạn có thể xem đơn
+          hàng tại
+          <Link href="/account" className="fw-bold text-decoration-underline">
+            trang cá nhân
+          </Link>
+          .
         </Alert>
       )}
       {status === "fail" && (

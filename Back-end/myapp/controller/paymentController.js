@@ -154,7 +154,7 @@ exports.createStripePayment = async (req, res) => {
     if (!order) {
       return res
         .status(404)
-        .json({ status: false, message: "Đơn hàng không tồn tại" });
+        .json({ status: false, message: "Đơn hàng không tồn tại!!" });
     }
 
     const session = await stripe.checkout.sessions.create({
