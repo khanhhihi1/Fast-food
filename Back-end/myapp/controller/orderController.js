@@ -2,7 +2,7 @@ const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
 const { Order, OrderStatus } = require("../model/orderModel.js");
 const TempOrder = require("../model/tempOrderModel.js");
-const Voucher= require("../model/voucherModel.js")
+const Voucher = require("../model/voucherModel.js");
 module.exports = {
   createOrderFromCart,
   createOrderFromTempOrder,
@@ -10,6 +10,7 @@ module.exports = {
   getAllOrders,
   updateOrderStatus,
   cancelOrder,
+  getOrderStatus,
 };
 
 // Tạo đơn hàng từ giỏ hàng của người dùng
@@ -98,18 +99,18 @@ async function getUserOrders(req) {
   const userId = req.userId;
   const orders = await Order.find({ userId })
     .populate({
-      path: 'items.productId',
-      select: 'name image', // Lấy trường name và image từ Product
+      path: "items.productId",
+      select: "name image", // Lấy trường name và image từ Product
     })
     .sort({ createdAt: -1 });
 
   // Format dữ liệu để bao gồm image từ Product
-  const formattedOrders = orders.map(order => ({
+  const formattedOrders = orders.map((order) => ({
     ...order._doc,
-    items: order.items.map(item => ({
+    items: order.items.map((item) => ({
       ...item._doc,
       name: item.productId ? item.productId.name : item.name,
-      image: item.productId ? item.productId.image : item.image || '', // Ưu tiên image từ Product
+      image: item.productId ? item.productId.image : item.image || "", // Ưu tiên image từ Product
     })),
   }));
 
@@ -244,5 +245,36 @@ async function cancelOrder(req) {
   return {
     message: "Hủy đơn hàng thành công",
     order,
+  };
+}
+
+// Lấy trạng thái đơn hàng
+async function getOrderStatus(req) {
+  console.log("Order ID:", req.params.id);
+  console.log("User ID:", req.userId);
+
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const order = await Order.findById(id);
+  if (!order) {
+    console.log(`Order not found for ID: ${id}`);
+    throw new Error("Không tìm thấy đơn hàng");
+  }
+
+  console.log("Order found:", order);
+
+  if (order.userId.toString() !== userId) {
+    console.log(
+      `Unauthorized access: Order userId ${order.userId} does not match requester ${userId}`
+    );
+    throw new Error("Không có quyền xem trạng thái đơn hàng này");
+  }
+
+  return {
+    message: "Lấy trạng thái đơn hàng thành công",
+    status: order.status,
+    isPaid: order.isPaid, // Thêm trường isPaid
+    orderId: order._id,
   };
 }

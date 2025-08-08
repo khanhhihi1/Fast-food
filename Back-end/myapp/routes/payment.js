@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controller/paymentController");
+const bodyParser = require("body-parser");
 
 // Tạo thanh toán MoMo
 router.post("/momo", paymentController.createMomoPayment);
@@ -17,7 +18,7 @@ router.post("/stripe", paymentController.createStripePayment);
 // nhận callback Stripe
 router.post(
   "/stripe/webhook",
-  express.raw({ type: "application/json" }),
+  bodyParser.raw({ type: "application/json" }),
   paymentController.stripeWebhook
 );
 
