@@ -33,9 +33,9 @@ const upload = multer({
 router.get("/", async (req, res) => {
   try {
     const result = await productsController.getAllPro();
-    res.status(200).json({ status: true, result });
+    res.status(200).json({ success: true, result });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -43,9 +43,9 @@ router.get("/", async (req, res) => {
 router.get("/active", async (req, res) => {
   try {
     const result = await productsController.getActiveProducts();
-    res.status(200).json({ status: true, result });
+    res.status(200).json({ success: true, result });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -53,9 +53,9 @@ router.get("/active", async (req, res) => {
 router.get("/inactive", async (req, res) => {
   try {
     const result = await productsController.getInactiveProducts();
-    res.status(200).json({ status: true, result });
+    res.status(200).json({ success: true, result });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -65,7 +65,7 @@ router.post("/addProduct", async (req, res) => {
     const data = req.body;
     const result = await productsController.addPro(data);
     res.status(201).json({
-      status: true,
+      success: true,
       result,
       image: data.image,
       message: "Thêm sản phẩm thành công",
@@ -73,11 +73,11 @@ router.post("/addProduct", async (req, res) => {
   } catch (error) {
     const statusCode =
       error.message.includes("Thiếu trường") ||
-        error.message.includes("Danh mục không tồn tại") ||
-        error.message.includes("Hình ảnh phải là URL")
+      error.message.includes("Danh mục không tồn tại") ||
+      error.message.includes("Hình ảnh phải là URL")
         ? 400
         : 500;
-    res.status(statusCode).json({ status: false, message: error.message });
+    res.status(statusCode).json({ success: false, message: error.message });
   }
 });
 
@@ -89,16 +89,16 @@ router.put("/updateProduct/:id", async (req, res) => {
     if (!data.image) {
       return res
         .status(400)
-        .json({ status: false, message: "Thiếu URL hình ảnh" });
+        .json({ success: false, message: "Thiếu URL hình ảnh" });
     }
     const result = await productsController.updateProduct(data, id);
     res.status(200).json({
-      status: true,
+      success: true,
       result,
       message: "Cập nhật sản phẩm thành công",
     });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -107,11 +107,9 @@ router.delete("/hide/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await productsController.hideProduct(id);
-    res
-      .status(200)
-      .json({ status: true, result, message: "Ẩn sản phẩm thành công" });
+    res.status(200).json({ success: true, result, message: "Ẩn sản phẩm thành công" });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
@@ -120,11 +118,9 @@ router.put("/show/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await productsController.showProduct(id);
-    res
-      .status(200)
-      .json({ status: true, result, message: "Hiển thị sản phẩm thành công" });
+    res.status(200).json({ success: true, result, message: "Hiển thị sản phẩm thành công" });
   } catch (error) {
-    res.status(500).json({ status: false, message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
@@ -132,45 +128,43 @@ router.put("/show/:id", async (req, res) => {
 router.get("/hot", async (req, res) => {
   try {
     const result = await productsController.getHotProducts();
-    return res.status(200).json({ status: true, result });
+    return res.status(200).json({ success: true, result });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    return res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
+
+// Tìm kiếm sản phẩm
 router.get("/search", async (req, res) => {
   try {
     const result = await productsController.searchProducts(req);
-    res.status(200).json({ status: true, result, message: "Tìm kiếm thành công" });
+    res.status(200).json({ success: true, result, message: "Tìm kiếm thành công" });
   } catch (error) {
     console.error("Lỗi tìm kiếm:", error.message);
-    res.status(500).json({ status: false, message: "Lỗi hệ thống khi tìm kiếm sản phẩm" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống khi tìm kiếm sản phẩm" });
   }
 });
-// sp discount
-// http://localhost:5000/products/discount
+
+// Lấy sản phẩm giảm giá
 router.get("/discount", async (req, res) => {
   try {
     const result = await productsController.getDiscountProduct();
-
-    res.status(200).json({ status: true, result});
+    res.status(200).json({ success: true, result });
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm giảm giá:", error);
-    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
-// không đc viết các router lấy sp sau api id
+
 // Lấy chi tiết sản phẩm theo ID
-// http://localhost:5000/products/685cb8c8d73334a073c656a4
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await productsController.getDatailPro(id);
-    res.status(200).json({ status: true, result });
+    res.status(200).json({ success: true, result });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
-
 
 module.exports = router;

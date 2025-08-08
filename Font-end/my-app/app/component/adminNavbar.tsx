@@ -99,19 +99,6 @@ export default function AdminNavbar() {
         <Button variant="light" onClick={toggleSidebar} className="me-3">
           <FontAwesomeIcon icon={faBarsStaggered} />
         </Button>
-        <Form className="d-flex search-form">
-          <div className="input-group">
-            <input
-              className="form-control search-input"
-              type="search"
-              placeholder="Tìm kiếm..."
-              aria-label="Search"
-            />
-            <button className="btn search-button" type="submit">
-              <FaSearch />
-            </button>
-          </div>
-        </Form>
         <div className="hihi">
           <span className="me-3">
             <FontAwesomeIcon icon={faBell} style={{ fontSize: 24 }} />

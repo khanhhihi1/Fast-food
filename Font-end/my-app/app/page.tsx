@@ -13,21 +13,24 @@ import styles from "./styles/home.module.css";
 import SalePage from "./sale/salePage";
 import DiscountPage from "./discount/discount";
 import Slide from "./component/main/slide";
+import HotProducts from "./productHot/page";
+import Blog from "./blog/page";
 export default function Home() {
   return (
     <>
       <Slide />
       <Service />
       <About />
-      <ProductList
+      <HotProducts />
+      {/* <ProductList
         category="hot"
         title="🔥Sản phẩm Hot"
         layout="horizontal"
         limit={4}
-      />
+      /> */}
       <SalePage />
       <DiscountPage />
-      <ProductList category="related" title="Thức Ăn Kèm" />
+      <Blog />
     </>
   );
 }
