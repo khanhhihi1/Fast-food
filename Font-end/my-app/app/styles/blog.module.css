@@ -5,11 +5,11 @@
 .sectionTitle {
   text-align: center;
   margin-bottom: 2rem;
-  font-size: 2rem;
-  color: #c72a00;
+  font-size: 24px;
+  color: #c10a28;
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .blogCard {

@@ -5,7 +5,7 @@ import Image from "react-bootstrap/Image";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
-import Service from "./service/service";
+import Service from "./category/service";
 import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
 import ProductList from "./productList/productList";
 import About from "./about/page";

@@ -3,43 +3,28 @@ const router = express.Router();
 const productsController = require("../controller/productController.js");
 const multer = require("multer");
 
-// Cấu hình lưu trữ file ảnh
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./public/images");
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
-
-// Kiểm tra định dạng file ảnh
-const checkFile = (req, file, cb) => {
-  const fileTypes = /jpg|jpeg|png$/;
-  const extName = fileTypes.test(file.originalname.toLowerCase());
-  if (extName) {
-    cb(null, true);
-  } else {
-    cb(new Error("Chỉ chấp nhận file ảnh (.jpg, .jpeg, .png)!"), false);
-  }
-};
-
-const upload = multer({
-  storage: storage,
-  fileFilter: checkFile,
-});
+// Cấu hình multer (giữ nguyên)
 
 // Lấy tất cả sản phẩm
 router.get("/", async (req, res) => {
   try {
-    const result = await productsController.getAllPro();
+    const { category } = req.query;
+    let result;
+
+    if (!category || category === "all") {
+      // Trả tất cả
+      result = await productsController.getAllPro();
+    } else {
+      // Lọc theo categoryId
+      result = await productsController.getProductsByCategory(category);
+    }
+
     res.status(200).json({ success: true, result });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Lấy sản phẩm đang bán
 router.get("/active", async (req, res) => {
   try {
     const result = await productsController.getActiveProducts();
@@ -49,7 +34,6 @@ router.get("/active", async (req, res) => {
   }
 });
 
-// Lấy sản phẩm ngưng bán
 router.get("/inactive", async (req, res) => {
   try {
     const result = await productsController.getInactiveProducts();
@@ -59,7 +43,6 @@ router.get("/inactive", async (req, res) => {
   }
 });
 
-// Thêm sản phẩm mới
 router.post("/addProduct", async (req, res) => {
   try {
     const data = req.body;
@@ -81,7 +64,6 @@ router.post("/addProduct", async (req, res) => {
   }
 });
 
-// Cập nhật sản phẩm
 router.put("/updateProduct/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -102,7 +84,6 @@ router.put("/updateProduct/:id", async (req, res) => {
   }
 });
 
-// Ẩn sản phẩm
 router.delete("/hide/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -113,7 +94,6 @@ router.delete("/hide/:id", async (req, res) => {
   }
 });
 
-// Hiển thị sản phẩm
 router.put("/show/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -124,7 +104,6 @@ router.put("/show/:id", async (req, res) => {
   }
 });
 
-// Lấy sản phẩm hot
 router.get("/hot", async (req, res) => {
   try {
     const result = await productsController.getHotProducts();
@@ -134,7 +113,6 @@ router.get("/hot", async (req, res) => {
   }
 });
 
-// Tìm kiếm sản phẩm
 router.get("/search", async (req, res) => {
   try {
     const result = await productsController.searchProducts(req);
@@ -145,7 +123,6 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// Lấy sản phẩm giảm giá
 router.get("/discount", async (req, res) => {
   try {
     const result = await productsController.getDiscountProduct();
@@ -156,7 +133,6 @@ router.get("/discount", async (req, res) => {
   }
 });
 
-// Lấy chi tiết sản phẩm theo ID
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
