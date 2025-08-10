@@ -6,11 +6,28 @@ const mongoose = require("mongoose");
 // Lấy tất cả sản phẩm
 async function getAllPro() {
   try {
-    const products = await productsModel.find().populate("categoryId");
-    return products;
+    return await productsModel.find().populate("categoryId");
   } catch (error) {
     console.error(error);
     throw new Error("Lỗi lấy dữ liệu sản phẩm");
+  }
+}
+
+async function getProductsByCategory(categoryId) {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      throw new Error("ID danh mục không hợp lệ");
+    }
+
+    const objectId = new mongoose.Types.ObjectId(categoryId);
+    const products = await productsModel
+      .find({ categoryId: objectId })
+      .populate("categoryId");
+
+    return products;
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm theo danh mục:", error);
+    throw new Error("Không thể lấy sản phẩm theo danh mục");
   }
 }
 
@@ -322,5 +339,6 @@ module.exports = {
   getHotProducts,
   getDiscountProduct,
   searchProducts,
+  getProductsByCategory,
 };
 

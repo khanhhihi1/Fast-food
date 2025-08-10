@@ -12,8 +12,8 @@ export default function SalePage() {
       <Container className="my-4">
         <Row>
           <Col className="d-flex justify-content-center p-3">
-            <h1 style={{ color: "black", fontSize: "26px" }}>
-              Các chương trình nổi bật
+            <h1 style={{ color: "#c10a28", fontSize: "24px",fontWeight:"650" }}>
+             CÁC CHƯƠNG TRÌNH NỔI BẬT
             </h1>
           </Col>
         </Row>

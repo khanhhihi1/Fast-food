@@ -68,7 +68,7 @@ export default function CartManagementPage() {
     return (
         <div className="d-flex dark-mode">
             <AdminSideBar />
-            <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}>
+            <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}  style={{minHeight:"100vh"}}>
                 <AdminNavbar />
                 <div className="cart-admin">
                     <div className="admin-container">

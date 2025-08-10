@@ -301,7 +301,7 @@ export default function Header() {
               <Image src="/Logo.png" alt="Logo" style={{ width: "130px", height: "130px" }} />
             </Col>
             <Col xs={5} className="d-flex align-items-center justify-content-center" style={{ gap: "30px" }}>
-              <Link href="/" className={styles.aLink}>TIN TỨC</Link>
+              <Link href="/menu" className={styles.aLink}>TIN TỨC</Link>
               <Link href="/" className={styles.aLink}>LIÊN HỆ</Link>
               <Link href="/" className={styles.aLink}>NHƯỢNG QUYỀN</Link>
             </Col>

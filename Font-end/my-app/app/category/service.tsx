@@ -15,13 +15,14 @@ interface Service {
 
 export default function Service() {
   const [service, setService] = useState<Service[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchService() {
       try {
         const res = await fetch("http://localhost:5000/categories");
         const data = await res.json();
-
+        console.log("Service categories response:", data);
         if (Array.isArray(data.result)) {
           setService(data.result);
         } else {
@@ -50,6 +51,8 @@ export default function Service() {
           <Col
             key={item._id}
             className={`d-flex align-items-center justify-content-between ${styles.service} p-3`}
+            onClick={() => router.push(`/category/${item._id}`)}
+            style={{ cursor: "pointer" }}
           >
             <div className={styles.serviceTittle}>
               <h1>{item.name}</h1>

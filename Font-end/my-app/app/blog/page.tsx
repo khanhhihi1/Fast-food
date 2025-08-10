@@ -33,7 +33,7 @@ const Blog = () => {
 
     return (
         <Container className={styles.blogContainer}>
-            <h2 className={styles.sectionTitle}>Blog Về Pizza</h2>
+            <h2 className={styles.sectionTitle}>Fast-Food Blog</h2>
             <Row>
                 {blogData.map((post) => (
                     <Col key={post.id} md={4} className="mb-4">

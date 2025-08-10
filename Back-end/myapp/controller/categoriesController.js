@@ -40,10 +40,11 @@ const addCate = async (data) => {
   }
 };
 
-// Xoá danh mục (kiểm tra nếu có sản phẩm thì không xoá)
+// Xoá danh mục (kiểm tra nếu có sản phẩm thì không xoá) - FIX Ở ĐÂY
 const deleteCate = async (id) => {
   try {
-    const pros = await productModel.find({ Categories: id });
+    // FIX: Thay 'Categories' thành 'categoryId' để query đúng field trong product model
+    const pros = await productModel.find({ categoryId: id });
     if (pros.length > 0) {
       throw new Error("Không thể xoá vì danh mục còn chứa sản phẩm");
     }
@@ -61,7 +62,6 @@ const deleteCate = async (id) => {
 // Cập nhật danh mục
 const updateCate = async (id, data) => {
   try {
-    // updateCate
     const { name, imageUrl } = data;
     const updatedCate = await CategoriesModel.findByIdAndUpdate(
       id,
