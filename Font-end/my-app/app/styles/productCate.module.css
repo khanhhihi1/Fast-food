@@ -2,15 +2,35 @@
 .filterHeader {
   background-color: #f8f9fa;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 34px;
+  padding: 0;
+  margin-bottom: 40px;
+  line-height: normal;
+  color: #c10a28;
+  font-weight: 650 !important;
 }
 
 .categorySidebar {
   margin-bottom: 20px;
 }
 
+.loadMoreButton {
+  background-color: #c10a28;
+  border: 1px solid #c10a28;
+}
+
+.loadMoreButton:hover {
+  background-color: #dc3545;
+  border: 1px solid #dc3545;
+
+}
+
 .sidebarHeader {
-  background-color: #007bff;
+  background-color: #c20a28;
   color: white;
   font-weight: bold;
   padding: 12px 15px;
@@ -27,7 +47,7 @@
 .categoryItem:hover,
 .categoryItem:active {
   background-color: #e9ecef;
-  color: #007bff;
+  color: #c20a28;
 }
 
 .productCard {
@@ -35,13 +55,13 @@
   border: none;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s;
 }
 
 .productCard:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 .productImage {
@@ -70,7 +90,20 @@
 }
 
 .productPrice {
+  justify-content:space-around !important;
   color: #dc3545;
-  font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1rem;
+}
+
+:global(.list-group-item.active) {
+  background-color: #c20a28 !important;
+  border-color: #c20a28 !important;
+  color: white !important;
+}
+
+/* Khi hover vẫn giữ màu đỏ */
+:global(.list-group-item.active:hover) {
+  background-color: #a40820 !important;
+  border-color: #a40820 !important;
+  color: white !important;
 }

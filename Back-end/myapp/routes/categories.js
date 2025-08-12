@@ -11,7 +11,26 @@ router.get("/", async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 });
+router.get("/active", async (req, res) => {
+  try {
+    const result = await categoryController.getActiveCate();
+    return res.status(200).json({ success: true, result });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
 
+// Lấy danh mục đã ẩn
+router.get("/hidden", async (req, res) => {
+  try {
+    const result = await categoryController.getHiddenCate();
+    return res.status(200).json({ success: true, result });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -46,18 +65,38 @@ router.put("/update/:id", async (req, res) => {
   }
 });
 
-router.delete("/delete/:id", async (req, res) => {
+router.patch("/hide/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await categoryController.deleteCate(id);
+    const result = await categoryController.hideCate(id);
     return res.status(200).json({
       success: true,
-      message: "Xóa danh mục thành công",
+      message: "Ẩn danh mục thành công",
       result,
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Không thể ẩn danh mục",
+    });
+  }
+});
+router.patch("/restore/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await categoryController.restoreCate(id);
+    return res.status(200).json({
+      success: true,
+      message: "Khôi phục danh mục thành công",
+      result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Không thể khôi phục danh mục",
+    });
   }
 });
 

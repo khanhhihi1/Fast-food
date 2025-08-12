@@ -78,43 +78,6 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
 
     fetchFavorites();
   }, [productId]);
-
-  const addToCart = async (product: Product) => {
-    try {
-      const firstSize = product.sizes?.[0];
-
-      if (!firstSize || !firstSize.price?.original) {
-        toast.error("Sản phẩm không có thông tin giá.");
-        return;
-      }
-
-      const body = {
-        productId: productId,
-        sizeName: firstSize.name ?? "default",
-        quantity: 1,
-        price: firstSize.price,
-      };
-
-      const response = await fetch("http://localhost:5000/cart/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
-      } else {
-        toast.error(result.message || "Thêm vào giỏ hàng thất bại.");
-      }
-    } catch (error) {
-      toast.error("Lỗi kết nối đến máy chủ.");
-      console.error("Thêm giỏ hàng lỗi:", error);
-    }
-  };
-
   const toggleFavorite = async () => {
     try {
       const response = await fetch(`http://localhost:5000/favoriteProduct/favorites/${productId}`, {

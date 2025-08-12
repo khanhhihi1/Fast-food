@@ -72,7 +72,7 @@ export default function Header() {
           credentials: "include",
         });
         const data = await res.json();
-        if (res.ok && data.status) {
+        if (res.ok && data.success) {
           setUser(data.result);
         } else {
           setUser(null);
@@ -91,7 +91,7 @@ export default function Header() {
         credentials: "include",
       });
       const data = await res.json();
-      if (res.ok && data.status) {
+      if (res.ok && data.success) {
         setUser(null);
         router.push("/login");
       } else {
@@ -127,7 +127,7 @@ export default function Header() {
       }
 
       const data = await res.json();
-      if (data.status) {
+      if (data.success) {
         setSearchResults(data.result);
       } else {
         setSearchResults([]);

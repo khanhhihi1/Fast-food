@@ -11,7 +11,26 @@ const getAllCate = async () => {
     throw new Error("Không thể lấy danh mục");
   }
 };
+const getActiveCate = async () => {
+  try {
+    const result = await CategoriesModel.find({ isHidden: false });
+    return result;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh mục đang hoạt động:", error.message);
+    throw new Error("Không thể lấy danh mục đang hoạt động");
+  }
+};
 
+// Lấy danh mục đã ẩn
+const getHiddenCate = async () => {
+  try {
+    const result = await CategoriesModel.find({ isHidden: true });
+    return result;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh mục đã ẩn:", error.message);
+    throw new Error("Không thể lấy danh mục đã ẩn");
+  }
+};
 // Lấy chi tiết danh mục theo ID
 const getDetailCate = async (id) => {
   try {
@@ -40,25 +59,31 @@ const addCate = async (data) => {
   }
 };
 
-// Xoá danh mục (kiểm tra nếu có sản phẩm thì không xoá) - FIX Ở ĐÂY
-const deleteCate = async (id) => {
+const hideCate = async (id) => {
   try {
-    // FIX: Thay 'Categories' thành 'categoryId' để query đúng field trong product model
+    // Kiểm tra xem danh mục có sản phẩm không
     const pros = await productModel.find({ categoryId: id });
     if (pros.length > 0) {
-      throw new Error("Không thể xoá vì danh mục còn chứa sản phẩm");
+      throw new Error("Không thể ẩn vì danh mục còn chứa sản phẩm");
     }
-    const cate = await CategoriesModel.findByIdAndDelete(id);
+
+    // Cập nhật trạng thái ẩn thay vì xoá
+    const cate = await CategoriesModel.findByIdAndUpdate(
+      id,
+      { isHidden: true },
+      { new: true } // trả về dữ liệu sau khi update
+    );
+
     if (!cate) {
-      throw new Error("Không tìm thấy danh mục để xoá");
+      throw new Error("Không tìm thấy danh mục để ẩn");
     }
+
     return cate;
   } catch (error) {
-    console.error("Lỗi khi xoá danh mục:", error.message);
-    throw new Error(error.message || "Không thể xoá danh mục");
+    console.error("Lỗi khi ẩn danh mục:", error.message);
+    throw new Error(error.message || "Không thể ẩn danh mục");
   }
 };
-
 // Cập nhật danh mục
 const updateCate = async (id, data) => {
   try {
@@ -79,11 +104,31 @@ const updateCate = async (id, data) => {
     throw new Error("Không thể cập nhật danh mục");
   }
 };
+const restoreCate = async (id) => {
+  try {
+    const cate = await CategoriesModel.findByIdAndUpdate(
+      id,
+      { isHidden: false },
+      { new: true } // trả về bản ghi sau khi update
+    );
 
+    if (!cate) {
+      throw new Error("Không tìm thấy danh mục để khôi phục");
+    }
+
+    return cate;
+  } catch (error) {
+    console.error("Lỗi khi khôi phục danh mục:", error.message);
+    throw new Error(error.message || "Không thể khôi phục danh mục");
+  }
+};
 module.exports = {
   getAllCate,
   getDetailCate,
   addCate,
-  deleteCate,
+  hideCate,
   updateCate,
+  restoreCate,
+  getActiveCate,
+  getHiddenCate,
 };
