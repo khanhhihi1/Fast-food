@@ -140,6 +140,7 @@ export default function ShowAdmin() {
   };
 
   const handleShowProduct = async (id: string) => {
+       if (!confirm("Bạn có chắc muốn khôi phục sản phẩm này?")) return;
     try {
       const res = await fetch(`http://localhost:5000/products/show/${id}`, { method: "PUT" });
       if (!res.ok) {
@@ -147,7 +148,7 @@ export default function ShowAdmin() {
         throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.message || "Không rõ"}`);
       }
       const data = await res.json();
-      if (data?.success) { // Kiểm tra data.success thay vì data.status
+      if (data?.success) {
         setPosts((prevPosts) =>
           prevPosts.map((p) =>
             p._id === id ? { ...p, status: true, isHidden: false } : p
@@ -164,6 +165,8 @@ export default function ShowAdmin() {
   };
 
   const handleHideProduct = async (id: string) => {
+    if (!confirm("Bạn có chắc muốn ẩn sản phẩm này?")) return;
+
     try {
       const res = await fetch(`http://localhost:5000/products/hide/${id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -171,7 +174,7 @@ export default function ShowAdmin() {
         throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.message || "Không rõ"}`);
       }
       const data = await res.json();
-      if (data?.success) { // Kiểm tra data.success thay vì data.status
+      if (data?.success) {
         setPosts((prevPosts) =>
           prevPosts.map((p) =>
             p._id === id ? { ...p, status: false, isHidden: true } : p
@@ -226,7 +229,7 @@ export default function ShowAdmin() {
   return (
     <div className={`d-flex ${isDarkMode ? "dark-mode" : "light-mode"}`}>
       <AdminSideBar />
-      <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{minHeight:"100vh"}}>
+      <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
         <AdminNavbar />
         <div className={styles["admin-product-container"]}>
           <h2>Quản lý sản phẩm</h2>
@@ -244,8 +247,8 @@ export default function ShowAdmin() {
               <span className={styles.statValue}>{filteredProducts.filter((p) => !p.status).length}</span>
             </div>
           </div>
-          <div className={styles["adminHeader"] + " mb-4"}>
-            <div className={styles.meNu}>
+          <div className={styles["adminHeader"] + " mb-4" + "d-flex"}>
+            <div className={styles.meNu} >
               <div className={styles.filters}>
                 <button
                   className={`${styles.filterBtn} ${filter === "all" ? styles.active : ""}`}
@@ -265,10 +268,10 @@ export default function ShowAdmin() {
                 >
                   Ngưng hoạt động
                 </button>
-                
-                 <Button onClick={() => setShowModal(true)}>
-                <FontAwesomeIcon icon={faPlus} /> Thêm sản phẩm
-              </Button>
+
+                <Button onClick={() => setShowModal(true)}>
+                  <FontAwesomeIcon icon={faPlus} /> Thêm sản phẩm
+                </Button>
               </div>
               <Form className={styles.fromInput} onSubmit={(e) => e.preventDefault()}>
                 <div className="input-group">
@@ -284,8 +287,8 @@ export default function ShowAdmin() {
                   </button>
                 </div>
               </Form>
-              
-             
+
+
             </div>
           </div>
 

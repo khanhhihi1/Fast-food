@@ -1,30 +1,33 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Container, Table, Button, Alert, Spinner } from "react-bootstrap";
+import { Container, Table, Button, Alert, Spinner, Form } from "react-bootstrap";
 import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
 import CategoryFormModal from "@/app/component/CategoryFormModal";
 import CategoryUpdateModal from "@/app/component/CategoryUpdateModal";
-import "../admin.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEyeSlash, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { faEyeSlash, faPenToSquare, faPlus, faSearch, faRotate } from "@fortawesome/free-solid-svg-icons";
 import useDarkMode from "../useDarkMode/page";
+import styles from "../styles/product.module.css";
+import { toast } from "react-toastify";
 
 interface CategoryType {
   _id: string;
   name: string;
   imageUrl: string;
+  isHidden?: boolean;
 }
 
 export default function ProductCategory() {
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(
-    null
-  );
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [visibleCount, setVisibleCount] = useState(15); 
   const { isDarkMode } = useDarkMode();
 
   const API_BASE = "http://localhost:5000/categories";
@@ -32,15 +35,21 @@ export default function ProductCategory() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await fetch(API_BASE);
+      let url = API_BASE;
+      if (filter === "active") url += "/active";
+      if (filter === "inactive") url += "/inactive";
+
+      const res = await fetch(url);
       const data = await res.json();
-      if (data.status) {
+      if (data.success && Array.isArray(data.result)) {
         setCategories(data.result);
+        setVisibleCount(15); // Reset lại khi đổi filter
       } else {
-        setError("Không thể tải danh mục.");
+        setCategories([]);
+        setError(data.message || "Dữ liệu danh mục không hợp lệ.");
       }
-    } catch (err) {
-      setError("Lỗi khi tải danh mục.");
+    } catch (err: any) {
+      setError("Lỗi khi tải danh mục: " + (err.message || "Không xác định"));
     } finally {
       setLoading(false);
     }
@@ -48,19 +57,41 @@ export default function ProductCategory() {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [filter]);
 
-  const handleDelete = async (id: string) => {
+  const handleHide = async (id: string) => {
+    if (!confirm("Bạn có chắc muốn ẩn danh mục này?")) return;
     try {
-      const res = await fetch(`${API_BASE}/delete/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE}/hide/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      });
       const data = await res.json();
-      if (data.status) {
+      if (data.success) {
         fetchCategories();
       } else {
-        setError("Không thể xóa danh mục.");
+        toast.error(data.message || "Không thể ẩn danh mục.");
       }
-    } catch (err) {
-      setError("Lỗi khi xóa danh mục.");
+    } catch {
+      setError("Lỗi khi ẩn danh mục.");
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    if (!confirm("Bạn có chắc muốn khôi phục danh mục này?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/restore/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchCategories();
+      } else {
+        setError(data.message || "Không thể khôi phục danh mục.");
+      }
+    } catch {
+      setError("Lỗi khi khôi phục danh mục.");
     }
   };
 
@@ -69,63 +100,137 @@ export default function ProductCategory() {
     setShowEditModal(true);
   };
 
-  return (
-    <div className="d-flex">
-      <AdminSideBar />
-      <Container fluid className="content w-100 container-content">
-        <AdminNavbar />
-        <div className="p-4 productCategory">
-          <h3>Quản lý danh mục sản phẩm</h3>
-          <Button variant="primary" onClick={() => setShowAddModal(true)}>
-            Thêm danh mục
-          </Button>
+  const filteredCategories = categories.filter((cat) =>
+    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-          {error && (
-            <Alert variant="danger" className="mt-3">
-              {error}
-            </Alert>
-          )}
+  const totalCategories = categories.length;
+  const activeCategories = categories.filter((cat) => !cat.isHidden).length;
+  const inactiveCategories = categories.filter((cat) => cat.isHidden).length;
+
+  return (
+    <div className={`d-flex ${isDarkMode ? "dark-mode" : ""}`}>
+      <AdminSideBar />
+      <Container fluid className="content w-100 container-content" style={{ minHeight: "100vh" }}>
+        <AdminNavbar />
+        <div className={styles["admin-product-container"]}>
+          <h2>Quản lý danh mục sản phẩm</h2>
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Tổng danh mục {totalCategories}</span>
+              <span className={styles.statValue}> {totalCategories}</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Danh mục hoạt động</span>
+              <span className={styles.statValue}>{activeCategories}</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Danh mục ngưng hoạt động {inactiveCategories}</span>
+              <span className={styles.statValue}>{inactiveCategories}</span>
+            </div>
+          </div>
+
+          <div className={styles["adminHeader"] + " mb-4"}>
+            <div className={styles.meNu}>
+              <div className={styles.filters}>
+                <button
+                  className={`${styles.filterBtn} ${filter === "all" ? styles.active : ""}`}
+                  onClick={() => setFilter("all")}
+                >
+                  Tất cả
+                </button>
+                <button
+                  className={`${styles.filterBtn} ${filter === "active" ? styles.active : ""}`}
+                  onClick={() => setFilter("active")}
+                >
+                  Đang hoạt động
+                </button>
+                <button
+                  className={`${styles.filterBtn} ${filter === "inactive" ? styles.active : ""}`}
+                  onClick={() => setFilter("inactive")}
+                >
+                  Ngưng hoạt động
+                </button>
+                <Button onClick={() => setShowAddModal(true)}>
+                  <FontAwesomeIcon icon={faPlus} /> Thêm danh mục
+                </Button>
+              </div>
+              <Form className={styles.fromInput} onSubmit={(e) => e.preventDefault()}>
+                <div className="input-group">
+                  <input
+                    className="form-control search-input"
+                    type="search"
+                    placeholder="Tìm kiếm..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button className="btn search-button" type="submit">
+                    <FontAwesomeIcon icon={faSearch} />
+                  </button>
+                </div>
+              </Form>
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center mt-4">
               <Spinner animation="border" />
             </div>
           ) : (
-            <Table striped bordered hover className="mt-3 table1 text-center">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Tên</th>
-                  <th>Hình ảnh</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((cat, index) => (
-                  <tr key={cat._id}>
-                    <td>{index + 1}</td>
-                    <td>{cat.name}</td>
-                    <td>
-                      <img src={cat.imageUrl} alt={cat.name} width="80" />
-                    </td>
-                    <td>
-                      <button
-                        className="action-btn edit-btn mx-2"
-                        onClick={() => handleEdit(cat)}
-                      >
-                        <FontAwesomeIcon icon={faPenToSquare} />
-                      </button>
-                      <button
-                        className="action-btn delete-btn mx-2"
-                        onClick={() => handleDelete(cat._id)}
-                      >
-                        <FontAwesomeIcon icon={faEyeSlash} />
-                      </button>
-                    </td>
+            <>
+              <Table striped bordered hover className={styles.table}>
+                <thead>
+                  <tr className="text-center">
+                    <th>#</th>
+                    <th>Tên</th>
+                    <th>Hình ảnh</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
+                </thead>
+                <tbody>
+                  {filteredCategories.slice(0, visibleCount).map((cat, index) => (
+                    <tr key={cat._id} className="text-center">
+                      <td>{index + 1}</td>
+                      <td>{cat.name}</td>
+                      <td>
+                        <img src={cat.imageUrl} alt={cat.name} width="80" />
+                      </td>
+                      <td>
+                        <span className={`${styles["status-badge"]} ${!cat.isHidden ? styles.active : styles.inactive}`}>
+                          {!cat.isHidden ? "Hoạt động" : "Ngừng bán"}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className="action-btn edit-btn mx-2"
+                          onClick={() => handleEdit(cat)}
+                        >
+                          <FontAwesomeIcon icon={faPenToSquare} />
+                        </button>
+                        {!cat.isHidden ? (
+                          <Button variant="outline-danger" size="sm" onClick={() => handleHide(cat._id)} className="mx-2">
+                            <FontAwesomeIcon icon={faEyeSlash} />
+                          </Button>
+                        ) : (
+                          <Button variant="outline-success" size="sm" onClick={() => handleRestore(cat._id)} className="mx-2">
+                            <FontAwesomeIcon icon={faRotate} />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+
+              {visibleCount < categories.length && (
+                <div className="text-center mt-3">
+                  <Button onClick={() => setVisibleCount(prev => prev + 15)}>
+                    Xem thêm
+                  </Button>
+                </div>
+              )}
+            </>
           )}
 
           {/* Modal Thêm */}

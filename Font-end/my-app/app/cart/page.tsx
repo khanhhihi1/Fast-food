@@ -197,38 +197,41 @@ export default function Cart() {
 
   // Áp dụng voucher
   const applyVoucher = async (voucherToApply?: Voucher) => {
-    const voucher = voucherToApply || selectedVoucher;
-    if (!voucher) return;
+  const voucher = voucherToApply || selectedVoucher;
+  if (!voucher) return;
 
-    setIsApplyingVoucher(true);
+  setIsApplyingVoucher(true);
 
-    try {
-      const res = await fetch("http://localhost:5000/voucher/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          code: voucher.code,
-          orderTotal: totalPrice,
-        }),
+  try {
+    const res = await fetch("http://localhost:5000/voucher/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        code: voucher.code,
+        orderTotal: totalPrice,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.status) {
+      setFinalTotal(data.result.finalTotal);
+      setDiscount(data.result.discountAmount);
+      toast.success(`Áp dụng voucher ${voucher.code} thành công!`, {
+        toastId: "applyVoucherSuccess",
       });
-
-      const data = await res.json();
-      if (data.status) {
-        setFinalTotal(data.result.finalTotal);
-        setDiscount(data.result.discountAmount);
-        if (!isApplyingVoucher) {
-          toast.success(`Áp dụng voucher ${voucher.code} thành công!`);
-        }
-      } else {
-        toast.warning(data.message || "Không thể áp dụng voucher");
-      }
-    } catch {
-      toast.error("Lỗi khi áp dụng voucher");
-    } finally {
-      setIsApplyingVoucher(false);
+    } else {
+      toast.warning(data.message || "Không thể áp dụng voucher", {
+        toastId: "applyVoucherWarning",
+      });
     }
-  };
+  } catch {
+    toast.error("Lỗi khi áp dụng voucher", { toastId: "applyVoucherError" });
+  } finally {
+    setIsApplyingVoucher(false);
+  }
+};
+
 
   // Xóa sản phẩm khỏi giỏ hàng
   const handleRemove = async (id: string) => {
@@ -255,34 +258,49 @@ export default function Cart() {
 
   // Xử lý thanh toán
   const handleCheckout = async () => {
-    if (cartItems.length === 0) {
-      toast.warning("Giỏ hàng trống!");
+  if (cartItems.length === 0) {
+    toast.warning("Giỏ hàng trống!");
+    return;
+  }
+
+  // Kiểm tra voucher nếu có
+  if (selectedVoucher) {
+    if (totalPrice < selectedVoucher.minOrderValue) {
+      toast.warning(
+        `Đơn hàng phải tối thiểu ${selectedVoucher.minOrderValue.toLocaleString()} ₫ để áp dụng voucher này`
+      );
       return;
     }
 
-    try {
-      const res = await fetch("http://localhost:5000/temp-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          items: cartItems,
-          total: finalTotal > 0 ? finalTotal : totalPrice,
-          voucherCode: selectedVoucher?.code || null,
-          voucherData: selectedVoucher || null,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.status) {
-        router.push("/shippingInfo");
-      } else {
-        toast.error(data.message || "Không thể tạo đơn hàng tạm thời");
-      }
-    } catch {
-      toast.error("Lỗi khi tạo đơn hàng tạm thời");
+    if (selectedVoucher.expiresAt && new Date(selectedVoucher.expiresAt) < new Date()) {
+      toast.warning("Voucher đã hết hạn!");
+      return;
     }
-  };
+  }
+
+  try {
+    const res = await fetch("http://localhost:5000/temp-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        items: cartItems,
+        total: finalTotal > 0 ? finalTotal : totalPrice,
+        voucherCode: selectedVoucher?.code || null,
+        voucherData: selectedVoucher || null,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.status) {
+      router.push("/shippingInfo");
+    } else {
+      toast.error(data.message || "Không thể tạo đơn hàng tạm thời");
+    }
+  } catch {
+    toast.error("Lỗi khi tạo đơn hàng tạm thời");
+  }
+};
 
   // Tải dữ liệu khi component mount
   useEffect(() => {

@@ -115,76 +115,84 @@ export default function Checkout() {
 
   // Áp dụng voucher
   const applyVoucher = async (voucherParam?: Voucher) => {
-    const voucher =
-      voucherParam || vouchers.find((v) => v.code === selectedCode);
-    if (!voucher) {
-      toast.warning("Vui lòng chọn voucher hợp lệ");
-      return;
-    }
+  const voucher = voucherParam || vouchers.find((v) => v.code === selectedCode);
+  if (!voucher) {
+    toast.warning("Vui lòng chọn voucher hợp lệ", { toastId: "voucher-warning" });
+    return;
+  }
 
-    try {
-      const res = await fetch("http://localhost:5000/voucher/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          code: voucher.code,
-          orderTotal: total,
-        }),
+  try {
+    const res = await fetch("http://localhost:5000/voucher/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        code: voucher.code,
+        orderTotal: total,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.status) {
+      setAppliedVoucher(voucher);
+      setDiscountAmount(data.result.discountAmount);
+      setTotalAfterDiscount(data.result.finalTotal);
+
+      toast.success(`Áp dụng voucher ${voucher.code} thành công!`, {
+        toastId: `apply-${voucher.code}`, // ✅ Toast ID duy nhất cho từng voucher
       });
 
-      const data = await res.json();
-      if (data.status) {
-        setAppliedVoucher(voucher);
-        setDiscountAmount(data.result.discountAmount);
-        setTotalAfterDiscount(data.result.finalTotal);
-        toast.success(`Áp dụng voucher ${voucher.code} thành công!`);
-
-        await fetch("http://localhost:5000/temp-order/update-voucher", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            voucherCode: voucher.code,
-            voucherData: voucher,
-            total: data.result.finalTotal,
-          }),
-        });
-      } else {
-        toast.warning(data.message || "Voucher không hợp lệ");
-        handleCancelVoucher();
-      }
-    } catch (error) {
-      console.error("Lỗi khi áp dụng voucher:", error);
-      toast.error("Lỗi khi áp dụng voucher");
-      handleCancelVoucher();
-    }
-  };
-
-  // Hủy voucher
-  const handleCancelVoucher = async () => {
-    setAppliedVoucher(null);
-    setDiscountAmount(0);
-    setTotalAfterDiscount(total);
-    setSelectedCode("");
-    localStorage.removeItem("selectedVoucher");
-
-    try {
       await fetch("http://localhost:5000/temp-order/update-voucher", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          voucherCode: null,
-          voucherData: null,
-          total,
+          voucherCode: voucher.code,
+          voucherData: voucher,
+          total: data.result.finalTotal,
         }),
       });
-      toast.success("Đã hủy voucher");
-    } catch {
-      toast.error("Không thể hủy voucher trong đơn hàng tạm thời");
+    } else {
+      toast.warning(data.message || "Voucher không hợp lệ", {
+        toastId: "voucher-invalid",
+      });
+      handleCancelVoucher();
     }
-  };
+  } catch (error) {
+    console.error("Lỗi khi áp dụng voucher:", error);
+    toast.error("Lỗi khi áp dụng voucher", { toastId: "voucher-error" });
+    handleCancelVoucher();
+  }
+};
+
+
+  // Hủy voucher
+ const handleCancelVoucher = async () => {
+  setAppliedVoucher(null);
+  setDiscountAmount(0);
+  setTotalAfterDiscount(total);
+  setSelectedCode("");
+  localStorage.removeItem("selectedVoucher");
+
+  try {
+    await fetch("http://localhost:5000/temp-order/update-voucher", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        voucherCode: null,
+        voucherData: null,
+        total,
+      }),
+    });
+    toast.success("Đã hủy voucher", { toastId: "voucher-cancel" });
+  } catch {
+    toast.error("Không thể hủy voucher trong đơn hàng tạm thời", {
+      toastId: "voucher-cancel-error",
+    });
+  }
+};
+
 
   // Cập nhật phương thức thanh toán
   const updatePaymentMethod = async () => {
@@ -198,13 +206,10 @@ export default function Checkout() {
           body: JSON.stringify({ paymentMethod }),
         }
       );
-
-      const data = await res.json();
       if (!res.ok) {
-        console.error("Lỗi cập nhật phương thức thanh toán:", data);
-        throw new Error(data.message || "Không thể cập nhật");
+        throw new Error("Không thể cập nhật phương thức thanh toán");
       }
-    } catch (err) {
+    } catch {
       toast.error("Không thể cập nhật phương thức thanh toán");
     }
   };
@@ -296,24 +301,6 @@ export default function Checkout() {
           window.location.href = momoData.payUrl;
         } else {
           toast.error("Không thể tạo thanh toán MoMo");
-        }
-      }
-
-      // Nếu Stripe → tạo session và chuyển hướng
-      if (paymentMethod === "stripe") {
-        const stripeRes = await fetch("http://localhost:5000/payment/stripe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ orderId: createdOrder._id }),
-        });
-
-        const stripeData = await stripeRes.json();
-
-        if (stripeData.status && stripeData.checkoutUrl) {
-          window.location.href = stripeData.checkoutUrl; // Chuyển đến trang thanh toán Stripe
-        } else {
-          toast.error("Không thể tạo thanh toán Stripe");
         }
       }
     } catch (error) {
@@ -484,15 +471,6 @@ export default function Checkout() {
                 name="paymentMethod"
                 value="vnpay"
                 checked={paymentMethod === "vnpay"}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              />
-
-              <Form.Check
-                type="radio"
-                label="Stripe"
-                name="paymentMethod"
-                value="stripe"
-                checked={paymentMethod === "stripe"}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               />
 
