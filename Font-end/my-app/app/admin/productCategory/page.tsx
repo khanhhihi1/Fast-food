@@ -27,7 +27,7 @@ export default function ProductCategory() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [visibleCount, setVisibleCount] = useState(15); 
+  const [visibleCount, setVisibleCount] = useState(15);
   const { isDarkMode } = useDarkMode();
 
   const API_BASE = "http://localhost:5000/categories";
@@ -35,15 +35,21 @@ export default function ProductCategory() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      let url = API_BASE;
-      if (filter === "active") url += "/active";
-      if (filter === "inactive") url += "/inactive";
-
-      const res = await fetch(url);
+      const res = await fetch(API_BASE);
       const data = await res.json();
+
       if (data.success && Array.isArray(data.result)) {
-        setCategories(data.result);
-        setVisibleCount(15); // Reset lại khi đổi filter
+        let fetchedCategories = data.result;
+
+        // Lọc theo filter ở frontend thay vì API
+        if (filter === "active") {
+          fetchedCategories = fetchedCategories.filter(cat => !cat.isHidden);
+        } else if (filter === "inactive") {
+          fetchedCategories = fetchedCategories.filter(cat => cat.isHidden);
+        }
+
+        setCategories(fetchedCategories);
+        setVisibleCount(15);
       } else {
         setCategories([]);
         setError(data.message || "Dữ liệu danh mục không hợp lệ.");
@@ -117,7 +123,7 @@ export default function ProductCategory() {
           <h2>Quản lý danh mục sản phẩm</h2>
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
-              <span className={styles.statLabel}>Tổng danh mục {totalCategories}</span>
+              <span className={styles.statLabel}>Tổng danh mục </span>
               <span className={styles.statValue}> {totalCategories}</span>
             </div>
             <div className={styles.statCard}>
@@ -125,7 +131,7 @@ export default function ProductCategory() {
               <span className={styles.statValue}>{activeCategories}</span>
             </div>
             <div className={styles.statCard}>
-              <span className={styles.statLabel}>Danh mục ngưng hoạt động {inactiveCategories}</span>
+              <span className={styles.statLabel}>Danh mục ngưng hoạt động </span>
               <span className={styles.statValue}>{inactiveCategories}</span>
             </div>
           </div>
@@ -193,21 +199,22 @@ export default function ProductCategory() {
                     <tr key={cat._id} className="text-center">
                       <td>{index + 1}</td>
                       <td>{cat.name}</td>
-                      <td>
+                      <td className="text-center">
                         <img src={cat.imageUrl} alt={cat.name} width="80" />
                       </td>
                       <td>
                         <span className={`${styles["status-badge"]} ${!cat.isHidden ? styles.active : styles.inactive}`}>
-                          {!cat.isHidden ? "Hoạt động" : "Ngừng bán"}
+                          {!cat.isHidden ? "Hoạt động" : "Ngưng hoạt động"}
                         </span>
                       </td>
                       <td>
-                        <button
-                          className="action-btn edit-btn mx-2"
+                        <Button
+                          variant="outline-warning"
+                          size="sm" className="me-2"
                           onClick={() => handleEdit(cat)}
                         >
                           <FontAwesomeIcon icon={faPenToSquare} />
-                        </button>
+                        </Button>
                         {!cat.isHidden ? (
                           <Button variant="outline-danger" size="sm" onClick={() => handleHide(cat._id)} className="mx-2">
                             <FontAwesomeIcon icon={faEyeSlash} />

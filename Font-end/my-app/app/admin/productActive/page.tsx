@@ -140,7 +140,7 @@ export default function ShowAdmin() {
   };
 
   const handleShowProduct = async (id: string) => {
-       if (!confirm("Bạn có chắc muốn khôi phục sản phẩm này?")) return;
+    if (!confirm("Bạn có chắc muốn khôi phục sản phẩm này?")) return;
     try {
       const res = await fetch(`http://localhost:5000/products/show/${id}`, { method: "PUT" });
       if (!res.ok) {
@@ -311,7 +311,7 @@ export default function ShowAdmin() {
                 <tr key={product._id} className="text-center">
                   <td>{indexOfFirst + index + 1}</td>
                   <td>{product.name}</td>
-                  <td>
+                  <td  className="text-center">
                     <Image src={product.image} alt={product.name} width={60} height={60} rounded className={styles["product-img"]} />
                   </td>
                   <td>{renderSizes(product.sizes)}</td>
