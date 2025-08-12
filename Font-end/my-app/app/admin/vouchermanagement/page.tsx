@@ -1,12 +1,7 @@
 "use client";
-import "./voucher.css";
-import "../admin.css";
 import React, { useState, useEffect } from "react";
 import {
     Container,
-    Row,
-    Col,
-    Card,
     Table,
     Button,
     Form,
@@ -14,10 +9,11 @@ import {
 import AdminSideBar from "@/app/component/adminSideBar";
 import AdminNavbar from "@/app/component/adminNavbar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEyeSlash, faPenToSquare, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faEyeSlash, faPenToSquare, faPlus, faRotate, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import VoucherFormModal from "@/app/component/createVoucherModal";
 import VoucherUpdateModal from "@/app/component/updateVoucherModal";
+import styles from "../styles/product.module.css";
 
 interface Voucher {
     _id: string;
@@ -33,13 +29,13 @@ interface Voucher {
 
 export default function VoucherPages() {
     const [collapsed, setCollapsed] = useState(false);
-    const [statusFilter, setStatusFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+    const [searchTerm, setSearchTerm] = useState("");
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
 
-    // Fetch voucher list
     const fetchVouchers = async () => {
         try {
             const res = await fetch("http://localhost:5000/voucher");
@@ -58,8 +54,8 @@ export default function VoucherPages() {
         fetchVouchers();
     }, []);
 
-    // Handle hide voucher
     const handleHideVoucher = async (id: string) => {
+        if (!confirm("Bạn có chắc muốn ẩn voucher này?")) return;
         try {
             const res = await fetch(`http://localhost:5000/voucher/${id}/hide`, {
                 method: "PATCH",
@@ -67,28 +63,31 @@ export default function VoucherPages() {
             });
             const data = await res.json();
             if (data.status) {
-                toast.success("Voucher ẩn thành công")
+                toast.success("Voucher ẩn thành công");
                 fetchVouchers();
             } else {
                 alert(data.message);
             }
         } catch (error) {
-            toast.error("Lỗi khi ẩn voucher")
+            toast.error("Lỗi khi ẩn voucher");
             console.error("Lỗi khi ẩn voucher:", error);
         }
     };
+
     const handleVoucherUpdated = (updatedVoucher: Voucher) => {
         setVouchers((prev) =>
             prev.map((v) => (v._id === updatedVoucher._id ? updatedVoucher : v))
         );
         setShowUpdateModal(false);
     };
+
     const handleVoucherAdded = (newVoucher: Voucher) => {
         setVouchers((prev) => [newVoucher, ...prev]);
         setShowAddModal(false);
     };
-    // Handle restore voucher
+
     const handleRestoreVoucher = async (id: string) => {
+        if (!confirm("Bạn có chắc muốn khôi phục voucher này?")) return;
         try {
             const res = await fetch(`http://localhost:5000/voucher/${id}/restore`, {
                 method: "PATCH",
@@ -96,7 +95,7 @@ export default function VoucherPages() {
             });
             const data = await res.json();
             if (data.status) {
-                toast.success("Voucher khôi phục thành công")
+                toast.success("Voucher khôi phục thành công");
                 fetchVouchers();
             } else {
                 alert(data.message);
@@ -107,8 +106,13 @@ export default function VoucherPages() {
     };
 
     const filteredVouchers = vouchers.filter((voucher) => {
-        if (statusFilter === "all") return true;
-        return (voucher.isActive ? "active" : "inactive") === statusFilter;
+        if (statusFilter === "active" && !voucher.isActive) return false;
+        if (statusFilter === "inactive" && voucher.isActive) return false;
+
+        if (searchTerm.trim() && !voucher.code.toLowerCase().includes(searchTerm.toLowerCase())) {
+            return false;
+        }
+        return true;
     });
 
     const formatDate = (dateString: string) => {
@@ -122,163 +126,154 @@ export default function VoucherPages() {
     return (
         <div className="d-flex dark-mode">
             <AdminSideBar />
-            <Container
-                fluid
-                className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
-                    }`}
-            >
+            <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
                 <AdminNavbar />
-                <div className="voucher-container">
-                    <div className="voucher-wrapper">
-                        <div className="voucher-header">
-                            <h1 className="voucher-title">🎫 Quản lý Voucher</h1>
-                            <p className="voucher-subtitle">
-                                Quản lý và theo dõi các mã khuyến mãi, mã giảm giá
-                            </p>
+                <div className={styles["admin-product-container"]}>
+                    <h2>🎫 Quản lý Voucher</h2>
+                    <div className={styles.statsGrid}>
+                        <div className={styles.statCard}>
+                            <span className={styles.statLabel}>Tổng số voucher</span>
+                            <span className={styles.statValue}>{vouchers.length}</span>
                         </div>
-
-                        <div className="voucher-stats">
-                            <div className="voucher-stat-card">
-                                <div className="stat-header">
-                                    <div>
-                                        <div className="stat-label">Tổng số voucher</div>
-                                        <div className="stat-value">{vouchers.length}</div>
-                                    </div>
-                                    <div className="stat-icon">📊</div>
-                                </div>
-                            </div>
-
-                            <div className="voucher-stat-card">
-                                <div className="stat-header">
-                                    <div>
-                                        <div className="stat-label">Đang hoạt động</div>
-                                        <div className="stat-value green">
-                                            {vouchers.filter(v => v.isActive).length}
-                                        </div>
-                                    </div>
-                                    <div className="stat-icon green-bg">✅</div>
-                                </div>
-                            </div>
-
-                            <div className="voucher-stat-card">
-                                <div className="stat-header">
-                                    <div>
-                                        <div className="stat-label">Không hoạt động</div>
-                                        <div className="stat-value gray">
-                                            {vouchers.filter(v => !v.isActive).length}
-                                        </div>
-                                    </div>
-                                    <div className="stat-icon gray-bg">⏸️</div>
-                                </div>
-                            </div>
+                        <div className={styles.statCard}>
+                            <span className={styles.statLabel}>Đang hoạt động</span>
+                            <span className={styles.statValue}>{vouchers.filter(v => v.isActive).length}</span>
                         </div>
-
-                        <div className="voucher-table-card">
-                            <div className="table-header">
-                                <h2 className="table-title">🔍 Danh sách voucher</h2>
-                                <div className="filter-section">
-                                    <span className="filter-label">Lọc theo trạng thái:</span>
-                                    <select
-                                        className="filter-select"
-                                        value={statusFilter}
-                                        onChange={(e) => setStatusFilter(e.target.value)}
-                                    >
-                                        <option value="all">Tất cả</option>
-                                        <option value="active">Đang hoạt động</option>
-                                        <option value="inactive">Không hoạt động</option>
-                                    </select>
-                                </div>
+                        <div className={styles.statCard}>
+                            <span className={styles.statLabel}>Không hoạt động</span>
+                            <span className={styles.statValue}>{vouchers.filter(v => !v.isActive).length}</span>
+                        </div>
+                    </div>
+                    <div className={styles["adminHeader"] + " mb-4 d-flex"}>
+                        <div className={styles.meNu}>
+                            <div className={styles.filters}>
+                                <button
+                                    className={`${styles.filterBtn} ${statusFilter === "all" ? styles.active : ""}`}
+                                    onClick={() => setStatusFilter("all")}
+                                >
+                                    Tất cả
+                                </button>
+                                <button
+                                    className={`${styles.filterBtn} ${statusFilter === "active" ? styles.active : ""}`}
+                                    onClick={() => setStatusFilter("active")}
+                                >
+                                    Đang hoạt động
+                                </button>
+                                <button
+                                    className={`${styles.filterBtn} ${statusFilter === "inactive" ? styles.active : ""}`}
+                                    onClick={() => setStatusFilter("inactive")}
+                                >
+                                    Ngưng hoạt động
+                                </button>
                                 <Button style={{ fontWeight: "600" }} onClick={() => setShowAddModal(true)}>
                                     <FontAwesomeIcon icon={faPlus} /> Thêm Voucher
                                 </Button>
                             </div>
 
-                            <Table className="voucher-table text-center" striped bordered hover>
-                                <thead>
-                                    <tr>
-                                        <th>Mã</th>
-                                        <th>Giảm giá</th>
-                                        <th>Giá trị đơn hàng tối thiểu</th>
-                                        <th>Giảm giá tối đa</th>
-                                        <th>Mô tả</th>
-                                        <th>Hết hạn</th>
-                                        <th>Trạng thái</th>
-                                        <th>Chức năng</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredVouchers.map((voucher) => (
-                                        <tr key={voucher._id}>
-                                            <td><span className="voucher-code">{voucher.code}</span></td>
-                                            <td>
-                                                💰{" "}
-                                                {voucher.discountType === "percentage"
-                                                    ? `${voucher.discountValue}%`
-                                                    : `${voucher.discountValue.toLocaleString()}₫`}
-                                            </td>
-                                            <td>{voucher.minOrderValue.toLocaleString()}đ</td>
-                                            <td>{voucher.maxDiscount.toLocaleString()}đ</td>
-                                            <td>{voucher.description}</td>
-                                            <td>{formatDate(voucher.expiresAt)}</td>
-                                            <td>
-                                                <span
-                                                    className={`status-badge ${voucher.isActive ? "active" : "inactive"
-                                                        }`}
-                                                >
-                                                    {voucher.isActive ? "Đang hoạt động" : "Không hoạt động"}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <Button
-                                                    variant="warning"
-                                                    size="sm"
-                                                    className="me-2"
-                                                    onClick={() => {
-                                                        setSelectedVoucher(voucher);
-                                                        setShowUpdateModal(true);
-                                                    }}
-                                                >
-                                                    <FontAwesomeIcon icon={faPenToSquare} />
-                                                </Button>
-
-                                                {voucher.isActive ? (
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="sm"
-                                                        onClick={() => handleHideVoucher(voucher._id)}
-                                                    >
-                                                        <FontAwesomeIcon icon={faEyeSlash} />
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        variant="success"
-                                                        size="sm"
-                                                        onClick={() => handleRestoreVoucher(voucher._id)}
-                                                    >
-                                                        🔄
-                                                    </Button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </Table>
-
-                            {filteredVouchers.length === 0 && (
-                                <div className="empty-state">
-                                    <div className="empty-icon">🎫</div>
-                                    <p>Không tìm thấy voucher phù hợp với bộ lọc đã chọn.</p>
+                            <Form className={styles.fromInput} onSubmit={(e) => e.preventDefault()}>
+                                <div className="input-group">
+                                    <input
+                                        className="form-control search-input"
+                                        type="search"
+                                        placeholder="Tìm kiếm theo mã..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                    <button className="btn search-button" type="submit">
+                                        <FontAwesomeIcon icon={faSearch} />
+                                    </button>
                                 </div>
-                            )}
+                            </Form>
                         </div>
                     </div>
+                    <Table striped bordered hover className={styles.table}>
+                        <thead>
+                            <tr className="text-center">
+                                <th>Mã</th>
+                                <th>Giảm giá</th>
+                                <th>Giá trị đơn hàng tối thiểu</th>
+                                <th>Giảm giá tối đa</th>
+                                <th>Mô tả</th>
+                                <th>Hết hạn</th>
+                                <th>Trạng thái</th>
+                                <th>Chức năng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredVouchers.map((voucher) => (
+                                <tr key={voucher._id} className="text-center">
+                                    <td><span >{voucher.code}</span></td>
+                                    <td>
+                                        💰{" "}
+                                        {voucher.discountType === "percentage"
+                                            ? `${voucher.discountValue}%`
+                                            : `${voucher.discountValue.toLocaleString()}₫`}
+                                    </td>
+                                    <td>{voucher.minOrderValue.toLocaleString()}đ</td>
+                                    <td>{voucher.maxDiscount.toLocaleString()}đ</td>
+                                    <td>{voucher.description}</td>
+                                    <td>{formatDate(voucher.expiresAt)}</td>
+                                    <td>
+                                        <span
+                                            className={`${styles["status-badge"]} ${voucher.isActive ? styles.active : styles.inactive
+                                                }`}
+                                        >
+                                            {voucher.isActive ? "Đang hoạt động" : "Không hoạt động"}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <Button
+                                           variant="outline-warning"
+                                            size="sm"
+                                            className="me-2"
+                                            onClick={() => {
+                                                setSelectedVoucher(voucher);
+                                                setShowUpdateModal(true);
+                                            }}
+                                        >
+                                            <FontAwesomeIcon icon={faPenToSquare} />
+                                        </Button>
+                                        {voucher.isActive ? (
+                                            <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                onClick={() => handleHideVoucher(voucher._id)}
+                                            >
+                                                <FontAwesomeIcon icon={faEyeSlash} />
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="outline-success"
+                                                size="sm"
+                                                onClick={() => handleRestoreVoucher(voucher._id)}
+                                            >
+                                                <FontAwesomeIcon icon={faRotate} />
+                                            </Button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+
+                    {filteredVouchers.length === 0 && (
+                        <div className="empty-state">
+                            <div className="empty-icon">🎫</div>
+                            <p>Không tìm thấy voucher phù hợp.</p>
+                        </div>
+                    )}
+
                 </div>
             </Container>
+
+            {/* Modal thêm voucher */}
             <VoucherFormModal
                 showModal={showAddModal}
                 setShowModal={setShowAddModal}
                 onAdded={handleVoucherAdded}
             />
+
+            {/* Modal cập nhật voucher */}
             {selectedVoucher && (
                 <VoucherUpdateModal
                     showModal={showUpdateModal}
@@ -288,6 +283,5 @@ export default function VoucherPages() {
                 />
             )}
         </div>
-
     );
 }
