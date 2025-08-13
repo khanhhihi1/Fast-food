@@ -70,7 +70,7 @@ export default function Header() {
           credentials: "include",
         });
         const data = await res.json();
-        if (res.ok && data.success) {
+        if (res.ok && data.status) {
           setUser(data.result);
         } else {
           setUser(null);
@@ -89,7 +89,7 @@ export default function Header() {
         credentials: "include",
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && data.status) {
         setUser(null);
         router.push("/login");
       } else {
@@ -125,7 +125,7 @@ export default function Header() {
       }
 
       const data = await res.json();
-      if (data.success) {
+      if (data.status) {
         setSearchResults(data.result);
       } else {
         setSearchResults([]);
@@ -283,7 +283,7 @@ export default function Header() {
               <Image src="/Logo.png" alt="Logo" style={{ width: "130px", height: "130px" }} />
             </Col>
             <Col xs={5} className="d-flex align-items-center justify-content-center" style={{ gap: "30px" }}>
-              <Link href="/news" className={styles.aLink}>TIN TỨC</Link>
+              <Link href="/new" className={styles.aLink}>TIN TỨC</Link>
               <Link href="/" className={styles.aLink}>LIÊN HỆ</Link>
               <Link href="/" className={styles.aLink}>NHƯỢNG QUYỀN</Link>
             </Col>
