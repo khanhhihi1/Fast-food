@@ -223,7 +223,7 @@ export default function VoucherPages() {
                                     </td>
                                     <td>
                                         <Button
-                                           variant="outline-warning"
+                                            variant="outline-warning"
                                             size="sm"
                                             className="me-2"
                                             onClick={() => {

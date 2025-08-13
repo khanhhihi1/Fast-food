@@ -1,0 +1,177 @@
+/* styles/Favorites.module.css */
+/* Biến màu sắc */
+:root {
+  --primary-color: #e74c3c;
+  --secondary-color: #f39c12;
+  --dark-color: #2c3e50;
+  --light-color: #ecf0f1;
+  --gray-color: #95a5a6;
+}
+
+/* Hero section */
+.heroSection {
+  background: linear-gradient(rgba(0, 0, 0, 0.7)), url('/images/pizza-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 6rem 0;
+  text-align: center;
+}
+
+.heroTitle {
+  font-size: 3.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.heroSubtitle {
+  font-size: 1.5rem;
+  font-weight: 300;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Favorites header */
+.favoritesHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.favoritesHeader h2 {
+  color: var(--dark-color);
+  font-weight: 700;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
+}
+
+.favoritesHeader h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: var(--primary-color);
+}
+
+.favoritesHeader p {
+  color: var(--gray-color);
+  font-size: 1.1rem;
+}
+
+/* Product card */
+.productCard {
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+
+.productCard:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.cardImageContainer {
+  position: relative;
+  overflow: hidden;
+  height: 200px;
+}
+
+.productImage {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s ease;
+}
+
+.productCard:hover .productImage {
+  transform: scale(1.05);
+}
+
+.favoriteBadge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.favoriteBadge img {
+  width: 20px;
+  height: 20px;
+}
+
+.productTitle {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--dark-color);
+  margin-bottom: 0.5rem;
+}
+
+.productDescription {
+  color: var(--gray-color);
+  font-size: 0.9rem;
+  min-height: 60px;
+  margin-bottom: 1.5rem;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.productPrice {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+}
+
+/* Empty state */
+.emptyState {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.emptyIcon {
+  width: 120px;
+  margin-bottom: 2rem;
+  opacity: 0.7;
+}
+
+.emptyState h3 {
+  color: var(--dark-color);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.emptyState p {
+  color: var(--gray-color);
+  font-size: 1.1rem;
+  max-width: 500px;
+  margin: 0 auto 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+}
