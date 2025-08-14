@@ -14,19 +14,7 @@ import { toast } from "react-toastify";
 import VoucherFormModal from "@/app/component/createVoucherModal";
 import VoucherUpdateModal from "@/app/component/updateVoucherModal";
 import styles from "../styles/product.module.css";
-
-interface Voucher {
-    _id: string;
-    code: string;
-    description: string;
-    discountValue: number;
-    discountType: string;
-    minOrderValue: number;
-    maxDiscount: number;
-    expiresAt: string;
-    isActive: boolean;
-}
-
+import { Voucher } from "@/app/type/voucher";
 export default function VoucherPages() {
     const [collapsed, setCollapsed] = useState(false);
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");

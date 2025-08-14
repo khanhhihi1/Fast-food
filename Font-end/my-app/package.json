@@ -17,6 +17,7 @@
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.9",
     "framer-motion": "^12.16.0",
+    "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.511.0",
     "next": "^15.2.4",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/axios": "^0.9.36",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/lodash": "^4.17.20",
     "@types/node": "^20",
     "@types/react": "^19",

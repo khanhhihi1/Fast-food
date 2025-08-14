@@ -1,17 +1,8 @@
 import { useEffect, useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { toast } from "react-toastify";
+import { Voucher } from "../type/voucher";
 
-interface Voucher {
-  _id: string;
-  code: string;
-  description: string;
-  discountValue: number;
-  discountType: string;
-  minOrderValue: number;
-  expiresAt: string;
-  maxDiscount: number;
-}
 
 interface Props {
   showModal: boolean;

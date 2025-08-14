@@ -11,25 +11,9 @@ import styles from "../styles/product.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faPenToSquare, faPlus, faRotate } from "@fortawesome/free-solid-svg-icons";
 import { FaSearch } from "react-icons/fa";
-
+import { PostType } from "@/app/type/type";
 export default function ShowAdmin() {
-  interface PostType {
-    _id: string;
-    name: string;
-    categoryId?: string | { _id: string; name: string };
-    image: string;
-    quantity: number;
-    taste?: string[];
-    sizes?: {
-      name: string;
-      price: {
-        original: number;
-        discount?: number;
-      };
-    }[];
-    description: string;
-    status?: boolean; // Thay isHidden thành status để khớp với backend
-  }
+  
 
   const [posts, setPosts] = useState<PostType[]>([]);
   const [post, setPost] = useState<PostType | null>(null);

@@ -49,8 +49,11 @@ interface User {
   role: string;
 }
 
+// ---- FIX: productId có thể là string hoặc object {_id} ----
+type ProductIdLike = string | { _id: string };
+
 interface OrderItem {
-  productId: string;
+  productId: ProductIdLike;
   name: string;
   image: string;
   sizeName: string;
@@ -106,7 +109,7 @@ const OrderStatusText = {
   4: "Hoàn tất",
   5: "Đã hủy",
 };
-const OrderStatusBadge = {
+const OrderStatusBadge: Record<number, { text: string; variant: string }> = {
   0: { text: OrderStatusText[0], variant: "warning" },
   1: { text: OrderStatusText[1], variant: "warning" },
   2: { text: OrderStatusText[2], variant: "info" },
@@ -114,6 +117,11 @@ const OrderStatusBadge = {
   4: { text: OrderStatusText[4], variant: "success" },
   5: { text: OrderStatusText[5], variant: "danger" },
 };
+
+// ---- Helper để chuẩn hóa productId về string ----
+const resolveProductId = (pid: ProductIdLike): string =>
+  typeof pid === "string" ? pid : pid._id;
+
 const UserProfile = () => {
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -247,8 +255,9 @@ const UserProfile = () => {
   };
 
   const submitComment = async () => {
+    let commentData: any = null;
     try {
-      const commentData = {
+      commentData = {
         userId: user?._id,
         orderId: selectedOrderId,
         productId: selectedProductId,
@@ -315,6 +324,7 @@ const UserProfile = () => {
       toast.error(err.message || "Không thể gửi bình luận");
     }
   };
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -388,7 +398,6 @@ const UserProfile = () => {
                   </Nav.Item>
                 </Nav>
 
-
                 <Tab.Content className="mt-4">
                   <Tab.Pane eventKey="profile">{/* ... */}</Tab.Pane>
                   <Tab.Pane eventKey="security">{/* ... */}</Tab.Pane>
@@ -430,7 +439,7 @@ const UserProfile = () => {
                                     <h6 className="mb-3">Sản phẩm</h6>
                                     <ListGroup variant="flush">
                                       {order.items.map((item, i) => (
-                                        <ListGroup.Item key={`${item.productId}-${i}`} className="py-3 px-0">
+                                        <ListGroup.Item key={`${resolveProductId(item.productId)}-${i}`} className="py-3 px-0">
                                           <div className="d-flex">
                                             <Image
                                               src={item.image || "/placeholder.jpg"}
@@ -462,13 +471,13 @@ const UserProfile = () => {
                                               {order.status === 4 && (
                                                 commentableProducts[order._id.toString()]?.length > 0 ? (
                                                   commentableProducts[order._id.toString()].some(
-                                                    (p) => p.productId === (typeof item.productId === 'string' ? item.productId : item.productId._id)
+                                                    (p) => p.productId === resolveProductId(item.productId)
                                                   ) && (
                                                     <Button
                                                       size="sm"
                                                       className="mt-2"
                                                       variant="outline-primary"
-                                                      onClick={() => openCommentModal(order._id, typeof item.productId === 'string' ? item.productId : item.productId._id)}
+                                                      onClick={() => openCommentModal(order._id, resolveProductId(item.productId))}
                                                     >
                                                       <FontAwesomeIcon icon={faStar} className="me-1" />
                                                       Đánh giá sản phẩm

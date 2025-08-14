@@ -43,10 +43,11 @@ export default function ProductCategory() {
 
         // Lọc theo filter ở frontend thay vì API
         if (filter === "active") {
-          fetchedCategories = fetchedCategories.filter(cat => !cat.isHidden);
+          fetchedCategories = fetchedCategories.filter((cat: CategoryType) => !cat.isHidden);
         } else if (filter === "inactive") {
-          fetchedCategories = fetchedCategories.filter(cat => cat.isHidden);
+          fetchedCategories = fetchedCategories.filter((cat: CategoryType) => cat.isHidden);
         }
+
 
         setCategories(fetchedCategories);
         setVisibleCount(15);
