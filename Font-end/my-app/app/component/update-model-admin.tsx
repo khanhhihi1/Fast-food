@@ -4,23 +4,8 @@ import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
 import { toast } from "react-toastify";
 import "./model.css"
-interface PostType {
-  _id?: string;
-  name: string;
-  image: string;
-  category: string;
-  quantity: number;
-  taste: string[] | string;
-  description: string;
-  sizes: {
-    name: string;
-    price: {
-      original: number;
-      discount?: number;
-    };
-  }[];
-  status?: boolean;
-}
+import { PostType } from "../type/type";
+
 
 interface iShow {
   showUpdateModal: boolean;

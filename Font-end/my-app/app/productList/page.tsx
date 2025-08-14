@@ -7,7 +7,7 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import styles from "../styles/productList.module.css";
-import ProductItem from "../productItem/productItem";
+import ProductItem from "../productItem/page";
 
 interface Product {
   _id: string;

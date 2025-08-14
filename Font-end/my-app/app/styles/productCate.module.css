@@ -94,16 +94,3 @@
   color: #dc3545;
   font-size: 1rem;
 }
-
-:global(.list-group-item.active) {
-  background-color: #c20a28 !important;
-  border-color: #c20a28 !important;
-  color: white !important;
-}
-
-/* Khi hover vẫn giữ màu đỏ */
-:global(.list-group-item.active:hover) {
-  background-color: #a40820 !important;
-  border-color: #a40820 !important;
-  color: white !important;
-}

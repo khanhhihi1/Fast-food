@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Counter from "@/app/count/count";
 import "./productList.css";
-import ProductList from "../productList";
+import ProductList from "../page";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
@@ -57,7 +57,19 @@ interface CommentType {
   rating: number;
   createdAt: string;
 }
+interface PaginationProps {
+  value: number;
+  setValue: React.Dispatch<React.SetStateAction<number>>;
+}
 
+const PaginationComponent: React.FC<PaginationProps> = ({ value, setValue }) => {
+  return (
+    <div>
+      <button onClick={() => setValue(value - 1)}>Prev</button>
+      <button onClick={() => setValue(value + 1)}>Next</button>
+    </div>
+  );
+};
 const ProductDetail = () => {
   const { id } = useParams();
   const [productId, setProductId] = useState<string | null>(null);
@@ -75,39 +87,55 @@ const ProductDetail = () => {
     const res = await fetch(url, { credentials: "include" });
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text}`);
+      throw new Error(
+        `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE")
+          ? "Không tìm thấy endpoint"
+          : text
+        }`
+      );
     }
     const data = await res.json();
     if (!data.result) throw new Error("API không trả về 'result'");
     return data.result;
   };
 
-  const { data: product, error: productError, isLoading: productLoading } = useSWR(
+  const {
+    data: product,
+    error: productError,
+    isLoading: productLoading,
+  } = useSWR<ProductType>(
     productId ? `http://localhost:5000/products/${productId}` : null,
     fetcher
   );
 
-  const { data: categories, error: categoryError, isLoading: categoryLoading } = useSWR(
-    "http://localhost:5000/categories",
-    fetcher
-  );
+  const {
+    data: categories,
+    error: categoryError,
+    isLoading: categoryLoading,
+  } = useSWR<CategoryInfo[]>("http://localhost:5000/categories", fetcher);
 
-  const { data: comments, error: commentError, isLoading: commentLoading } = useSWR(
-  productId ? `http://localhost:5000/comment/${productId}` : null,
-  async (url: string) => {
-    console.log("Fetching comments from:", url);
-    const res = await fetch(url, { credentials: "include" });
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Fetch error:", { status: res.status, body: text });
-      throw new Error(`Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text}`);
+  const {
+    data: comments,
+    error: commentError,
+    isLoading: commentLoading,
+  } = useSWR<CommentType[]>(
+    productId ? `http://localhost:5000/comment/${productId}` : null,
+    async (url: string) => {
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE")
+            ? "Không tìm thấy endpoint"
+            : text
+          }`
+        );
+      }
+      const data = await res.json();
+      if (!data.result) throw new Error("API không trả về 'result'");
+      return data.result;
     }
-    const data = await res.json();
-    console.log("Comments response:", data);
-    if (!data.result) throw new Error("API không trả về 'result'");
-    return data.result;
-  }
-);
+  );
 
   useEffect(() => {
     if (product?.sizes && product.sizes.length > 0) {
@@ -117,32 +145,20 @@ const ProductDetail = () => {
     }
   }, [product]);
 
-  useEffect(() => {
-    if (categories) {
-      console.log("Fetched categories:", categories);
-    }
-    if (categoryError) {
-      console.error("Category fetch error:", categoryError);
-    }
-    if (comments) {
-      console.log("Fetched comments:", comments);
-    }
-    if (commentError) {
-      console.error("Comment fetch error:", commentError);
-    }
-  }, [categories, categoryError, comments, commentError]);
-
   const getCategoryName = () => {
     if (!product || !categories) return "Danh mục";
     if (typeof product.categoryId === "string") {
-      const category = categories.find((cat: CategoryInfo) => cat._id === product.categoryId);
+      const category = categories.find(
+        (cat) => cat._id === product.categoryId
+      );
       return category?.name || "Danh mục";
     }
     return (product.categoryId as CategoryInfo)?.name || "Danh mục";
   };
 
   const renderPrice = () => {
-    if (!product?.sizes || product.sizes.length === 0) return "Giá không khả dụng";
+    if (!product?.sizes || product.sizes.length === 0)
+      return "Giá không khả dụng";
     const size = product.sizes.find((s) => s.name === selectedSize);
     if (!size) return "Không có size phù hợp";
 
@@ -161,19 +177,19 @@ const ProductDetail = () => {
     );
   };
 
-  const renderStars = (rating: number) => {
-    return (
-      <span>
-        {[...Array(5)].map((_, index) => (
-          <FontAwesomeIcon
-            key={index}
-            icon={faStar}
-            style={{ color: index < rating ? "#ffc107" : "#e4e5e9" }}
-          />
-        ))}
-      </span>
-    );
-  };
+  const renderStars = (rating: number) => (
+    <span>
+      {[...Array(5)].map((_, index) => (
+        <FontAwesomeIcon
+          key={index}
+          icon={faStar}
+          style={{
+            color: index < rating ? "#ffc107" : "#e4e5e9",
+          }}
+        />
+      ))}
+    </span>
+  );
 
   const handleAddToCart = async (product: ProductType) => {
     if (!selectedSize || !product?._id) {
@@ -181,7 +197,9 @@ const ProductDetail = () => {
       return;
     }
 
-    const sizeInfo = product.sizes?.find((s) => s.name === selectedSize);
+    const sizeInfo = product.sizes?.find(
+      (s) => s.name === selectedSize
+    );
     if (!sizeInfo) {
       toast.error("Kích cỡ không hợp lệ");
       return;
@@ -214,24 +232,37 @@ const ProductDetail = () => {
       toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
     } catch (error: any) {
       toast.error(`Thêm giỏ hàng thất bại: ${error.message}`);
-      console.error("Lỗi khi thêm giỏ hàng:", error);
     }
   };
 
-  if (productLoading || categoryLoading || commentLoading) return <p>Đang tải...</p>;
-  if (productError) return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
-  if (categoryError) return <p>Lỗi khi tải danh mục: {categoryError.message}</p>;
-  if (commentError) return <p>Lỗi khi tải bình luận: {commentError.message}</p>;
+  if (productLoading || categoryLoading || commentLoading)
+    return <p>Đang tải...</p>;
+  if (productError)
+    return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
+  if (categoryError)
+    return <p>Lỗi khi tải danh mục: {categoryError.message}</p>;
+  if (commentError)
+    return <p>Lỗi khi tải bình luận: {commentError.message}</p>;
   if (!product || !product._id) return <p>Không tìm thấy sản phẩm</p>;
 
   return (
     <>
       <Container fluid style={{ padding: "0px" }}>
-        <Breadcrumb className="m-0" style={{ backgroundColor: "#ddd", padding: "10px 110px" }}>
-          <Breadcrumb.Item href="/" className="breadCrumbItem" style={{ margin: "0px" }}>
+        <Breadcrumb
+          className="m-0"
+          style={{ backgroundColor: "#ddd", padding: "10px 110px" }}
+        >
+          <Breadcrumb.Item
+            href="/"
+            className="breadCrumbItem"
+            style={{ margin: "0px" }}
+          >
             Trang chủ
           </Breadcrumb.Item>
-          <Breadcrumb.Item href="" className="breadCrumbItem">
+          <Breadcrumb.Item
+            href=""
+            className="breadCrumbItem"
+          >
             {getCategoryName()}
           </Breadcrumb.Item>
           <Breadcrumb.Item active>{product.name}</Breadcrumb.Item>
@@ -243,8 +274,18 @@ const ProductDetail = () => {
               <Image src={product.image} fluid />
             </Col>
             <Col xs={4}>
-              <Row className="d-flex flex-column" style={{ gap: "12px" }}>
-                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{product.name}</h1>
+              <Row
+                className="d-flex flex-column"
+                style={{ gap: "12px" }}
+              >
+                <h1
+                  style={{
+                    fontSize: "20px",
+                    color: "#252a2b",
+                  }}
+                >
+                  {product.name}
+                </h1>
                 <span>{renderPrice()}</span>
 
                 {product.sizes && product.sizes.length > 0 && (
@@ -257,8 +298,8 @@ const ProductDetail = () => {
                           key={index}
                           id={`size-${index}`}
                           label={`${size.name} (${size.price.discount
-                              ? size.price.discount.toLocaleString()
-                              : size.price.original.toLocaleString()
+                            ? size.price.discount.toLocaleString()
+                            : size.price.original.toLocaleString()
                             }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
@@ -269,14 +310,26 @@ const ProductDetail = () => {
                   </>
                 )}
 
-                <span>{product.time || "Thời gian không khả dụng"}</span>
                 <span>
-                  Đánh giá: {comments?.length ? renderStars(comments.reduce((acc: number, c: CommentType) => acc + c.rating, 0) / comments.length) : "Chưa có đánh giá"}
+                  {product.time || "Thời gian không khả dụng"}
                 </span>
+                <span>
+                  Đánh giá:{" "}
+                  {(comments ?? []).length
+                    ? renderStars(
+                      (comments ?? []).reduce(
+                        (acc, c) => acc + c.rating,
+                        0
+                      ) / (comments ?? []).length
+                    )
+                    : "Chưa có đánh giá"}
+                </span>
+
 
                 <p className="m-0">Chọn vị:</p>
                 <Form>
-                  {Array.isArray(product.taste) && product.taste.length > 0 ? (
+                  {Array.isArray(product.taste) &&
+                    product.taste.length > 0 ? (
                     <>
                       <Form.Check
                         key="no-taste"
@@ -304,16 +357,19 @@ const ProductDetail = () => {
                   )}
                 </Form>
 
-                <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
+                <p className="m-0" style={{ color: "orange" }}>
+                  Combo bao gồm:
+                </p>
                 <ul>
                   <li>{product.description || "Không có mô tả"}</li>
                 </ul>
-
-                <Counter value={quantity} setValue={setQuantity} />
-
                 <Button
                   className="text-light p-2"
-                  style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
+                  style={{
+                    border: "none",
+                    borderRadius: "0",
+                    backgroundColor: "#e00000",
+                  }}
                   onClick={() => handleAddToCart(product)}
                 >
                   Thêm vào giỏ
@@ -322,12 +378,11 @@ const ProductDetail = () => {
             </Col>
           </Row>
 
-          {/* Section hiển thị bình luận */}
           <Row className="mt-5">
             <Col xs={12}>
               <h3>Bình luận về sản phẩm</h3>
-              {comments?.length > 0 ? (
-                comments.map((comment: CommentType) => (
+              {(comments ?? []).length > 0 ? (
+                (comments ?? []).map((comment) => (
                   <Card key={comment._id} className="mb-3">
                     <Card.Body>
                       <div className="d-flex justify-content-between">
@@ -336,7 +391,8 @@ const ProductDetail = () => {
                           <div>{renderStars(comment.rating)}</div>
                         </div>
                         <small className="text-muted">
-                          {new Date(comment.createdAt).toLocaleDateString("vi-VN")} {new Date(comment.createdAt).toLocaleTimeString("vi-VN")}
+                          {new Date(comment.createdAt).toLocaleDateString("vi-VN")}{" "}
+                          {new Date(comment.createdAt).toLocaleTimeString("vi-VN")}
                         </small>
                       </div>
                       <p className="mt-2">{comment.comment}</p>
@@ -346,12 +402,17 @@ const ProductDetail = () => {
               ) : (
                 <p>Chưa có bình luận nào cho sản phẩm này.</p>
               )}
+
             </Col>
           </Row>
         </Container>
       </Container>
 
-      <ProductList category="related" title="Sản phẩm liên quan" limit={6} />
+      <ProductList
+        category="related"
+        title="Sản phẩm liên quan"
+        limit={6}
+      />
     </>
   );
 };

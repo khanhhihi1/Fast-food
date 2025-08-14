@@ -61,7 +61,7 @@ interface Order {
   createdAt: string;
 }
 
-const OrderStatusText = {
+const OrderStatusText: { [key: number]: string } = {
   0: "Chờ xác nhận",
   1: "Chờ thanh toán",
   2: "Đã xác nhận",
@@ -242,9 +242,7 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
             <Card>
               <Card.Body>
                 <h6>Ghi chú</h6>
-                <p>
-                  {order.shippingInfo?.note || "Khách hàng không có ghi chú"}
-                </p>
+                
               </Card.Body>
             </Card>
           </Col>

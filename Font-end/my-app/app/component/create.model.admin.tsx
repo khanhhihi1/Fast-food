@@ -7,9 +7,10 @@ import { toast } from "react-toastify";
 interface iShow {
   showModal: boolean;
   setShowModal: (value: boolean) => void;
+  fetchPosts: () => void;
 }
 
-function ModalsAdmin({ showModal, setShowModal }: iShow) {
+function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [image, setImage] = useState("");
@@ -86,8 +87,8 @@ function ModalsAdmin({ showModal, setShowModal }: iShow) {
           original: variantPrices[`${sz}_original`],
           ...(variantPrices[`${sz}_discount`] &&
             variantPrices[`${sz}_discount`] < variantPrices[`${sz}_original`]
-              ? { discount: variantPrices[`${sz}_discount`] }
-              : {}),
+            ? { discount: variantPrices[`${sz}_discount`] }
+            : {}),
         },
       }));
     }
