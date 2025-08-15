@@ -1,4 +1,0 @@
-# Bỏ qua file môi trường
-.env
-# Bỏ qua node_modules
-node_modules/

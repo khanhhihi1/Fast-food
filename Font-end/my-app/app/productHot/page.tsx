@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card } from 'react-bootstrap';
-import styles from '../styles/HotProduct.module.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeart, faHeartBroken } from '@fortawesome/free-solid-svg-icons';
-import { toast } from 'react-toastify';
-import Link from 'next/link'; // dùng Link của Next.js chứ không phải từ `lucide-react`
+"use client";
+import React, { useEffect, useState } from "react";
+import { Container, Row, Col, Card } from "react-bootstrap";
+import styles from "../styles/HotProduct.module.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart, faHeartBroken } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
+import Link from "next/link"; // dùng Link của Next.js chứ không phải từ `lucide-react`
 
 interface Product {
   _id: string;
@@ -36,21 +37,23 @@ const HotProducts = () => {
 
     async function fetchProducts() {
       try {
-        const res = await fetch('http://localhost:5000/products/hot', { signal });
+        const res = await fetch("http://localhost:5000/products/hot", {
+          signal,
+        });
         const data = await res.json();
 
         const productList = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-            ? data.result
-            : Array.isArray(data.data)
-              ? data.data
-              : [];
+          ? data.result
+          : Array.isArray(data.data)
+          ? data.data
+          : [];
 
         setHotProducts(productList);
       } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('Lỗi khi fetch sản phẩm:', error);
+        if (error.name !== "AbortError") {
+          console.error("Lỗi khi fetch sản phẩm:", error);
         }
       }
     }
@@ -64,10 +67,13 @@ const HotProducts = () => {
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const res = await fetch("http://localhost:5000/favoriteProduct/favorites", {
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
+        const res = await fetch(
+          "http://localhost:5000/favoriteProduct/favorites",
+          {
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
 
         const data = await res.json();
 
@@ -89,11 +95,14 @@ const HotProducts = () => {
   // Toggle yêu thích theo từng sản phẩm
   const toggleFavorite = async (productId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/favoriteProduct/favorites/${productId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const response = await fetch(
+        `http://localhost:5000/favoriteProduct/favorites/${productId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
 
       const result = await response.json();
 
@@ -114,7 +123,9 @@ const HotProducts = () => {
 
   return (
     <Container className="py-5">
-      <h2 className={`text-center mb-4 ${styles.sectionTitle} ${styles.sectionTitle1}`}>
+      <h2
+        className={`text-center mb-4 ${styles.sectionTitle} ${styles.sectionTitle1}`}
+      >
         SẢN PHẨM NỔI BẬT 🔥
       </h2>
 
@@ -124,7 +135,7 @@ const HotProducts = () => {
           const priceInfo = hasSizes ? product.sizes![0].price : null;
           const displayPrice = priceInfo
             ? priceInfo.discount ?? priceInfo.original
-            : 'Liên hệ';
+            : "Liên hệ";
 
           const isFavorite = favoriteMap[product._id] || false;
 
@@ -144,19 +155,26 @@ const HotProducts = () => {
                 </Link>
 
                 <Card.Body className={styles.cardBody}>
-                  <Card.Title className={styles.productTitle}>{product.name}</Card.Title>
-                  <Card.Text className={styles.productDesc}>{product.description}</Card.Text>
+                  <Card.Title className={styles.productTitle}>
+                    {product.name}
+                  </Card.Title>
+                  <Card.Text className={styles.productDesc}>
+                    {product.description}
+                  </Card.Text>
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <span className={styles.productPrice}>
-                      {typeof displayPrice === 'number'
-                        ? displayPrice.toLocaleString('vi-VN') + '₫'
+                      {typeof displayPrice === "number"
+                        ? displayPrice.toLocaleString("vi-VN") + "₫"
                         : displayPrice}
                     </span>
                     <FontAwesomeIcon
                       icon={isFavorite ? faHeart : faHeartBroken}
-                      style={{ color: isFavorite ? 'red' : '#aaa', cursor: 'pointer' }}
+                      style={{
+                        color: isFavorite ? "red" : "#aaa",
+                        cursor: "pointer",
+                      }}
                       onClick={() => toggleFavorite(product._id)}
-                      title={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+                      title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
                     />
                   </div>
                 </Card.Body>
