@@ -1,11 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Container, Spinner, Alert } from "react-bootstrap";
 import Link from "next/link";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
@@ -22,7 +22,7 @@ export default function PaymentSuccessPage() {
           {
             credentials: "include",
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token nếu cần
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
             },
           }
         );
@@ -31,13 +31,13 @@ export default function PaymentSuccessPage() {
 
         const orderId = data.session.metadata.orderId;
 
-        // B2: Gọi backend kiểm tra trạng thái đơn hàng
+        // B2: Kiểm tra trạng thái đơn hàng
         const orderRes = await fetch(
           `http://localhost:5000/orders/${orderId}/status`,
           {
             credentials: "include",
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token nếu cần
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
             },
           }
         );
@@ -73,7 +73,7 @@ export default function PaymentSuccessPage() {
       {status === "success" && (
         <Alert variant="success">
           🎉 Thanh toán thành công! Cảm ơn bạn đã đặt hàng. Bạn có thể xem đơn
-          hàng tại
+          hàng tại{" "}
           <Link href="/account" className="fw-bold text-decoration-underline">
             trang cá nhân
           </Link>
@@ -86,5 +86,13 @@ export default function PaymentSuccessPage() {
         </Alert>
       )}
     </Container>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-5">Đang tải...</div>}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
