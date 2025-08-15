@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Counter from "@/app/count/count";
 import "./productList.css";
-import ProductList from "../page";
+import ProductList from "../productList";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
@@ -62,7 +62,10 @@ interface PaginationProps {
   setValue: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const PaginationComponent: React.FC<PaginationProps> = ({ value, setValue }) => {
+const PaginationComponent: React.FC<PaginationProps> = ({
+  value,
+  setValue,
+}) => {
   return (
     <div>
       <button onClick={() => setValue(value - 1)}>Prev</button>
@@ -88,9 +91,8 @@ const ProductDetail = () => {
     if (!res.ok) {
       const text = await res.text();
       throw new Error(
-        `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE")
-          ? "Không tìm thấy endpoint"
-          : text
+        `Lỗi ${res.status}: ${
+          text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
         }`
       );
     }
@@ -125,9 +127,8 @@ const ProductDetail = () => {
       if (!res.ok) {
         const text = await res.text();
         throw new Error(
-          `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE")
-            ? "Không tìm thấy endpoint"
-            : text
+          `Lỗi ${res.status}: ${
+            text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
           }`
         );
       }
@@ -148,9 +149,7 @@ const ProductDetail = () => {
   const getCategoryName = () => {
     if (!product || !categories) return "Danh mục";
     if (typeof product.categoryId === "string") {
-      const category = categories.find(
-        (cat) => cat._id === product.categoryId
-      );
+      const category = categories.find((cat) => cat._id === product.categoryId);
       return category?.name || "Danh mục";
     }
     return (product.categoryId as CategoryInfo)?.name || "Danh mục";
@@ -197,9 +196,7 @@ const ProductDetail = () => {
       return;
     }
 
-    const sizeInfo = product.sizes?.find(
-      (s) => s.name === selectedSize
-    );
+    const sizeInfo = product.sizes?.find((s) => s.name === selectedSize);
     if (!sizeInfo) {
       toast.error("Kích cỡ không hợp lệ");
       return;
@@ -237,12 +234,10 @@ const ProductDetail = () => {
 
   if (productLoading || categoryLoading || commentLoading)
     return <p>Đang tải...</p>;
-  if (productError)
-    return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
+  if (productError) return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
   if (categoryError)
     return <p>Lỗi khi tải danh mục: {categoryError.message}</p>;
-  if (commentError)
-    return <p>Lỗi khi tải bình luận: {commentError.message}</p>;
+  if (commentError) return <p>Lỗi khi tải bình luận: {commentError.message}</p>;
   if (!product || !product._id) return <p>Không tìm thấy sản phẩm</p>;
 
   return (
@@ -259,10 +254,7 @@ const ProductDetail = () => {
           >
             Trang chủ
           </Breadcrumb.Item>
-          <Breadcrumb.Item
-            href=""
-            className="breadCrumbItem"
-          >
+          <Breadcrumb.Item href="" className="breadCrumbItem">
             {getCategoryName()}
           </Breadcrumb.Item>
           <Breadcrumb.Item active>{product.name}</Breadcrumb.Item>
@@ -274,10 +266,7 @@ const ProductDetail = () => {
               <Image src={product.image} fluid />
             </Col>
             <Col xs={4}>
-              <Row
-                className="d-flex flex-column"
-                style={{ gap: "12px" }}
-              >
+              <Row className="d-flex flex-column" style={{ gap: "12px" }}>
                 <h1
                   style={{
                     fontSize: "20px",
@@ -297,10 +286,11 @@ const ProductDetail = () => {
                           type="radio"
                           key={index}
                           id={`size-${index}`}
-                          label={`${size.name} (${size.price.discount
-                            ? size.price.discount.toLocaleString()
-                            : size.price.original.toLocaleString()
-                            }đ)`}
+                          label={`${size.name} (${
+                            size.price.discount
+                              ? size.price.discount.toLocaleString()
+                              : size.price.original.toLocaleString()
+                          }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}
@@ -310,26 +300,20 @@ const ProductDetail = () => {
                   </>
                 )}
 
-                <span>
-                  {product.time || "Thời gian không khả dụng"}
-                </span>
+                <span>{product.time || "Thời gian không khả dụng"}</span>
                 <span>
                   Đánh giá:{" "}
                   {(comments ?? []).length
                     ? renderStars(
-                      (comments ?? []).reduce(
-                        (acc, c) => acc + c.rating,
-                        0
-                      ) / (comments ?? []).length
-                    )
+                        (comments ?? []).reduce((acc, c) => acc + c.rating, 0) /
+                          (comments ?? []).length
+                      )
                     : "Chưa có đánh giá"}
                 </span>
 
-
                 <p className="m-0">Chọn vị:</p>
                 <Form>
-                  {Array.isArray(product.taste) &&
-                    product.taste.length > 0 ? (
+                  {Array.isArray(product.taste) && product.taste.length > 0 ? (
                     <>
                       <Form.Check
                         key="no-taste"
@@ -391,8 +375,12 @@ const ProductDetail = () => {
                           <div>{renderStars(comment.rating)}</div>
                         </div>
                         <small className="text-muted">
-                          {new Date(comment.createdAt).toLocaleDateString("vi-VN")}{" "}
-                          {new Date(comment.createdAt).toLocaleTimeString("vi-VN")}
+                          {new Date(comment.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )}{" "}
+                          {new Date(comment.createdAt).toLocaleTimeString(
+                            "vi-VN"
+                          )}
                         </small>
                       </div>
                       <p className="mt-2">{comment.comment}</p>
@@ -402,17 +390,12 @@ const ProductDetail = () => {
               ) : (
                 <p>Chưa có bình luận nào cho sản phẩm này.</p>
               )}
-
             </Col>
           </Row>
         </Container>
       </Container>
 
-      <ProductList
-        category="related"
-        title="Sản phẩm liên quan"
-        limit={6}
-      />
+      <ProductList category="related" title="Sản phẩm liên quan" limit={6} />
     </>
   );
 };

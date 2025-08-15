@@ -7,7 +7,7 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Service from "./category/page";
 import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
-import ProductList from "./productList/page";
+import ProductList from "./productList/productList";
 import About from "./about/page";
 import styles from "./styles/home.module.css";
 import SalePage from "./sale/page";
