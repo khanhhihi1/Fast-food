@@ -2,7 +2,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Dropdown, Navbar, Nav, NavDropdown, Container, Image, Row, Col } from "react-bootstrap";
+import {
+  Dropdown,
+  Navbar,
+  Nav,
+  NavDropdown,
+  Container,
+  Image,
+  Row,
+  Col,
+} from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPhone,
@@ -50,7 +59,13 @@ export default function Header() {
     if (discount) {
       return (
         <>
-          <span style={{ textDecoration: "line-through", color: "#888", marginRight: "8px" }}>
+          <span
+            style={{
+              textDecoration: "line-through",
+              color: "#888",
+              marginRight: "8px",
+            }}
+          >
             {original.toLocaleString()}đ
           </span>
           <span style={{ color: "red", fontWeight: "bold" }}>
@@ -108,7 +123,9 @@ export default function Header() {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/products/search?keyword=${encodeURIComponent(keyword)}`,
+        `http://localhost:5000/products/search?keyword=${encodeURIComponent(
+          keyword
+        )}`,
         {
           method: "GET",
           headers: {
@@ -158,32 +175,60 @@ export default function Header() {
         <Container>
           <Row className="d-flex align-items-center">
             <Col className="d-flex align-items-center" style={{ gap: "10px" }}>
-              <span className="text-light" style={{ fontSize: "16px", fontWeight: "600" }}>
-                <FontAwesomeIcon icon={faPhone} className="text-light me-2" style={{ fontSize: "16px" }} />
+              <span
+                className="text-light"
+                style={{ fontSize: "16px", fontWeight: "600" }}
+              >
+                <FontAwesomeIcon
+                  icon={faPhone}
+                  className="text-light me-2"
+                  style={{ fontSize: "16px" }}
+                />
                 0931892826
               </span>
-              <span className="text-light mx-2" style={{ fontSize: "16px", fontWeight: "600" }}>
-                <FontAwesomeIcon icon={faClock} className="text-light me-1" style={{ fontSize: "16px" }} />
+              <span
+                className="text-light mx-2"
+                style={{ fontSize: "16px", fontWeight: "600" }}
+              >
+                <FontAwesomeIcon
+                  icon={faClock}
+                  className="text-light me-1"
+                  style={{ fontSize: "16px" }}
+                />
                 Thứ 2 - Chủ nhật: 9:00 - 18:00
               </span>
             </Col>
-            <Col className="d-flex justify-content-end align-items-center" style={{ gap: "10px" }}>
+            <Col
+              className="d-flex justify-content-end align-items-center"
+              style={{ gap: "10px" }}
+            >
               {user ? (
                 <Dropdown>
-                  <Dropdown.Toggle variant="link" className="text-white p-0 border-0" style={{ fontSize: "18px" }}>
+                  <Dropdown.Toggle
+                    variant="link"
+                    className="text-white p-0 border-0"
+                    style={{ fontSize: "18px" }}
+                  >
                     <FontAwesomeIcon icon={faUser} />
                   </Dropdown.Toggle>
                   <Dropdown.Menu align="end">
                     <Dropdown.Item as={Link} href="/account">
                       Tài khoản
                     </Dropdown.Item>
-                    <Dropdown.Item onClick={handleLogout}>Đăng xuất</Dropdown.Item>
+                    <Dropdown.Item onClick={handleLogout}>
+                      Đăng xuất
+                    </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
               ) : (
                 <Link
                   href="/login"
-                  style={{ textDecoration: "none", color: "white", fontSize: "18px", fontWeight: "600" }}
+                  style={{
+                    textDecoration: "none",
+                    color: "white",
+                    fontSize: "18px",
+                    fontWeight: "600",
+                  }}
                 >
                   <FontAwesomeIcon icon={faUser} />
                 </Link>
@@ -246,11 +291,18 @@ export default function Header() {
                         <Image
                           src={product.image || "/no-image.png"}
                           alt={product.name}
-                          style={{ width: "50px", height: "50px", objectFit: "cover", marginRight: "10px" }}
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            objectFit: "cover",
+                            marginRight: "10px",
+                          }}
                           rounded
                         />
                         <div>
-                          <div style={{ fontWeight: "600" }}>{product.name}</div>
+                          <div style={{ fontWeight: "600" }}>
+                            {product.name}
+                          </div>
                           {renderPrice(product.sizes)}
                         </div>
                       </Link>
@@ -260,10 +312,18 @@ export default function Header() {
               </div>
 
               <Link href="/cart">
-                <FontAwesomeIcon icon={faShoppingBag} className="text-light me-2" style={{ fontSize: "18px" }} />
+                <FontAwesomeIcon
+                  icon={faShoppingBag}
+                  className="text-light me-2"
+                  style={{ fontSize: "18px" }}
+                />
               </Link>
               <Link href="/favoriteProduct">
-                <FontAwesomeIcon icon={faHeart} className="text-light me-2" style={{ fontSize: "18px" }} />
+                <FontAwesomeIcon
+                  icon={faHeart}
+                  className="text-light me-2"
+                  style={{ fontSize: "18px" }}
+                />
               </Link>
             </Col>
           </Row>
@@ -272,20 +332,53 @@ export default function Header() {
 
       {/* Menu chính */}
       <Container fluid className={styles.box}>
-        <Container style={{ paddingLeft: "100px", paddingRight: "100px", height: "auto" }}>
+        <Container
+          style={{
+            paddingLeft: "100px",
+            paddingRight: "100px",
+            height: "auto",
+          }}
+        >
           <Row>
-            <Col xs={5} className="d-flex align-items-center justify-content-center" style={{ gap: "30px" }}>
-              <Link href="/" className={styles.aLink}>TRANG CHỦ</Link>
-              <Link href="/" className={styles.aLink}>GIỚI THIỆU</Link>
-              <Link href="/menu" className={styles.aLink}>THỰC ĐƠN</Link>
+            <Col
+              xs={5}
+              className="d-flex align-items-center justify-content-center"
+              style={{ gap: "30px" }}
+            >
+              <Link href="/" className={styles.aLink}>
+                TRANG CHỦ
+              </Link>
+              <Link href="/" className={styles.aLink}>
+                GIỚI THIỆU
+              </Link>
+              <Link href="/menu" className={styles.aLink}>
+                THỰC ĐƠN
+              </Link>
             </Col>
-            <Col xs={2} className="d-flex align-items-center justify-content-center">
-              <Image src="/Logo.png" alt="Logo" style={{ width: "130px", height: "130px" }} />
+            <Col
+              xs={2}
+              className="d-flex align-items-center justify-content-center"
+            >
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                style={{ width: "130px", height: "130px" }}
+              />
             </Col>
-            <Col xs={5} className="d-flex align-items-center justify-content-center" style={{ gap: "30px" }}>
-              <Link href="/new" className={styles.aLink}>TIN TỨC</Link>
-              <Link href="/" className={styles.aLink}>LIÊN HỆ</Link>
-              <Link href="/" className={styles.aLink}>NHƯỢNG QUYỀN</Link>
+            <Col
+              xs={5}
+              className="d-flex align-items-center justify-content-center"
+              style={{ gap: "30px" }}
+            >
+              <Link href="/new" className={styles.aLink}>
+                TIN TỨC
+              </Link>
+              <Link href="/" className={styles.aLink}>
+                LIÊN HỆ
+              </Link>
+              <Link href="/" className={styles.aLink}>
+                NHƯỢNG QUYỀN
+              </Link>
             </Col>
           </Row>
         </Container>
