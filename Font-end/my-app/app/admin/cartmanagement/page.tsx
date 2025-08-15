@@ -27,7 +27,6 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./cart.css";
 import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";
 import useDarkMode from "../useDarkMode/page";
@@ -98,7 +97,7 @@ export default function CartManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>("all");
   const [collapsed, setCollapsed] = useState(false);
   const ordersPerPage = 10;
   const { isDarkMode } = useDarkMode();
@@ -163,19 +162,19 @@ export default function CartManagementPage() {
   const getStatusColor = (status: number) => {
     switch (status) {
       case 0:
-        return '#ffa500';
+        return "#ffa500";
       case 1:
-        return '#ff4500';
+        return "#ff4500";
       case 2:
-        return '#1e90ff';
+        return "#1e90ff";
       case 3:
-        return '#9370db';
+        return "#9370db";
       case 4:
-        return '#32cd32';
+        return "#32cd32";
       case 5:
-        return '#ff0000';
+        return "#ff0000";
       default:
-        return '#808080';
+        return "#808080";
     }
   };
 
@@ -183,16 +182,16 @@ export default function CartManagementPage() {
   const indexOfLast = currentPage * ordersPerPage;
   const indexOfFirst = indexOfLast - ordersPerPage;
 
-  const filteredOrders = orders.filter(order => {
-    if (filter === 'all') return true;
+  const filteredOrders = orders.filter((order) => {
+    if (filter === "all") return true;
     switch (filter) {
-      case 'pending':
+      case "pending":
         return order.status === 0 || order.status === 1;
-      case 'processing':
+      case "processing":
         return order.status === 2 || order.status === 3;
-      case 'completed':
+      case "completed":
         return order.status === 4;
-      case 'cancelled':
+      case "cancelled":
         return order.status === 5;
       default:
         return true;
@@ -205,7 +204,12 @@ export default function CartManagementPage() {
   return (
     <div className="d-flex dark-mode">
       <AdminSideBar />
-      <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}>
+      <Container
+        fluid
+        className={`content w-100 container-content ${
+          collapsed ? "collapsed-content" : ""
+        }`}
+      >
         <AdminNavbar />
         <div className="cart-admin">
           <div className="admin-container">
@@ -218,47 +222,63 @@ export default function CartManagementPage() {
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">Chờ xử lý</span>
-                  <span className="stat-value">{orders.filter(order => order.status === 0 || order.status === 1).length}</span>
+                  <span className="stat-value">
+                    {
+                      orders.filter(
+                        (order) => order.status === 0 || order.status === 1
+                      ).length
+                    }
+                  </span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">Đã hoàn thành</span>
-                  <span className="stat-value">{orders.filter(order => order.status === 4).length}</span>
+                  <span className="stat-value">
+                    {orders.filter((order) => order.status === 4).length}
+                  </span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">Doanh thu</span>
-                  <span className="stat-value">{totalRevenue.toLocaleString('vi-VN')} VNĐ</span>
+                  <span className="stat-value">
+                    {totalRevenue.toLocaleString("vi-VN")} VNĐ
+                  </span>
                 </div>
               </div>
             </header>
 
             <div className="filters">
               <button
-                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-                onClick={() => setFilter('all')}
+                className={`filter-btn ${filter === "all" ? "active" : ""}`}
+                onClick={() => setFilter("all")}
               >
                 Tất cả
               </button>
               <button
-                className={`filter-btn ${filter === 'pending' ? 'active' : ''}`}
-                onClick={() => setFilter('pending')}
+                className={`filter-btn ${filter === "pending" ? "active" : ""}`}
+                onClick={() => setFilter("pending")}
               >
                 Chờ xử lý
               </button>
               <button
-                className={`filter-btn ${filter === 'processing' ? 'active' : ''}`}
-                onClick={() => setFilter('processing')}
+                className={`filter-btn ${
+                  filter === "processing" ? "active" : ""
+                }`}
+                onClick={() => setFilter("processing")}
               >
                 Đang xử lý
               </button>
               <button
-                className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-                onClick={() => setFilter('completed')}
+                className={`filter-btn ${
+                  filter === "completed" ? "active" : ""
+                }`}
+                onClick={() => setFilter("completed")}
               >
                 Đã hoàn thành
               </button>
               <button
-                className={`filter-btn ${filter === 'cancelled' ? 'active' : ''}`}
-                onClick={() => setFilter('cancelled')}
+                className={`filter-btn ${
+                  filter === "cancelled" ? "active" : ""
+                }`}
+                onClick={() => setFilter("cancelled")}
               >
                 Đã hủy
               </button>
@@ -281,36 +301,43 @@ export default function CartManagementPage() {
                       <div className="table-cell">
                         <span
                           className="status-badge"
-                          style={{ backgroundColor: getStatusColor(order.status) }}
+                          style={{
+                            backgroundColor: getStatusColor(order.status),
+                          }}
                         >
-                          {OrderStatusText[order.status as keyof typeof OrderStatusText]}
+                          {
+                            OrderStatusText[
+                              order.status as keyof typeof OrderStatusText
+                            ]
+                          }
                         </span>
                       </div>
                       <div className="table-cell">
-                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                        {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                       </div>
                       <div className="table-cell">
-                       
-                          <Button onClick={() => {
+                        <Button
+                          onClick={() => {
                             setSelectedOrder(order);
                             setShowModal(true);
-                          }}>
-                            Xem chi tiết
-                          </Button>
-                        
-                       
+                          }}
+                        >
+                          Xem chi tiết
+                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </Container>
-       <OderDetailModal show={showModal} onHide={() => setShowModal(false)} order={selectedOrder} />
+      <OderDetailModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        order={selectedOrder}
+      />
     </div>
-    
   );
 }
