@@ -7,7 +7,7 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import styles from "../styles/productList.module.css";
-import ProductItem from "../productItem/page";
+import ProductItem from "../productItem/productItem";
 
 interface Product {
   _id: string;
@@ -64,10 +64,10 @@ export default function ProductList({
         const productList = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-            ? data.result
-            : Array.isArray(data.data)
-              ? data.data
-              : [];
+          ? data.result
+          : Array.isArray(data.data)
+          ? data.data
+          : [];
 
         setProducts(productList);
       } catch (error: any) {
@@ -81,7 +81,6 @@ export default function ProductList({
 
     return () => controller.abort();
   }, [category]);
-
 
   return (
     <Container
