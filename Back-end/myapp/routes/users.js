@@ -96,7 +96,16 @@ router.get("/profile", authMiddleware, async (req, res) => {
     res.status(400).json({ status: false, message: error.message });
   }
 });
-
+router.put("/change-password", authMiddleware, async (req, res) => {
+  try {
+    const result = await userController.changePassword(req.userId, req.body);
+    res
+      .status(200)
+      .json({ status: true, result, message: "Thay đổi mật khẩu thành công" });
+  } catch (error) {
+    res.status(400).json({ status: false, message: error.message });
+  }
+});
 // Lấy danh sách người dùng (admin xem được tất cả trừ đã xóa)
 router.get("/", isAdminMiddleware, async (req, res) => {
   try {

@@ -27,8 +27,8 @@ export default function AdminSideBar() {
       <h3 className="text-center">
         <img
           className="rounded-circle"
-          src="/logo-admin.jpg"
-          style={{ width: "100px", height: "100px", marginLeft: 50 }}
+          src="/logo.png"
+          style={{ width: "150px", height: "150px", marginLeft: 50 }}
           alt="Logo"
         />
       </h3>

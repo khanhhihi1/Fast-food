@@ -27,7 +27,7 @@ const Blog = () => {
             excerpt: "Lịch sử thú vị về món ăn nổi tiếng toàn cầu bắt đầu từ một thị trấn nhỏ ở Ý...",
             date: "28 tháng 3, 2024",
             readTime: "7 phút đọc",
-            image: "https://themewagon.github.io/pizza/images/bg_1.png"
+            image: "https://upload.wikimedia.org/wikipedia/commons/9/91/Pizza-3007395.jpg"
         }
     ];
 
