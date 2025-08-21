@@ -1,0 +1,133 @@
+.contactPage {
+  padding: 60px 0;
+  background: #fafafa;
+}
+
+/* Tiêu đề */
+.sectionTitle {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.sectionTitle h3 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.sectionTitle p {
+  font-size: 16px;
+  color: #666;
+}
+
+/* Khung thông tin liên hệ */
+.contactInfo {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* mỗi hàng 2 item */
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.infoItem {
+  display: flex;
+  align-items: flex-start;
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.infoItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+.infoIcon {
+  font-size: 22px;
+  color: #e74c3c;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.infoItem h5 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #222;
+}
+
+.infoItem p {
+  font-size: 14px;
+  margin: 0;
+  color: #555;
+}
+
+/* Form */
+.contactForm {
+  background: #fff;
+  border-radius: 10px;
+  padding: 25px 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.contactForm h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.contactForm .form-label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #444;
+}
+
+.contactForm .form-control {
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  transition: border-color 0.2s ease;
+}
+
+.contactForm .form-control:focus {
+  border-color: #e74c3c;
+  box-shadow: 0 0 0 0.2rem rgba(231,76,60,0.15);
+}
+
+.contactForm button {
+  background: #e74c3c;
+  border: none;
+  padding: 10px 25px;
+  font-size: 15px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.contactForm button:hover {
+  background: #c0392b;
+}
+
+/* Map */
+.mapContainer {
+  width: 100%;
+  height: 100%;
+  min-height: 450px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .contactInfo {
+    grid-template-columns: 1fr; /* Mobile thì 1 cột */
+  }
+
+  .mapContainer {
+    min-height: 300px;
+    margin-top: 20px;
+  }
+}

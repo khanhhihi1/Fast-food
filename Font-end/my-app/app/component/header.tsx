@@ -348,10 +348,10 @@ export default function Header() {
               <Link href="/" className={styles.aLink}>
                 TRANG CHỦ
               </Link>
-              <Link href="/" className={styles.aLink}>
+              <Link href="/introduce" className={styles.aLink}>
                 GIỚI THIỆU
               </Link>
-              <Link href="/menu" className={styles.aLink}>
+              <Link href="/category/all" className={styles.aLink}>
                 THỰC ĐƠN
               </Link>
             </Col>
@@ -373,11 +373,11 @@ export default function Header() {
               <Link href="/new" className={styles.aLink}>
                 TIN TỨC
               </Link>
-              <Link href="/" className={styles.aLink}>
+              <Link href="/contact" className={styles.aLink}>
                 LIÊN HỆ
               </Link>
-              <Link href="/" className={styles.aLink}>
-                NHƯỢNG QUYỀN
+              <Link href="/blogtext" className={styles.aLink}>
+               BLOG
               </Link>
             </Col>
           </Row>
