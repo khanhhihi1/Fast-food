@@ -11,6 +11,7 @@ module.exports = {
   getUserInfo,
   getAllUser,
   patchUserByAdmin,
+  changePassword
 };
 
 // Helper
@@ -249,6 +250,41 @@ async function patchUserByAdmin(id, data) {
       .select("-password");
 
     return result;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+async function changePassword(id, data) {
+  try {
+    const { oldPassword, newPassword, confirmNewPassword } = data;
+
+    if (!oldPassword || !newPassword || !confirmNewPassword) {
+      throw new Error("Thiếu thông tin bắt buộc: mật khẩu cũ, mật khẩu mới và xác nhận mật khẩu mới");
+    }
+
+    if (newPassword.length < 6) {
+      throw new Error("Mật khẩu mới phải có ít nhất 6 ký tự");
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      throw new Error("Mật khẩu mới và xác nhận không khớp");
+    }
+
+    const user = await userModel.findById(id);
+    if (!user) {
+      throw new Error("Người dùng không tồn tại");
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new Error("Mật khẩu cũ không đúng");
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save();
+
+    return { message: "Mật khẩu đã được thay đổi thành công" };
   } catch (error) {
     throw new Error(error.message);
   }

@@ -34,53 +34,7 @@ import AdminNavbar from "@/app/component/adminNavbar";
 import { Collapse } from "react-bootstrap";
 import { toast } from "react-toastify";
 import OderDetailModal from "@/app/component/modalOderAdmin";
-
-interface OrderItem {
-  productId: string;
-  name: string;
-  image?: string;
-  sizeName: string;
-  taste: string[];
-  quantity: number;
-  price: {
-    original: number;
-    discount?: number;
-  };
-  finalPrice: number;
-}
-
-interface Order {
-  _id: string;
-  userId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  items: OrderItem[];
-  total: number;
-  discount: number;
-  voucherCode?: string;
-  voucherData?: {
-    code: string;
-    description: string;
-    discountType: string;
-    discountValue: number;
-    minOrderValue: number;
-    maxDiscount: number;
-    expiresAt: string;
-  };
-  shippingInfo: {
-    name: string;
-    phone: string;
-    address: string;
-  };
-  shippingFee: number;
-  tax: number;
-  paymentMethod: string;
-  isPaid: boolean;
-  status: number;
-  createdAt: string;
-}
+import { Order } from "@/app/type/oder";
 
 const OrderStatusText = {
   0: "Chờ xác nhận",

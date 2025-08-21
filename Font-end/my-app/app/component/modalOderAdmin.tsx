@@ -13,53 +13,8 @@ import {
 import "./oder.css";
 import { toast } from "react-toastify";
 import useDarkMode from "../admin/useDarkMode/page";
+import { Order } from "../type/oder";
 
-interface OrderItem {
-  productId: string;
-  name: string;
-  image?: string;
-  sizeName: string;
-  taste: string[];
-  quantity: number;
-  price: {
-    original: number;
-    discount?: number;
-  };
-  finalPrice: number;
-}
-
-interface Order {
-  _id: string;
-  userId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  items: OrderItem[];
-  total: number;
-  discount: number;
-  voucherCode?: string;
-  voucherData?: {
-    code: string;
-    description: string;
-    discountType: string;
-    discountValue: number;
-    minOrderValue: number;
-    maxDiscount: number;
-    expiresAt: string;
-  };
-  shippingInfo: {
-    name: string;
-    phone: string;
-    address: string;
-  };
-  shippingFee: number;
-  tax: number;
-  paymentMethod: string;
-  isPaid: boolean;
-  status: number;
-  createdAt: string;
-}
 
 const OrderStatusText: { [key: number]: string } = {
   0: "Chờ xác nhận",
@@ -87,18 +42,14 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
   const [updating, setUpdating] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // Xóa state không cần thiết (orders, isLoading, currentPage, v.v.) vì chỉ hiển thị 1 order
   if (!order) return null;
 
   const updateOrderStatus = async (orderId: string, newStatus: number) => {
     try {
-      // Không cho phép lùi trạng thái
       if (newStatus < order.status) {
         toast.warning("Không thể cập nhật lùi trạng thái!");
         return;
       }
-
-      // Xác nhận khi hủy đơn
       if (newStatus === 5 && !confirm("Bạn có chắc muốn hủy đơn hàng này?")) {
         return;
       }

@@ -167,6 +167,7 @@ const HotProducts = () => {
                         ? displayPrice.toLocaleString("vi-VN") + "₫"
                         : displayPrice}
                     </span>
+                   
                     <FontAwesomeIcon
                       icon={isFavorite ? faHeart : faHeartBroken}
                       style={{

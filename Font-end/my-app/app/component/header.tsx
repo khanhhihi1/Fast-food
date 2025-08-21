@@ -142,7 +142,7 @@ export default function Header() {
       }
 
       const data = await res.json();
-      if (data.status) {
+      if (data.success) {
         setSearchResults(data.result);
       } else {
         setSearchResults([]);

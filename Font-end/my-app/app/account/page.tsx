@@ -15,6 +15,7 @@ import {
   Badge,
   Image,
   ListGroup,
+  InputGroup,
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -36,6 +37,8 @@ import {
   faTicketAlt,
   faCommentDots,
   faCalendar,
+  faEyeSlash,
+  faEye,
 } from "@fortawesome/free-solid-svg-icons";
 import "./account.css";
 import ProtectedRoute from "../component/ProtectedRoute";
@@ -48,8 +51,6 @@ interface User {
   email: string;
   role: string;
 }
-
-// ---- FIX: productId có thể là string hoặc object {_id} ----
 type ProductIdLike = string | { _id: string };
 
 interface OrderItem {
@@ -134,6 +135,13 @@ const UserProfile = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [rating, setRating] = useState(5);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserAndOrders = async () => {
@@ -324,7 +332,42 @@ const UserProfile = () => {
       toast.error(err.message || "Không thể gửi bình luận");
     }
   };
-
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      toast.error("Mật khẩu mới và xác nhận không khớp");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/users/change-password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+          confirmNewPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể thay đổi mật khẩu");
+      }
+      toast.success("Thay đổi mật khẩu thành công");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi khi thay đổi mật khẩu");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
   if (loading) {
     return (
       <ProtectedRoute>
@@ -376,6 +419,7 @@ const UserProfile = () => {
                     <Nav.Link eventKey="profile">
                       <FontAwesomeIcon icon={faUserCircle} className="me-2" />
                       Thông tin cá nhân
+
                     </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
@@ -399,8 +443,121 @@ const UserProfile = () => {
                 </Nav>
 
                 <Tab.Content className="mt-4">
-                  <Tab.Pane eventKey="profile">{/* ... */}</Tab.Pane>
-                  <Tab.Pane eventKey="security">{/* ... */}</Tab.Pane>
+                  <Tab.Pane eventKey="profile">
+                    <Card className="p-4 border-0 shadow-sm">
+                      <h5 className="mb-4 text-center">
+                        <FontAwesomeIcon icon={faUserCircle} className="text-primary me-2" />
+                        Thông tin cá nhân
+                      </h5>
+
+                      {user ? (
+                        <ListGroup variant="flush">
+                          <ListGroup.Item className="d-flex align-items-center py-3 ">
+                            <FontAwesomeIcon icon={faUserCircle} className="text-muted me-3" />
+                            <div>
+                              <div className="fw-bold">Tên người dùng</div>
+                              <div>{user.name || user.username}</div>
+                            </div>
+                          </ListGroup.Item>
+
+                          <ListGroup.Item className="d-flex align-items-center py-3">
+                            <FontAwesomeIcon icon={faEnvelope} className="text-muted me-3" />
+                            <div>
+                              <div className="fw-bold">Email</div>
+                              <div>{user.email}</div>
+                            </div>
+                          </ListGroup.Item>
+
+                          <ListGroup.Item className="d-flex align-items-center py-3">
+                            <FontAwesomeIcon icon={faLock} className="text-muted me-3" />
+                            <div>
+                              <div className="fw-bold">Vai trò</div>
+                              <div>{user.role === "admin" ? "Quản trị viên" : "Khách hàng"}</div>
+                            </div>
+                          </ListGroup.Item>
+                        </ListGroup>
+                      ) : (
+                        <p className="text-muted">Không có thông tin người dùng.</p>
+                      )}
+                    </Card></Tab.Pane>
+                  <Tab.Pane eventKey="security">
+                    <Card className="p-4 border-0 shadow-sm">
+                      <h5 className="mb-4 text-center">
+                        <FontAwesomeIcon icon={faLock} className="text-primary me-2" />
+                        Thay đổi mật khẩu
+                      </h5>
+                      <Form onSubmit={handleChangePassword}>
+                        <Form.Group controlId="oldPassword" className="mb-3">
+                          <Form.Label>Mật khẩu cũ</Form.Label>
+                          <InputGroup>
+                            <Form.Control
+                              type={showOldPassword ? "text" : "password"}
+                              value={oldPassword}
+                              onChange={(e) => setOldPassword(e.target.value)}
+                              placeholder="Nhập mật khẩu cũ"
+                              required
+                            />
+                            <Button
+                              variant="outline-secondary"
+                              onClick={() => setShowOldPassword(!showOldPassword)}
+                            >
+                              <FontAwesomeIcon icon={showOldPassword ? faEyeSlash : faEye} />
+                            </Button>
+                          </InputGroup>
+                        </Form.Group>
+
+                        <Form.Group controlId="newPassword" className="mb-3">
+                          <Form.Label>Mật khẩu mới</Form.Label>
+                          <InputGroup>
+                            <Form.Control
+                              type={showNewPassword ? "text" : "password"}
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Nhập mật khẩu mới"
+                              required
+                            />
+                            <Button
+                              variant="outline-secondary"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                            >
+                              <FontAwesomeIcon icon={showNewPassword ? faEyeSlash : faEye} />
+                            </Button>
+                          </InputGroup>
+                        </Form.Group>
+
+                        <Form.Group controlId="confirmNewPassword" className="mb-4">
+                          <Form.Label>Xác nhận mật khẩu mới</Form.Label>
+                          <InputGroup>
+                            <Form.Control
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={confirmNewPassword}
+                              onChange={(e) => setConfirmNewPassword(e.target.value)}
+                              placeholder="Xác nhận mật khẩu mới"
+                              required
+                            />
+                            <Button
+                              variant="outline-secondary"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                              <FontAwesomeIcon icon={showConfirmPassword ? faEyeSlash : faEye} />
+                            </Button>
+                          </InputGroup>
+                        </Form.Group>
+
+                        <Button
+                          variant="primary"
+                          type="submit"
+                          className="w-100"
+                          disabled={passwordLoading}
+                        >
+                          {passwordLoading ? (
+                            <Spinner animation="border" size="sm" className="me-2" />
+                          ) : null}
+                          Thay đổi mật khẩu
+                        </Button>
+                      </Form>
+                    </Card>
+                  </Tab.Pane>
                   <Tab.Pane eventKey="orders">
                     <Card className="p-4 border-0 shadow-sm">
                       <h5 className="mb-4">
@@ -442,7 +599,7 @@ const UserProfile = () => {
                                         <ListGroup.Item key={`${resolveProductId(item.productId)}-${i}`} className="py-3 px-0">
                                           <div className="d-flex">
                                             <Image
-                                              src={item.image || "/placeholder.jpg"}
+                                              src={item.image}
                                               width={80}
                                               height={80}
                                               className="rounded me-3 product-img"
