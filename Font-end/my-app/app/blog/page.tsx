@@ -2,7 +2,7 @@
 import React from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import styles from '../styles/blog.module.css';
-
+import Link from "next/link";
 const Blog = () => {
     const blogData = [
         {
@@ -53,8 +53,9 @@ const Blog = () => {
                                 <Card.Title className={styles.cardTitle}>{post.title}</Card.Title>
                                 <Card.Text className={styles.cardExcerpt}>{post.excerpt}</Card.Text>
                                 <div className={styles.metaInfo}>
-
-                                    <button className={styles.readMoreBtn}>Đọc tiếp</button>
+                                    <Link href="/blogtext">
+                                        <button className={styles.readMoreBtn}>Đọc tiếp</button>
+                                    </Link>
                                 </div>
                             </Card.Body>
                         </Card>
