@@ -14,18 +14,6 @@ import {
   FormControl,
   Alert,
 } from "react-bootstrap";
-import {
-  FaSearch,
-  FaShoppingCart,
-  FaShoppingBag,
-  FaPlus,
-  FaUser,
-  FaBoxes,
-  FaPrint,
-  FaEnvelope,
-  FaCheck,
-  FaChevronDown,
-} from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";

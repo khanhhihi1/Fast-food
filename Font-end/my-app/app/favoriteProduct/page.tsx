@@ -119,10 +119,9 @@ const FavoriteProduct = () => {
             <Container className="my-5">
                 {favorites.length === 0 ? (
                     <div className={styles.emptyState}>
-                        <img src="/icons/empty-favorites.svg" alt="Empty" className={styles.emptyIcon} />
                         <h3>Chưa có pizza yêu thích nào</h3>
                         <p>Hãy thêm các loại pizza bạn yêu thích vào danh sách!</p>
-                        <Link href="/menu">
+                        <Link href="/category/all">
                             <Button variant="danger" size="lg">Khám phá menu</Button>
                         </Link>
                     </div>
