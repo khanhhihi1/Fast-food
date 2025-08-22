@@ -159,7 +159,7 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
         </Row>
 
         <h6>Sản phẩm trong giỏ</h6>
-        <Table className="mt-3 text-center">
+        <Table className="mt-3 text-center table">
           <thead>
             <tr>
               <th>Hình</th>

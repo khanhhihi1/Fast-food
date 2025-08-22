@@ -13,8 +13,6 @@ import { faEyeSlash, faPenToSquare, faPlus, faRotate } from "@fortawesome/free-s
 import { FaSearch } from "react-icons/fa";
 import { PostType } from "@/app/type/type";
 export default function ShowAdmin() {
-  
-
   const [posts, setPosts] = useState<PostType[]>([]);
   const [post, setPost] = useState<PostType | null>(null);
   const [showModal, setShowModal] = useState(false);

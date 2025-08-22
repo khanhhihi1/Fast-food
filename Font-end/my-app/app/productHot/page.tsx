@@ -5,7 +5,7 @@ import styles from "../styles/HotProduct.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faHeartBroken } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import Link from "next/link"; // dùng Link của Next.js chứ không phải từ `lucide-react`
+import Link from "next/link"; 
 
 interface Product {
   _id: string;
