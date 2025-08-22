@@ -40,6 +40,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const { isDarkMode } = useDarkMode();
   const [updating, setUpdating] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     if (show && initialOrder) {
@@ -50,7 +51,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
   const fetchOrderDetails = async (orderId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/orders/admin/${orderId}`, {
+      const res = await fetch(`${API_URL}/orders/admin/${orderId}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -85,7 +86,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         return;
       }
 
-      const res = await fetch(`http://localhost:5000/orders/admin/${orderId}`, {
+      const res = await fetch(`${API_URL}/orders/admin/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

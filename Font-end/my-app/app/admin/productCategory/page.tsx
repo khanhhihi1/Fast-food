@@ -29,13 +29,12 @@ export default function ProductCategory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(15);
   const { isDarkMode } = useDarkMode();
-
-  const API_BASE = "http://localhost:5000/categories";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await fetch(API_BASE);
+      const res = await fetch(`${API_URL}/categories`);
       const data = await res.json();
 
       if (data.success && Array.isArray(data.result)) {
@@ -69,7 +68,7 @@ export default function ProductCategory() {
   const handleHide = async (id: string) => {
     if (!confirm("Bạn có chắc muốn ẩn danh mục này?")) return;
     try {
-      const res = await fetch(`${API_BASE}/hide/${id}`, {
+      const res = await fetch(`${API_URL}/categories/hide/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
@@ -87,7 +86,7 @@ export default function ProductCategory() {
   const handleRestore = async (id: string) => {
     if (!confirm("Bạn có chắc muốn khôi phục danh mục này?")) return;
     try {
-      const res = await fetch(`${API_BASE}/restore/${id}`, {
+      const res = await fetch(`${API_URL}/categories/restore/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });

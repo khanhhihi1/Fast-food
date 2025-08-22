@@ -49,10 +49,12 @@ const CategoryPage = () => {
   const itemsPerPage = 16;
   const [favoriteMap, setFavoriteMap] = useState<{ [key: string]: boolean }>({});
   const [isFavorite, setIsFavorite] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const res = await fetch("http://localhost:5000/favoriteProduct/favorites", {
+        const res = await fetch(`${API_URL}/favoriteProduct/favorites`, {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         });
@@ -74,7 +76,7 @@ const CategoryPage = () => {
   }, []);
   const toggleFavorite = async (productId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/favoriteProduct/favorites/${productId}`, {
+      const response = await fetch(`${API_URL}/favoriteProduct/favorites/${productId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -98,7 +100,7 @@ const CategoryPage = () => {
   };
 
   useEffect(() => {
-    fetch("http://localhost:5000/categories")
+    fetch(`${API_URL}/categories`)
       .then((res) => {
         if (!res.ok) throw new Error("Lỗi khi fetch danh mục");
         return res.json();
@@ -130,7 +132,7 @@ const CategoryPage = () => {
     setError(null);
     console.log("categoryId (frontend):", categoryId);
 
-    let url = "http://localhost:5000/products";
+    let url = `${API_URL}/products`;
     if (categoryId !== "all") {
       url += `?category=${categoryId}`;
     }

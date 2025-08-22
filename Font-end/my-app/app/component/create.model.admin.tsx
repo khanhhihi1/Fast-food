@@ -24,13 +24,14 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const [status, setStatus] = useState(true);
   const [categoriesList, setCategoriesList] = useState<{ _id: string; name: string }[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     if (showModal) {
       const fetchCategories = async () => {
         setLoading(true);
         try {
-          const response = await fetch("http://localhost:5000/categories");
+          const response = await fetch(`${API_URL}/categories`);
           const data = await response.json();
           const categoriesData = Array.isArray(data) ? data : data.result;
           setCategoriesList(categoriesData);
@@ -105,7 +106,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/products/addProduct", {
+      const res = await fetch(`${API_URL}/products/addProduct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

@@ -30,10 +30,11 @@ export default function UserAdmin() {
   // Thêm filter và search
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:5000/users", {
+      const res = await fetch(`${API_URL}/users`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -53,7 +54,7 @@ export default function UserAdmin() {
     value: string | boolean
   ) => {
     try {
-      const res = await fetch(`http://localhost:5000/users/${id}`, {
+      const res = await fetch(`${API_URL}/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

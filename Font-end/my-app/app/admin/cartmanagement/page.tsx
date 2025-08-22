@@ -45,11 +45,11 @@ export default function CartManagementPage() {
   const { isDarkMode } = useDarkMode();
   const router = useRouter();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch("http://localhost:5000/orders/admin/all", {
+      const res = await fetch(`${API_URL}/orders/admin/all`, {
         method: "GET",
         credentials: "include",
       });
@@ -74,7 +74,7 @@ export default function CartManagementPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost:5000/orders/admin/${orderId}`, {
+      const res = await fetch(`${API_URL}/orders/admin/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

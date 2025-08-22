@@ -71,11 +71,12 @@ export default function Checkout() {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Lấy thông tin đơn hàng tạm thời
   const fetchTempOrder = async () => {
     try {
-      const res = await fetch("http://localhost:5000/temp-order", {
+      const res = await fetch(`${API_URL}/temp-order`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -106,7 +107,7 @@ export default function Checkout() {
   // Lấy danh sách voucher
   const fetchVouchers = async () => {
     try {
-      const res = await fetch("http://localhost:5000/voucher", {
+      const res = await fetch(`${API_URL}/voucher`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -136,7 +137,7 @@ export default function Checkout() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/voucher/apply", {
+      const res = await fetch(`${API_URL}/voucher/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -156,7 +157,7 @@ export default function Checkout() {
           toastId: `apply-${voucher.code}`, // ✅ Toast ID duy nhất cho từng voucher
         });
 
-        await fetch("http://localhost:5000/temp-order/update-voucher", {
+        await fetch(`${API_URL}/temp-order/update-voucher`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -189,7 +190,7 @@ export default function Checkout() {
     localStorage.removeItem("selectedVoucher");
 
     try {
-      await fetch("http://localhost:5000/temp-order/update-voucher", {
+      await fetch(`${API_URL}/temp-order/update-voucher`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -212,7 +213,7 @@ export default function Checkout() {
   const updatePaymentMethod = async () => {
     try {
       const res = await fetch(
-        "http://localhost:5000/temp-order/update-payment",
+        `${API_URL}/temp-order/update-payment`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -244,7 +245,7 @@ export default function Checkout() {
     try {
       await updatePaymentMethod();
 
-      const orderRes = await fetch("http://localhost:5000/orders/from-temp", {
+      const orderRes = await fetch(`${API_URL}/orders/from-temp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -267,12 +268,12 @@ export default function Checkout() {
 
       // Nếu COD → xử lý như cũ
       if (paymentMethod === "cod") {
-        await fetch("http://localhost:5000/cart/clear", {
+        await fetch(`${API_URL}/cart/clear`, {
           method: "DELETE",
           credentials: "include",
         });
 
-        await fetch("http://localhost:5000/temp-order", {
+        await fetch(`${API_URL}/temp-order`, {
           method: "DELETE",
           credentials: "include",
         });
@@ -293,7 +294,7 @@ export default function Checkout() {
 
       // Nếu MoMo → redirect sang trang thanh toán MoMo
       if (paymentMethod === "momo") {
-        const momoRes = await fetch("http://localhost:5000/payment/momo", {
+        const momoRes = await fetch(`${API_URL}/payment/momo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",

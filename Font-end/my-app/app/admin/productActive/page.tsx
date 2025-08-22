@@ -25,10 +25,11 @@ export default function ShowAdmin() {
   const { isDarkMode } = useDarkMode();
 
   const productsPerPage = 10;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchAllProducts = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:5000/products");
+      const res = await fetch(`${API_URL}/products`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       if (data?.result) {
@@ -50,7 +51,7 @@ export default function ShowAdmin() {
 
   const fetchInactiveProducts = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:5000/products/inactive");
+      const res = await fetch(`${API_URL}/products/inactive`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       if (data?.result) {
@@ -72,7 +73,7 @@ export default function ShowAdmin() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:5000/categories");
+      const res = await fetch(`${API_URL}/categories`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       const list = Array.isArray(data) ? data : data.result;
@@ -124,7 +125,7 @@ export default function ShowAdmin() {
   const handleShowProduct = async (id: string) => {
     if (!confirm("Bạn có chắc muốn khôi phục sản phẩm này?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/products/show/${id}`, { method: "PUT" });
+      const res = await fetch(`${API_URL}/products/show/${id}`, { method: "PUT" });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.message || "Không rõ"}`);
@@ -150,7 +151,7 @@ export default function ShowAdmin() {
     if (!confirm("Bạn có chắc muốn ẩn sản phẩm này?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/products/hide/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/products/hide/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(`HTTP error! status: ${res.status}, message: ${errorData.message || "Không rõ"}`);

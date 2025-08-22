@@ -88,11 +88,12 @@ export default function Cart() {
     (total, item) => total + item.price * item.quantity,
     0
   );
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchCart = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch("http://localhost:5000/cart", {
+      const res = await fetch(`${API_URL}/cart`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -105,7 +106,7 @@ export default function Cart() {
         data.result.items.map(async (item: CartItem) => {
           try {
             const productRes = await fetch(
-              `http://localhost:5000/products/${item.productId}`
+              `${API_URL}/products/${item.productId}`
             );
             const productData: Product = (await productRes.json()).result;
             const selectedSize = productData.sizes?.find(
@@ -147,7 +148,7 @@ export default function Cart() {
 
   const fetchVouchers = async () => {
     try {
-      const res = await fetch("http://localhost:5000/voucher", {
+      const res = await fetch(`${API_URL}/voucher`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -178,7 +179,7 @@ export default function Cart() {
       );
       const price = selectedSize?.price || { original: updatedItem.price };
       const res = await fetch(
-        `http://localhost:5000/cart/update/${updatedItem.id}`,
+        `${API_URL}/cart/update/${updatedItem.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -206,7 +207,7 @@ export default function Cart() {
     setIsApplyingVoucher(true);
 
     try {
-      const res = await fetch("http://localhost:5000/voucher/apply", {
+      const res = await fetch(`${API_URL}/voucher/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -238,7 +239,7 @@ export default function Cart() {
 
   const handleRemove = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/cart/remove/${id}`, {
+      const res = await fetch(`${API_URL}/cart/remove/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -279,7 +280,7 @@ export default function Cart() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/temp-order", {
+      const res = await fetch(`${API_URL}/temp-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
