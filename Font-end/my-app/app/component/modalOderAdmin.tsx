@@ -12,7 +12,7 @@ import {
 } from "react-bootstrap";
 import "./oder.css";
 import { toast } from "react-toastify";
-import useDarkMode from "../admin/useDarkMode/page";
+import useDarkMode from "../admin/hooks/darkmode";
 import { Order } from "../type/oder";
 
 
@@ -131,19 +131,18 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
               <Form.Label>Cập nhật trạng thái:</Form.Label>
               <Form.Select
                 value={order.status}
-                className={`form-select fw-bold text-capitalize ${
-                  order.status === 0
-                    ? "text-warning"
-                    : order.status === 1
+                className={`form-select fw-bold text-capitalize ${order.status === 0
+                  ? "text-warning"
+                  : order.status === 1
                     ? "text-info"
                     : order.status === 2
-                    ? "text-primary"
-                    : order.status === 3
-                    ? "text-secondary"
-                    : order.status === 4
-                    ? "text-success"
-                    : "text-danger"
-                }`}
+                      ? "text-primary"
+                      : order.status === 3
+                        ? "text-secondary"
+                        : order.status === 4
+                          ? "text-success"
+                          : "text-danger"
+                  }`}
                 onChange={(e) =>
                   updateOrderStatus(order._id, Number(e.target.value))
                 }
@@ -193,7 +192,7 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
             <Card>
               <Card.Body>
                 <h6>Ghi chú</h6>
-                
+
               </Card.Body>
             </Card>
           </Col>

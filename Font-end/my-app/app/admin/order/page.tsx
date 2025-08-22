@@ -30,7 +30,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./cart.css";
 import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";
-import useDarkMode from "../useDarkMode/page";
+import useDarkMode from "../hooks/darkmode";
 import AdminNavbar from "@/app/component/adminNavbar";
 import { Collapse } from "react-bootstrap";
 import { toast } from "react-toastify";

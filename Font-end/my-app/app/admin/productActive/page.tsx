@@ -4,7 +4,7 @@ import { Button, Container, Table, Form, Image } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ModalsAdmin from "@/app/component/create.model.admin";
 import UpdateModelAdmin from "@/app/component/update-model-admin";
-import useDarkMode from "../useDarkMode/page";
+import useDarkMode from "../hooks/darkmode";
 import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
 import styles from "../styles/product.module.css";
@@ -293,7 +293,7 @@ export default function ShowAdmin() {
                 <tr key={product._id} className="text-center">
                   <td>{indexOfFirst + index + 1}</td>
                   <td>{product.name}</td>
-                  <td  className="text-center">
+                  <td className="text-center">
                     <Image src={product.image} alt={product.name} width={60} height={60} rounded className={styles["product-img"]} />
                   </td>
                   <td>{renderSizes(product.sizes)}</td>
