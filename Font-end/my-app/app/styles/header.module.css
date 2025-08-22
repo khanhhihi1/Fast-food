@@ -10,3 +10,44 @@
 .box{
   border-bottom:  1px solid #ccc;
 }
+.searchInput {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-left: 10px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.searchInput:focus {
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.4);
+}
+
+.searchResults {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 320px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.searchItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  color: #212529;
+  text-decoration: none;
+  border-bottom: 1px solid #eee;
+}
+
+.searchItem:hover {
+  background-color: #f8f9fa;
+}

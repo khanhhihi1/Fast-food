@@ -146,7 +146,7 @@ h4 {
 }
 
 .table>:not(caption)>*>* {
-  background-color: #2a3b4c
+  background-color: #f5f0f0;
 }
 .input-group-text {
   margin-left: -23px;
