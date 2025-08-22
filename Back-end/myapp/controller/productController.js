@@ -1,7 +1,7 @@
-const categoriesModel = require("../model/categoriesModel.js");
-const productsModel = require("../model/productModel.js");
 const mongoose = require("mongoose");
-
+const categoriesModel = require("../model/categoriesModel");
+const productsModel = require("../model/productModel");
+const notificationController = require("../controller/notificationController");
 
 // Lấy tất cả sản phẩm
 async function getAllPro() {
@@ -62,7 +62,6 @@ async function addPro(data) {
       throw new Error("Danh mục không tồn tại");
     }
 
-    // Kiểm tra và chuẩn hóa giá từng size
     const sizes = data.sizes.map((size) => {
       if (
         !size.name ||
@@ -94,6 +93,13 @@ async function addPro(data) {
     });
 
     const result = await newProduct.save();
+
+    // Tạo thông báo hệ thống khi thêm sản phẩm mới
+    await notificationController.createNotification({
+      message: `Sản phẩm mới: ${data.name} vừa được thêm vào danh mục ${category.name}!`,
+      type: "system",
+    });
+
     return result;
   } catch (error) {
     console.error("Lỗi khi thêm sản phẩm:", error.message);
@@ -105,7 +111,6 @@ async function addPro(data) {
 async function getDatailPro(id) {
   try {
     const result = await productsModel.findById(id).populate("categoryId");
-
     if (!result) {
       throw new Error("Không tìm thấy sản phẩm");
     }
@@ -136,6 +141,12 @@ async function hideProduct(id) {
       { new: true }
     );
 
+    // Tạo thông báo hệ thống khi ẩn sản phẩm
+    await notificationController.createNotification({
+      message: `Sản phẩm ${product.name} đã tạm ngưng bán.`,
+      type: "system",
+    });
+
     return result;
   } catch (error) {
     console.error(error);
@@ -162,6 +173,12 @@ async function showProduct(id) {
       { status: true },
       { new: true }
     );
+
+    // Tạo thông báo hệ thống khi hiển thị sản phẩm
+    await notificationController.createNotification({
+      message: `Sản phẩm ${product.name} đã được hiển thị trở lại.`,
+      type: "system",
+    });
 
     return result;
   } catch (error) {
@@ -240,6 +257,14 @@ async function updateProduct(data, id) {
       { new: true }
     );
 
+    // Tạo thông báo hệ thống khi cập nhật sản phẩm
+    if (data.saleOff) {
+      await notificationController.createNotification({
+        message: `Sản phẩm ${data.name} đang có chương trình giảm giá!`,
+        type: "system",
+      });
+    }
+
     return result;
   } catch (error) {
     console.error("Lỗi khi cập nhật sản phẩm:", error.message);
@@ -268,30 +293,31 @@ async function getInactiveProducts() {
     throw new Error("Không thể lấy danh sách sản phẩm ngưng bán");
   }
 }
-// sp hot
+
+// Sản phẩm hot
 async function getHotProducts() {
   try {
-    const result = await productsModel
-      .find({})
-      .sort({ view: -1 })
-      .limit(4);
+    const result = await productsModel.find({}).sort({ view: -1 }).limit(4);
     return result;
   } catch (error) {
     console.log(error);
     throw new Error("Lỗi khi lấy sản phẩm hot");
   }
 }
+
+// Sản phẩm giảm giá
 async function getDiscountProduct() {
   try {
-    const productsWithDiscount = await productsModel.find({
-      status: true,
-      saleOff: true,
-      sizes: {
-        $elemMatch: {
-          "price.discount": { $exists: true }
-        }
-      }
-    })
+    const productsWithDiscount = await productsModel
+      .find({
+        status: true,
+        saleOff: true,
+        sizes: {
+          $elemMatch: {
+            "price.discount": { $exists: true },
+          },
+        },
+      })
       .limit(5);
 
     return productsWithDiscount;
@@ -300,7 +326,8 @@ async function getDiscountProduct() {
     throw new Error("Không thể lấy sản phẩm giảm giá");
   }
 }
-//tiềm kiếm sản phẩm
+
+// Tìm kiếm sản phẩm
 function normalizeVietnamese(str) {
   return str
     .normalize("NFD")
@@ -327,6 +354,7 @@ async function searchProducts(req) {
     throw new Error("Không thể tìm kiếm sản phẩm");
   }
 }
+
 module.exports = {
   getAllPro,
   getDatailPro,
@@ -341,4 +369,3 @@ module.exports = {
   searchProducts,
   getProductsByCategory,
 };
-

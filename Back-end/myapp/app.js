@@ -19,6 +19,7 @@ const commentRouter = require("./routes/comment");
 const tempOrderRoutes = require("./routes/tempOrder");
 const paymentRouter = require("./routes/payment");
 const favoriteProductRoutes = require("./routes/favoriteProduct");
+const notificationRoutes = require("./routes/notification");
 
 const app = express();
 
@@ -28,10 +29,7 @@ const app = express();
 //   .then(() => console.log("✅ Kết nối MongoDB thành công!"))
 //   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Kết nối MongoDB Atlas thành công!"))
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB Atlas:", err));
 
@@ -67,6 +65,7 @@ app.use("/voucher", voucherRouter);
 app.use("/temp-order", tempOrderRoutes);
 app.use("/payment", paymentRouter);
 app.use("/favoriteProduct", favoriteProductRoutes);
+app.use("/notifications", notificationRoutes);
 
 // Xử lý 404
 app.use((req, res, next) => {

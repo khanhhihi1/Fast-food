@@ -88,7 +88,9 @@ router.delete("/hide/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await productsController.hideProduct(id);
-    res.status(200).json({ success: true, result, message: "Ẩn sản phẩm thành công" });
+    res
+      .status(200)
+      .json({ success: true, result, message: "Ẩn sản phẩm thành công" });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
@@ -98,7 +100,9 @@ router.put("/show/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await productsController.showProduct(id);
-    res.status(200).json({ success: true, result, message: "Hiển thị sản phẩm thành công" });
+    res
+      .status(200)
+      .json({ success: true, result, message: "Hiển thị sản phẩm thành công" });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
@@ -116,10 +120,14 @@ router.get("/hot", async (req, res) => {
 router.get("/search", async (req, res) => {
   try {
     const result = await productsController.searchProducts(req);
-    res.status(200).json({ success: true, result, message: "Tìm kiếm thành công" });
+    res
+      .status(200)
+      .json({ success: true, result, message: "Tìm kiếm thành công" });
   } catch (error) {
     console.error("Lỗi tìm kiếm:", error.message);
-    res.status(500).json({ success: false, message: "Lỗi hệ thống khi tìm kiếm sản phẩm" });
+    res
+      .status(500)
+      .json({ success: false, message: "Lỗi hệ thống khi tìm kiếm sản phẩm" });
   }
 });
 
