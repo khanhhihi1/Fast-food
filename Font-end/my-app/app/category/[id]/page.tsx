@@ -7,7 +7,6 @@ import styles from "../../styles/productCate.module.css";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faHeartBroken } from "@fortawesome/free-solid-svg-icons";
-
 interface Category {
   _id: string;
   name: string;
@@ -33,6 +32,7 @@ interface Product {
   taste?: string[];
   sizes?: SizeType[];
   categoryId?: string | Category;
+  status?: boolean;
 }
 
 const CategoryPage = () => {
@@ -160,7 +160,11 @@ const CategoryPage = () => {
   useEffect(() => {
     const result = products.filter((p) => {
       const price = p.sizes?.[0]?.price?.discount ?? p.sizes?.[0]?.price?.original ?? 0;
-      return price >= priceRange[0] && price <= priceRange[1];
+      return (
+        (p.status === undefined || p.status === true) && // chỉ lấy sản phẩm đang hoạt động
+        price >= priceRange[0] &&
+        price <= priceRange[1]
+      );
     });
     setFilteredProducts(result);
     setDisplayedCount(itemsPerPage);
