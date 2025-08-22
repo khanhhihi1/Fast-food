@@ -15,7 +15,6 @@ import { toast } from "react-toastify";
 import useDarkMode from "../admin/hooks/darkmode";
 import { Order } from "../type/oder";
 
-
 const OrderStatusText: { [key: number]: string } = {
   0: "Chờ xác nhận",
   1: "Chờ thanh toán",
@@ -25,28 +24,60 @@ const OrderStatusText: { [key: number]: string } = {
   5: "Hủy đơn hàng",
 };
 
-interface OderDetailModalProps {
+interface OrderDetailModalProps {
   show: boolean;
   onHide: () => void;
   order: Order | null;
   onStatusUpdated?: () => void;
 }
 
-const OderDetailModal: React.FC<OderDetailModalProps> = ({
+const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   show,
   onHide,
-  order,
+  order: initialOrder,
   onStatusUpdated,
 }) => {
   const { isDarkMode } = useDarkMode();
   const [updating, setUpdating] = useState(false);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
 
-  if (!order) return null;
+  useEffect(() => {
+    if (show && initialOrder) {
+      console.log("Dữ liệu order từ props ban đầu:", initialOrder); 
+      fetchOrderDetails(initialOrder._id);
+    }
+  }, [show, initialOrder]);
+
+  const fetchOrderDetails = async (orderId: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/orders/admin/${orderId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể lấy chi tiết đơn hàng");
+      }
+
+      console.log("Dữ liệu order từ backend:", data.order);
+      setCurrentOrder(data.order);    } catch (error: any) {
+      console.error("Lỗi fetch order:", error);
+      toast.error(error.message || "Có lỗi khi tải chi tiết đơn hàng");
+    }
+  };
+
+  if (!show || !currentOrder) return null;
 
   const updateOrderStatus = async (orderId: string, newStatus: number) => {
+    setUpdating(true);
     try {
-      if (newStatus < order.status) {
+      if (newStatus < currentOrder.status) {
         toast.warning("Không thể cập nhật lùi trạng thái!");
         return;
       }
@@ -66,25 +97,28 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
         throw new Error(data.message || "Không thể cập nhật trạng thái");
       }
 
+      setCurrentOrder((prev) => prev ? { ...prev, status: newStatus } : null);
       toast.success("Cập nhật trạng thái thành công!");
-      window.location.reload();
       if (onStatusUpdated) {
         onStatusUpdated();
       }
     } catch (error: any) {
       toast.error(error.message || "Có lỗi khi cập nhật trạng thái");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  const subtotal = order.items.reduce(
+  const subtotal = currentOrder.items.reduce(
     (sum, item) => sum + item.price.original * item.quantity,
     0
   );
-  const discount = order.discount || 0;
-  const voucherDiscount = order.voucherData?.discountValue || 0;
-  const shippingFee = order.shippingFee || 0;
-  const tax = order.tax || 0;
+  const discount = currentOrder.discount || 0;
+  const voucherDiscount = currentOrder.voucherData?.discountValue || 0;
+  const shippingFee = currentOrder.shippingFee || 0;
+  const tax = currentOrder.tax || 0;
   const totalAmount = subtotal - discount - voucherDiscount + shippingFee + tax;
+
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton>
@@ -95,57 +129,58 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
           <Col md={6}>
             <h6>Thông tin khách hàng</h6>
             <p>
-              <strong>Tên:</strong> {order.userId.name || "Không xác định"}
+              <strong>Tên:</strong> {currentOrder.userId?.name || "Không xác định"}
             </p>
             <p>
-              <strong>Email:</strong> {order.userId.email || "Không xác định"}
+              <strong>Email:</strong> {currentOrder.userId?.email || "Không xác định"}
             </p>
             <p>
               <strong>SĐT:</strong>{" "}
-              {order.shippingInfo.phone || "Không xác định"}
+              {currentOrder.shippingInfo?.phone || "Không xác định"}
             </p>
             <p>
               <strong>Địa chỉ:</strong>{" "}
-              {order.shippingInfo.address || "Không xác định"}
+              {currentOrder.shippingInfo?.address || "Không xác định"}
             </p>
           </Col>
           <Col md={6}>
             <h6>Thông tin đơn hàng</h6>
             <p>
               <strong>Ngày tạo:</strong>{" "}
-              {new Date(order.createdAt).toLocaleString()}
+              {new Date(currentOrder.createdAt).toLocaleString()}
             </p>
             <p>
               <strong>Trạng thái:</strong>{" "}
-              <Badge bg="info">{OrderStatusText[order.status]}</Badge>
+              <Badge bg="info">{OrderStatusText[currentOrder.status]}</Badge>
             </p>
             <p>
               <strong>Phương thức thanh toán:</strong>{" "}
-              {order.paymentMethod || "Không xác định"}
+              {currentOrder.paymentMethod || "Không xác định"}
             </p>
             <p>
               <strong>Trạng thái thanh toán:</strong>{" "}
-              {order.isPaid ? "Có" : "Chưa"}
+              {currentOrder.isPaid ? "Có" : "Chưa"}
             </p>
             <Form.Group className="mt-3">
               <Form.Label>Cập nhật trạng thái:</Form.Label>
               <Form.Select
-                value={order.status}
-                className={`form-select fw-bold text-capitalize ${order.status === 0
+                value={currentOrder.status}
+                className={`form-select fw-bold text-capitalize ${currentOrder.status === 0
                   ? "text-warning"
-                  : order.status === 1
+                  : currentOrder.status === 1
                     ? "text-info"
-                    : order.status === 2
+                    : currentOrder.status === 2
                       ? "text-primary"
-                      : order.status === 3
+                      : currentOrder.status === 3
                         ? "text-secondary"
-                        : order.status === 4
+                        : currentOrder.status === 4
                           ? "text-success"
                           : "text-danger"
                   }`}
                 onChange={(e) =>
-                  updateOrderStatus(order._id, Number(e.target.value))
+                  updateOrderStatus(currentOrder._id, Number(e.target.value))
                 }
+                disabled={updating}
               >
                 {Object.entries(OrderStatusText).map(([key, value]) => (
                   <option key={key} value={key}>
@@ -157,8 +192,8 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
           </Col>
         </Row>
 
-        <h6>Sản phẩm trong giỏ</h6>
-        <Table className="mt-3 text-center table">
+        <h6>Sản phẩm trong giỏ hàng</h6>
+        <Table className="mt-3 text-center">
           <thead>
             <tr>
               <th>Hình</th>
@@ -171,17 +206,26 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
             </tr>
           </thead>
           <tbody>
-            {order.items.map((item, index) => (
+            {currentOrder.items.map((item, index) => (
               <tr key={`${item.productId}-${index}`}>
-                <td>
-                  <Image src={item.image} alt={item.name} width={60} rounded />
+                <td className="text-center">
+                  <Image 
+                    src={item.image} 
+                    alt={item.name} 
+                    width={60} 
+                    rounded 
+                    onError={(e) => {
+                      console.error(`Lỗi load image: ${item.image}`);
+                      e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Image';
+                    }} 
+                  />
                 </td>
-                <td>{item.name}</td>
-                <td>{item.sizeName || "Không xác định"}</td>
-                <td>{item.taste.join(", ") || "Không có"}</td>
-                <td>{item.price.original.toLocaleString()}đ</td>
-                <td>{item.quantity}</td>
-                <td>{item.finalPrice.toLocaleString()}đ</td>
+                <td style={{color:"black"}}>{item.name}</td>
+                <td style={{color:"black"}}>{item.sizeName || "Không xác định"}</td>
+                <td style={{color:"black"}}>{item.taste.join(", ") || "Không có"}</td>
+                <td style={{color:"black"}}>{item.price.original.toLocaleString()}đ</td>
+                <td style={{color:"black"}}>{item.quantity}</td>
+                <td style={{color:"black"}}>{(item.finalPrice * item.quantity).toLocaleString()}đ</td>
               </tr>
             ))}
           </tbody>
@@ -192,7 +236,6 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
             <Card>
               <Card.Body>
                 <h6>Ghi chú</h6>
-
               </Card.Body>
             </Card>
           </Col>
@@ -208,9 +251,9 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
                   <span>Giảm giá:</span>
                   <span>-{discount.toLocaleString()}đ</span>
                 </div>
-                {order.voucherCode && order.voucherData && (
+                {currentOrder.voucherCode && currentOrder.voucherData?.discountValue && (
                   <div className="d-flex justify-content-between">
-                    <span>Voucher ({order.voucherCode}):</span>
+                    <span>Voucher ({currentOrder.voucherCode}):</span>
                     <span>-{voucherDiscount.toLocaleString()}đ</span>
                   </div>
                 )}
@@ -241,4 +284,4 @@ const OderDetailModal: React.FC<OderDetailModalProps> = ({
   );
 };
 
-export default OderDetailModal;
+export default OrderDetailModal;

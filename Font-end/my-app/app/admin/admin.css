@@ -150,7 +150,7 @@ h4 {
 }
 
 .table>:not(caption)>*>* {
-  background-color: #2a3b4c;
+  background-color: #2a3b4c !important;
 }
 
 .input-group-text {

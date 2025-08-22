@@ -35,11 +35,21 @@ router.get("/admin/all", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
+// Admin lấy chi tiết đơn hàng theo ID (mới thêm cho modal frontend)
+router.get("/admin/:id", authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const result = await orderController.getOrderById(req);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+});
+
 // Admin cập nhật trạng thái đơn hàng
 router.put("/admin/:id", authMiddleware, isAdmin, async (req, res) => {
   try {
     const result = await orderController.updateOrderStatus(req, res);
-    res.json({ status: true, result });
+    res.json(result);
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }

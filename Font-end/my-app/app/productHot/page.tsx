@@ -5,7 +5,7 @@ import styles from "../styles/HotProduct.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faHeartBroken } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import Link from "next/link"; 
+import Link from "next/link";
 
 interface Product {
   _id: string;
@@ -29,15 +29,14 @@ interface Product {
 const HotProducts = () => {
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
-
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   // Fetch sản phẩm nổi bật
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
-
     async function fetchProducts() {
       try {
-        const res = await fetch("http://localhost:5000/products/hot", {
+        const res = await fetch(`${API_URL}/products/hot`, {
           signal,
         });
         const data = await res.json();
@@ -45,10 +44,10 @@ const HotProducts = () => {
         const productList = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-          ? data.result
-          : Array.isArray(data.data)
-          ? data.data
-          : [];
+            ? data.result
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
 
         setHotProducts(productList);
       } catch (error: any) {
@@ -68,7 +67,7 @@ const HotProducts = () => {
     const fetchFavorites = async () => {
       try {
         const res = await fetch(
-          "http://localhost:5000/favoriteProduct/favorites",
+          `${API_URL}/favoriteProduct/favorites`,
           {
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -96,7 +95,7 @@ const HotProducts = () => {
   const toggleFavorite = async (productId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/favoriteProduct/favorites/${productId}`,
+        `${API_URL}/favoriteProduct/favorites/${productId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -167,7 +166,7 @@ const HotProducts = () => {
                         ? displayPrice.toLocaleString("vi-VN") + "₫"
                         : displayPrice}
                     </span>
-                   
+
                     <FontAwesomeIcon
                       icon={isFavorite ? faHeart : faHeartBroken}
                       style={{

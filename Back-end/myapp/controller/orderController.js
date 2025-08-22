@@ -8,10 +8,47 @@ module.exports = {
   createOrderFromTempOrder,
   getUserOrders,
   getAllOrders,
+  getOrderById, 
   updateOrderStatus,
   cancelOrder,
   getOrderStatus,
 };
+
+// Function mới: Lấy chi tiết đơn hàng theo ID (cho admin/modal)
+async function getOrderById(req) {
+  const { id } = req.params;
+
+  let order = await Order.findById(id)
+    .populate("userId", "name email")
+    .populate({
+      path: "items.productId",
+      select: "name image",
+    });
+
+  if (!order) {
+    throw new Error("Không tìm thấy đơn hàng");
+  }
+
+  order = order.toObject();
+  order.items = order.items.map((item) => {
+    let image = item.image || (item.productId ? item.productId.image : "");
+    if (image && !image.startsWith("http")) {
+      image = `${req.protocol}://${req.get("host")}${image}`;
+    }
+    return {
+      ...item,
+      image,
+      name: item.productId ? item.productId.name : item.name, 
+    };
+  });
+
+  // voucherData là embedded, nên đã có sẵn discountValue
+
+  return {
+    status: true,
+    order,
+  };
+}
 
 // Tạo đơn hàng từ giỏ hàng của người dùng
 async function createOrderFromCart(req) {
@@ -97,31 +134,59 @@ async function createOrderFromCart(req) {
 // Lấy danh sách đơn hàng của người dùng
 async function getUserOrders(req) {
   const userId = req.userId;
-  const orders = await Order.find({ userId })
+  let orders = await Order.find({ userId })
     .populate({
       path: "items.productId",
-      select: "name image", // Lấy trường name và image từ Product
+      select: "name image",
     })
     .sort({ createdAt: -1 });
 
-  // Format dữ liệu để bao gồm image từ Product
-  const formattedOrders = orders.map((order) => ({
-    ...order._doc,
-    items: order.items.map((item) => ({
-      ...item._doc,
-      name: item.productId ? item.productId.name : item.name,
-      image: item.productId ? item.productId.image : item.image || "", // Ưu tiên image từ Product
-    })),
-  }));
+  // Format với prepend URL
+  orders = orders.map((order) => {
+    const orderDoc = order.toObject();
+    orderDoc.items = orderDoc.items.map((item) => {
+      let image = item.image || (item.productId ? item.productId.image : "");
+      if (image && !image.startsWith("http")) {
+        image = `${req.protocol}://${req.get("host")}${image}`;
+      }
+      return {
+        ...item,
+        name: item.productId ? item.productId.name : item.name,
+        image,
+      };
+    });
+    return orderDoc;
+  });
 
-  return formattedOrders;
+  return orders;
 }
 
 // Lấy tất cả đơn hàng (admin)
-async function getAllOrders() {
-  const orders = await Order.find()
+async function getAllOrders(req) {
+  let orders = await Order.find()
     .populate("userId", "name email")
+    .populate({
+      path: "items.productId",
+      select: "name image",
+    })
     .sort({ createdAt: -1 });
+
+  // Format với prepend URL
+  orders = orders.map((order) => {
+    const orderDoc = order.toObject();
+    orderDoc.items = orderDoc.items.map((item) => {
+      let image = item.image || (item.productId ? item.productId.image : "");
+      if (image && !image.startsWith("http")) {
+        image = `${req.protocol}://${req.get("host")}${image}`;
+      }
+      return {
+        ...item,
+        image,
+      };
+    });
+    return orderDoc;
+  });
+
   return orders;
 }
 
@@ -134,12 +199,32 @@ async function updateOrderStatus(req) {
     throw new Error("Trạng thái không hợp lệ");
   }
 
-  const updated = await Order.findByIdAndUpdate(id, { status }, { new: true });
+  let updated = await Order.findByIdAndUpdate(id, { status }, { new: true })
+    .populate("userId", "name email")
+    .populate({
+      path: "items.productId",
+      select: "name image",
+    });
+
   if (!updated) {
     throw new Error("Không tìm thấy đơn hàng");
   }
 
+  // Format với prepend URL
+  updated = updated.toObject();
+  updated.items = updated.items.map((item) => {
+    let image = item.image || (item.productId ? item.productId.image : "");
+    if (image && !image.startsWith("http")) {
+      image = `${req.protocol}://${req.get("host")}${image}`;
+    }
+    return {
+      ...item,
+      image,
+    };
+  });
+
   return {
+    status: true,
     message: "Cập nhật trạng thái thành công",
     order: updated,
   };
@@ -163,29 +248,39 @@ async function createOrderFromTempOrder(req) {
     paymentMethod,
   } = tempOrder;
 
-  const enrichedItems = tempOrder.items.map((item) => {
-    const original =
-      item?.price?.original ?? item?.fullPrice?.original ?? item?.price ?? 0;
+  const enrichedItems = await Promise.all(
+    tempOrder.items.map(async (item) => {
+      const product = await Product.findById(item.productId); // Fetch product để lấy image chính xác nếu cần
 
-    const discountPrice =
-      item?.price?.discount ?? item?.fullPrice?.discount ?? undefined;
+      const original =
+        item?.price?.original ?? item?.fullPrice?.original ?? item?.price ?? 0;
 
-    const final = item?.finalPrice ?? discountPrice ?? original;
+      const discountPrice =
+        item?.price?.discount ?? item?.fullPrice?.discount ?? undefined;
 
-    return {
-      productId: item.productId,
-      name: item.name,
-      image: item.image,
-      sizeName: item.sizeName,
-      taste: item.taste || [],
-      quantity: item.quantity,
-      price: {
-        original: original,
-        discount: discountPrice,
-      },
-      finalPrice: final,
-    };
-  });
+      const final = item?.finalPrice ?? discountPrice ?? original;
+
+      let image = item.image || (product ? product.image : "");
+
+      if (image && !image.startsWith("http")) {
+        image = `${req.protocol}://${req.get("host")}${image}`;
+      }
+
+      return {
+        productId: item.productId,
+        name: item.name,
+        image,
+        sizeName: item.sizeName,
+        taste: item.taste || [],
+        quantity: item.quantity,
+        price: {
+          original: original,
+          discount: discountPrice,
+        },
+        finalPrice: final,
+      };
+    })
+  );
 
   const shippingFee = 0;
   const tax = 0;

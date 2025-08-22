@@ -255,37 +255,17 @@ export default function Header() {
                       setSearchKeyword(e.target.value);
                       setShowSearch(true);
                     }}
-                    style={{
-                      padding: "5px 10px",
-                      borderRadius: "5px",
-                      border: "1px solid #ccc",
-                      marginLeft: "10px",
-                      fontSize: "14px",
-                    }}
+                    className={styles.searchInput}
                   />
                 )}
 
                 {showSearch && searchResults.length > 0 && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "40px",
-                      right: "0",
-                      backgroundColor: "#fff",
-                      border: "1px solid #ccc",
-                      borderRadius: "5px",
-                      width: "320px",
-                      maxHeight: "300px",
-                      overflowY: "auto",
-                      zIndex: 1000,
-                      boxShadow: "0px 2px 10px rgba(0,0,0,0.2)",
-                    }}
-                  >
+                  <div className={styles.searchResults}>
                     {searchResults.map((product: any) => (
                       <Link
                         key={product._id}
                         href={`/productList/${product._id}`}
-                        className="d-flex align-items-center px-2 py-2 text-dark text-decoration-none border-bottom"
+                        className={styles.searchItem}
                         onClick={() => setShowSearch(false)}
                       >
                         <Image
@@ -300,9 +280,7 @@ export default function Header() {
                           rounded
                         />
                         <div>
-                          <div style={{ fontWeight: "600" }}>
-                            {product.name}
-                          </div>
+                          <div style={{ fontWeight: "600" }}>{product.name}</div>
                           {renderPrice(product.sizes)}
                         </div>
                       </Link>
@@ -377,7 +355,7 @@ export default function Header() {
                 LIÊN HỆ
               </Link>
               <Link href="/blogtext" className={styles.aLink}>
-               BLOG
+                BLOG
               </Link>
             </Col>
           </Row>
