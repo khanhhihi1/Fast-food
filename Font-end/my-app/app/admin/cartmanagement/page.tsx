@@ -17,7 +17,7 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";
-import useDarkMode from "../useDarkMode/page";
+import useDarkMode from "../hooks/darkmode";
 import AdminNavbar from "@/app/component/adminNavbar";
 import { Collapse } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -148,9 +148,8 @@ export default function CartManagementPage() {
       <AdminSideBar />
       <Container
         fluid
-        className={`content w-100 container-content ${
-          collapsed ? "collapsed-content" : ""
-        }`}
+        className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
+          }`}
       >
         <AdminNavbar />
         <div className="cart-admin">
@@ -201,25 +200,22 @@ export default function CartManagementPage() {
                 Chờ xử lý
               </button>
               <button
-                className={`filter-btn ${
-                  filter === "processing" ? "active" : ""
-                }`}
+                className={`filter-btn ${filter === "processing" ? "active" : ""
+                  }`}
                 onClick={() => setFilter("processing")}
               >
                 Đang xử lý
               </button>
               <button
-                className={`filter-btn ${
-                  filter === "completed" ? "active" : ""
-                }`}
+                className={`filter-btn ${filter === "completed" ? "active" : ""
+                  }`}
                 onClick={() => setFilter("completed")}
               >
                 Đã hoàn thành
               </button>
               <button
-                className={`filter-btn ${
-                  filter === "cancelled" ? "active" : ""
-                }`}
+                className={`filter-btn ${filter === "cancelled" ? "active" : ""
+                  }`}
                 onClick={() => setFilter("cancelled")}
               >
                 Đã hủy
@@ -249,7 +245,7 @@ export default function CartManagementPage() {
                         >
                           {
                             OrderStatusText[
-                              order.status as keyof typeof OrderStatusText
+                            order.status as keyof typeof OrderStatusText
                             ]
                           }
                         </span>

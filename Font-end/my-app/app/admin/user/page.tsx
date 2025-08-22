@@ -6,7 +6,7 @@ import { faUserShield } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import AdminNavbar from "../../component/adminNavbar";
 import AdminSideBar from "../../component/adminSideBar";
-import useDarkMode from "../useDarkMode/page";
+import useDarkMode from "../hooks/darkmode";
 import styles from "../styles/product.module.css";
 import { FaSearch } from "react-icons/fa";
 
@@ -170,7 +170,7 @@ export default function UserAdmin() {
               <Form
                 className={styles.fromInput}
                 onSubmit={(e) => e.preventDefault()}
-                style={{marginLeft:"630px"}}
+                style={{ marginLeft: "630px" }}
               >
                 <div className="input-group">
                   <input

@@ -7,7 +7,7 @@ import CategoryFormModal from "@/app/component/CategoryFormModal";
 import CategoryUpdateModal from "@/app/component/CategoryUpdateModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faPenToSquare, faPlus, faSearch, faRotate } from "@fortawesome/free-solid-svg-icons";
-import useDarkMode from "../useDarkMode/page";
+import useDarkMode from "../hooks/darkmode";
 import styles from "../styles/product.module.css";
 import { toast } from "react-toastify";
 
