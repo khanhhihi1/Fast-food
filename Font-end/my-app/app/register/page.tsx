@@ -14,6 +14,7 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
   });
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,7 +37,7 @@ export default function SignUpPage() {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/users/register", {
+      const response = await fetch(`${API_URL}/users/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

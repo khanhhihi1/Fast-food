@@ -19,16 +19,17 @@ interface Comment {
 export default function CartManagementPage() {
     const [collapsed, setCollapsed] = useState(false);
     const [filterType, setFilterType] = useState<string>("all"); // all | high-low | low-high
-    const [activeTab, setActiveTab] = useState<"all" | "order" | "product">("all"); 
+    const [activeTab, setActiveTab] = useState<"all" | "order" | "product">("all");
     const [comments, setComments] = useState<Comment[]>([]);
-    const [searchTerm, setSearchTerm] = useState<string>(""); 
+    const [searchTerm, setSearchTerm] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const fetchComments = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`http://localhost:5000/comment/all`);
+            const res = await fetch(`${API_URL}/comment/all`);
             const data = await res.json();
             if (data.status) {
                 setComments(data.result);
@@ -68,7 +69,7 @@ export default function CartManagementPage() {
     return (
         <div className="d-flex dark-mode">
             <AdminSideBar />
-            <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}  style={{minHeight:"100vh"}}>
+            <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
                 <AdminNavbar />
                 <div className="cart-admin">
                     <div className="admin-container">

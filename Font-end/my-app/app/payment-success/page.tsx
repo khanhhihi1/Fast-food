@@ -12,13 +12,14 @@ function PaymentSuccessContent() {
   const [status, setStatus] = useState<"loading" | "success" | "fail">(
     "loading"
   );
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const checkOrderStatus = async () => {
       try {
         // B1: Gọi backend lấy thông tin session
         const res = await fetch(
-          `http://localhost:5000/payment/stripe/session/${sessionId}`,
+          `${API_URL}/payment/stripe/session/${sessionId}`,
           {
             credentials: "include",
             headers: {
@@ -33,7 +34,7 @@ function PaymentSuccessContent() {
 
         // B2: Kiểm tra trạng thái đơn hàng
         const orderRes = await fetch(
-          `http://localhost:5000/orders/${orderId}/status`,
+          `${API_URL}/orders/${orderId}/status`,
           {
             credentials: "include",
             headers: {

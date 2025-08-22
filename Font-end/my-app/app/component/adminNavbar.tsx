@@ -74,10 +74,11 @@ export default function AdminNavbar() {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const [user, setUser] = useState(null);
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleLogout = async () => {
     try {
-      const res = await fetch("http://localhost:5000/users/logout", {
+      const res = await fetch(`${API_URL}/users/logout`, {
         method: "POST",
         credentials: "include",
       });

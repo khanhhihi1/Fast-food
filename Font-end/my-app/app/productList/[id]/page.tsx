@@ -83,6 +83,8 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     if (id && typeof id === "string") {
       setProductId(id);
@@ -108,7 +110,7 @@ const ProductDetail = () => {
     error: productError,
     isLoading: productLoading,
   } = useSWR<ProductType>(
-    productId ? `http://localhost:5000/products/${productId}` : null,
+    productId ? `${API_URL}/products/${productId}` : null,
     fetcher
   );
 
@@ -116,14 +118,14 @@ const ProductDetail = () => {
     data: categories,
     error: categoryError,
     isLoading: categoryLoading,
-  } = useSWR<CategoryInfo[]>("http://localhost:5000/categories", fetcher);
+  } = useSWR<CategoryInfo[]>(`${API_URL}/categories`, fetcher);
 
   const {
     data: comments,
     error: commentError,
     isLoading: commentLoading,
   } = useSWR<CommentType[]>(
-    productId ? `http://localhost:5000/comment/${productId}` : null,
+    productId ? `${API_URL}/comment/${productId}` : null,
     async (url: string) => {
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) {
@@ -155,7 +157,7 @@ const ProductDetail = () => {
     data: allProducts,
     error: relatedError,
     isLoading: relatedLoading,
-  } = useSWR<ProductType[]>("http://localhost:5000/products", fetcher);
+  } = useSWR<ProductType[]>(`${API_URL}/products`, fetcher);
 
   useEffect(() => {
     if (product?.sizes && product.sizes.length > 0) {
@@ -206,7 +208,7 @@ const ProductDetail = () => {
   const toggleFavorite = async (productId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/favoriteProduct/favorites/${productId}`,
+        `${API_URL}/favoriteProduct/favorites/${productId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -262,7 +264,7 @@ const ProductDetail = () => {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/cart/add", {
+      const res = await fetch(`${API_URL}/cart/add`, {
         method: "POST",
         credentials: "include",
         headers: {

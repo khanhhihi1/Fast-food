@@ -42,6 +42,7 @@ export default function ProductList({
   limit,
 }: ProductListProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,14 +50,14 @@ export default function ProductList({
 
     async function fetchProducts() {
       try {
-        let endpoint = "http://localhost:5000/products";
+        let endpoint = `${API_URL}/products`;
 
         if (category === "hot") {
-          endpoint = "http://localhost:5000/products/hot";
+          endpoint = `${API_URL}/products/hot`;
         } else if (category === "discount") {
-          endpoint = "http://localhost:5000/products/discount";
+          endpoint = `${API_URL}/products/discount`;
         } else if (category) {
-          endpoint = `http://localhost:5000/products?category=${category}`;
+          endpoint = `${API_URL}/products?category=${category}`;
         }
 
         const res = await fetch(endpoint, { signal });

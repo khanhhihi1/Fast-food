@@ -56,11 +56,12 @@ const renderPrice = (sizes?: Product["sizes"]) => {
 export default function ProductItem({ product, layout = "vertical" }: ProductItemsProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const productId = product._id || product.id;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const res = await fetch("http://localhost:5000/favoriteProduct/favorites", {
+        const res = await fetch(`${API_URL}/favoriteProduct/favorites`, {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         });
@@ -80,7 +81,7 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
   }, [productId]);
   const toggleFavorite = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/favoriteProduct/favorites/${productId}`, {
+      const response = await fetch(`${API_URL}/favoriteProduct/favorites/${productId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

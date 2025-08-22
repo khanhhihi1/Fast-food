@@ -142,6 +142,7 @@ const UserProfile = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const fetchUserAndOrders = async () => {
@@ -149,10 +150,10 @@ const UserProfile = () => {
         setLoading(true);
 
         const [userRes, ordersRes] = await Promise.all([
-          fetch("http://localhost:5000/users/profile", {
+          fetch(`${API_URL}/users/profile`, {
             credentials: "include",
           }),
-          fetch("http://localhost:5000/orders", {
+          fetch(`${API_URL}/orders`, {
             credentials: "include",
           }),
         ]);
@@ -172,8 +173,13 @@ const UserProfile = () => {
 
         if (ordersRes.ok && ordersData.status) {
           setOrders(ordersData.result || []);
-          const completedOrders = ordersData.result.filter((order: Order) => order.status === 4);
-          console.log("Completed Orders:", JSON.stringify(completedOrders, null, 2));
+          const completedOrders = ordersData.result.filter(
+            (order: Order) => order.status === 4
+          );
+          console.log(
+            "Completed Orders:",
+            JSON.stringify(completedOrders, null, 2)
+          );
 
           const commentablePromises = completedOrders.map((order: Order) => {
             if (!order._id || !userData.result?._id) {
@@ -181,33 +187,50 @@ const UserProfile = () => {
                 orderId: order._id,
                 userId: userData.result?._id,
               });
-              return Promise.resolve({ status: false, message: "Thiếu ID" });
+              return Promise.resolve({
+                status: false,
+                message: "Thiếu ID",
+              });
             }
             console.log("Fetching commentable products for:", {
               orderId: order._id,
               userId: userData.result._id,
             });
             return fetch(
-              `http://localhost:5000/comment/commentable-products?orderId=${order._id}&userId=${userData.result._id}`,
+              `${API_URL}/comment/commentable-products?orderId=${order._id}&userId=${userData.result._id}`,
               { credentials: "include" }
-            ).then(res => res.json());
+            ).then((res) => res.json());
           });
 
           const commentableResults = await Promise.all(commentablePromises);
-          console.log("Commentable Results:", JSON.stringify(commentableResults, null, 2));
+          console.log(
+            "Commentable Results:",
+            JSON.stringify(commentableResults, null, 2)
+          );
 
           const commentableMap: { [orderId: string]: CommentableProduct[] } = {};
           const canCommentOrderMap: { [orderId: string]: boolean } = {};
           completedOrders.forEach((order: Order, index: number) => {
             if (commentableResults[index].status) {
-              commentableMap[order._id.toString()] = commentableResults[index].result || [];
-              canCommentOrderMap[order._id.toString()] = commentableResults[index].canCommentOrder || false;
+              commentableMap[order._id.toString()] =
+                commentableResults[index].result || [];
+              canCommentOrderMap[order._id.toString()] =
+                commentableResults[index].canCommentOrder || false;
             } else {
-              console.error(`Failed to fetch commentable products for order ${order._id}:`, commentableResults[index].message);
+              console.error(
+                `Failed to fetch commentable products for order ${order._id}:`,
+                commentableResults[index].message
+              );
             }
           });
-          console.log("Commentable Products:", JSON.stringify(commentableMap, null, 2));
-          console.log("Can Comment Order:", JSON.stringify(canCommentOrderMap, null, 2));
+          console.log(
+            "Commentable Products:",
+            JSON.stringify(commentableMap, null, 2)
+          );
+          console.log(
+            "Can Comment Order:",
+            JSON.stringify(canCommentOrderMap, null, 2)
+          );
           setCommentableProducts(commentableMap);
           setCanCommentOrder(canCommentOrderMap);
         } else {
@@ -233,7 +256,7 @@ const UserProfile = () => {
   const cancelOrder = async (orderId: string) => {
     if (!confirm("Bạn có chắc muốn hủy đơn hàng này?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/orders/${orderId}/cancel`, {
+      const res = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -242,7 +265,9 @@ const UserProfile = () => {
       if (!data.status) throw new Error(data.message || "Không thể hủy đơn hàng");
 
       setOrders((prev) =>
-        prev.map((order) => (order._id === orderId ? { ...order, status: 5 } : order))
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status: 5 } : order
+        )
       );
       toast.success("Hủy đơn hàng thành công!");
     } catch (error: any) {
@@ -273,7 +298,6 @@ const UserProfile = () => {
         rating: Number(rating),
       };
 
-      // Kiểm tra các trường bắt buộc
       if (!commentData.userId) {
         toast.error("Vui lòng đăng nhập để bình luận");
         return;
@@ -286,14 +310,18 @@ const UserProfile = () => {
         toast.error("Vui lòng nhập nội dung bình luận");
         return;
       }
-      if (!Number.isInteger(commentData.rating) || commentData.rating < 1 || commentData.rating > 5) {
+      if (
+        !Number.isInteger(commentData.rating) ||
+        commentData.rating < 1 ||
+        commentData.rating > 5
+      ) {
         toast.error("Đánh giá phải là số nguyên từ 1 đến 5");
         return;
       }
 
       console.log("Comment Data:", JSON.stringify(commentData, null, 2));
 
-      const res = await fetch("http://localhost:5000/comment", {
+      const res = await fetch(`${API_URL}/comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -311,7 +339,9 @@ const UserProfile = () => {
       if (selectedProductId) {
         setCommentableProducts((prev) => ({
           ...prev,
-          [selectedOrderId]: prev[selectedOrderId].filter((p) => p.productId !== selectedProductId),
+          [selectedOrderId]: prev[selectedOrderId].filter(
+            (p) => p.productId !== selectedProductId
+          ),
         }));
       } else {
         setCommentableProducts((prev) => ({
@@ -332,6 +362,7 @@ const UserProfile = () => {
       toast.error(err.message || "Không thể gửi bình luận");
     }
   };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmNewPassword) {
@@ -344,7 +375,7 @@ const UserProfile = () => {
     }
     setPasswordLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/users/change-password", {
+      const res = await fetch(`${API_URL}/users/change-password`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -368,6 +399,7 @@ const UserProfile = () => {
       setPasswordLoading(false);
     }
   };
+
   if (loading) {
     return (
       <ProtectedRoute>

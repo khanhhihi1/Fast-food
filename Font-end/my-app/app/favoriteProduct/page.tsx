@@ -49,11 +49,12 @@ const FavoriteProduct = () => {
     const [favorites, setFavorites] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     useEffect(() => {
         const fetchFavorites = async () => {
             try {
-                const res = await fetch("http://localhost:5000/favoriteProduct/favorites", {
+                const res = await fetch(`${API_URL}/favoriteProduct/favorites`, {
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                 });
@@ -75,7 +76,7 @@ const FavoriteProduct = () => {
 
     const handleRemoveFavorite = async (productId: string) => {
         try {
-            const res = await fetch(`http://localhost:5000/favoriteProduct/favorites/${productId}`, {
+            const res = await fetch(`${API_URL}/favoriteProduct/favorites/${productId}`, {
                 method: "POST", // Nếu API yêu cầu DELETE
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",

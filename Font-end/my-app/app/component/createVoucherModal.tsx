@@ -20,6 +20,7 @@ function VoucherFormModal(props: iShow) {
   const [minOrderValue, setMinOrderValue] = useState<number>(0);
   const [expiresAt, setExpiresAt] = useState("");
   const [maxDiscount, setMaxDiscount] = useState<number>(0);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleSubmit = async () => {
     if (!code || !description || !discountValue || !expiresAt) {
@@ -38,7 +39,7 @@ function VoucherFormModal(props: iShow) {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/voucher/add", {
+      const response = await fetch(`${API_URL}/voucher/add`, {
         method: "POST",
         headers: {
           Accept: "application/json",

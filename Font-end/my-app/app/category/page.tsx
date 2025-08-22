@@ -16,11 +16,12 @@ interface Service {
 export default function Service() {
   const [service, setService] = useState<Service[]>([]);
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     async function fetchService() {
       try {
-        const res = await fetch("http://localhost:5000/categories");
+        const res = await fetch(`${API_URL}/categories`);
         const data = await res.json();
         console.log("Service categories response:", data);
         if (Array.isArray(data.result)) {

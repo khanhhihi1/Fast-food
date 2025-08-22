@@ -23,10 +23,11 @@ export default function VoucherPages() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const fetchVouchers = async () => {
         try {
-            const res = await fetch("http://localhost:5000/voucher");
+            const res = await fetch(`${API_URL}/voucher`);
             const data = await res.json();
             if (data.status) {
                 setVouchers(data.result);
@@ -45,7 +46,7 @@ export default function VoucherPages() {
     const handleHideVoucher = async (id: string) => {
         if (!confirm("Bạn có chắc muốn ẩn voucher này?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/voucher/${id}/hide`, {
+            const res = await fetch(`${API_URL}/voucher/${id}/hide`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
             });
@@ -77,7 +78,7 @@ export default function VoucherPages() {
     const handleRestoreVoucher = async (id: string) => {
         if (!confirm("Bạn có chắc muốn khôi phục voucher này?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/voucher/${id}/restore`, {
+            const res = await fetch(`${API_URL}/voucher/${id}/restore`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
             });

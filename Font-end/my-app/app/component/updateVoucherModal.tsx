@@ -19,6 +19,7 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher, onUpdated }: Pro
   const [minOrderValue, setMinOrderValue] = useState<number>(voucher.minOrderValue);
   const [expiresAt, setExpiresAt] = useState(voucher.expiresAt.split("T")[0]);
   const [maxDiscount, setMaxDiscount] = useState<number>(voucher.maxDiscount);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     setCode(voucher.code);
@@ -47,7 +48,7 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher, onUpdated }: Pro
     };
 
     try {
-      const response = await fetch(`http://localhost:5000/voucher/update/${voucher._id}`, {
+      const response = await fetch(`${API_URL}/voucher/update/${voucher._id}`, {
         method: "PUT",
         headers: {
           Accept: "application/json",

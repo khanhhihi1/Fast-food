@@ -37,13 +37,14 @@ function UpdateModelAdmin({
   const [categoriesList, setCategoriesList] = useState<
     { _id: string; name: string }[] | null
   >(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     if (showUpdateModal) {
       const fetchCategories = async () => {
         setLoading(true);
         try {
-          const response = await fetch("http://localhost:5000/categories");
+          const response = await fetch(`${API_URL}/categories`);
           const data = await response.json();
           const categoriesData = Array.isArray(data) ? data : data.result;
           setCategoriesList(categoriesData);
@@ -146,7 +147,7 @@ function UpdateModelAdmin({
 
     try {
       const response = await fetch(
-        `http://localhost:5000/products/updateProduct/${productId}`,
+        `${API_URL}/products/updateProduct/${productId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
