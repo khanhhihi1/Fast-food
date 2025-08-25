@@ -146,7 +146,11 @@ h4 {
 }
 
 .table>:not(caption)>*>* {
+<<<<<<< HEAD
   background-color: #f5f0f0;
+=======
+  background-color: #2a3b4c
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 }
 .input-group-text {
   margin-left: -23px;

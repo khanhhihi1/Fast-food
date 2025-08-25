@@ -22,7 +22,10 @@ export function useAuth() {
       .then(async (res) => {
         const data = await res.json();
         if (res.ok && data.status) {
+<<<<<<< HEAD
           
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           setUser(data.result);
         } else {
           setUser(null);

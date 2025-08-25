@@ -11,7 +11,10 @@ module.exports = {
   getUserInfo,
   getAllUser,
   patchUserByAdmin,
+<<<<<<< HEAD
   changePassword
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 };
 
 // Helper
@@ -90,9 +93,17 @@ async function loginUser(data) {
     }
 
     // Hợp nhất đoạn bị conflict
+<<<<<<< HEAD
     const token = jwt.sign({ id: user._id, role: user.role }, "secret_key", {
       expiresIn: "1d",
     });
+=======
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      "secret_key",
+      { expiresIn: "1d" }
+    );
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
     return {
       user: {
@@ -213,7 +224,11 @@ async function getAllUser() {
       .select("-password");
     return users;
   } catch (error) {
+<<<<<<< HEAD
     throw new Error("Không thể lấy danh sách người dùng!");
+=======
+    throw new Error("Không thể lấy danh sách người dùng");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   }
 }
 
@@ -221,7 +236,11 @@ async function getAllUser() {
 async function patchUserByAdmin(id, data) {
   try {
     const user = await userModel.findById(id);
+<<<<<<< HEAD
     if (!user) throw new Error("Không tìm thấy người dùng!");
+=======
+    if (!user) throw new Error("Không tìm thấy người dùng");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
     // Không cho chỉnh sửa nếu là admin
     if (
@@ -254,6 +273,7 @@ async function patchUserByAdmin(id, data) {
     throw new Error(error.message);
   }
 }
+<<<<<<< HEAD
 async function changePassword(id, data) {
   try {
     const { oldPassword, newPassword, confirmNewPassword } = data;
@@ -289,3 +309,5 @@ async function changePassword(id, data) {
     throw new Error(error.message);
   }
 }
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb

@@ -1,18 +1,43 @@
+<<<<<<< HEAD
 const mongoose = require("mongoose");
 const categoriesModel = require("../model/categoriesModel");
 const productsModel = require("../model/productModel");
 const notificationController = require("../controller/notificationController");
+=======
+const categoriesModel = require("../model/categoriesModel.js");
+const productsModel = require("../model/productModel.js");
+const mongoose = require("mongoose");
+
+module.exports = {
+  getAllPro,
+  getDatailPro,
+  hideProduct,
+  showProduct,
+  addPro,
+  updateProduct,
+  getActiveProducts,
+  getInactiveProducts,
+  getHotProducts,
+  getDiscountProduct,
+};
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 // Lấy tất cả sản phẩm
 async function getAllPro() {
   try {
+<<<<<<< HEAD
     return await productsModel.find().populate("categoryId");
+=======
+    const products = await productsModel.find().populate("categoryId");
+    return products;
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   } catch (error) {
     console.error(error);
     throw new Error("Lỗi lấy dữ liệu sản phẩm");
   }
 }
 
+<<<<<<< HEAD
 async function getProductsByCategory(categoryId) {
   try {
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -31,6 +56,8 @@ async function getProductsByCategory(categoryId) {
   }
 }
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 // Thêm mới sản phẩm
 async function addPro(data) {
   try {
@@ -62,6 +89,10 @@ async function addPro(data) {
       throw new Error("Danh mục không tồn tại");
     }
 
+<<<<<<< HEAD
+=======
+    // Kiểm tra và chuẩn hóa giá từng size
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     const sizes = data.sizes.map((size) => {
       if (
         !size.name ||
@@ -93,6 +124,7 @@ async function addPro(data) {
     });
 
     const result = await newProduct.save();
+<<<<<<< HEAD
 
     // Tạo thông báo hệ thống khi thêm sản phẩm mới
     await notificationController.createNotification({
@@ -100,6 +132,8 @@ async function addPro(data) {
       type: "system",
     });
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     return result;
   } catch (error) {
     console.error("Lỗi khi thêm sản phẩm:", error.message);
@@ -111,6 +145,10 @@ async function addPro(data) {
 async function getDatailPro(id) {
   try {
     const result = await productsModel.findById(id).populate("categoryId");
+<<<<<<< HEAD
+=======
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     if (!result) {
       throw new Error("Không tìm thấy sản phẩm");
     }
@@ -141,12 +179,15 @@ async function hideProduct(id) {
       { new: true }
     );
 
+<<<<<<< HEAD
     // Tạo thông báo hệ thống khi ẩn sản phẩm
     await notificationController.createNotification({
       message: `Sản phẩm ${product.name} đã tạm ngưng bán.`,
       type: "system",
     });
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     return result;
   } catch (error) {
     console.error(error);
@@ -174,12 +215,15 @@ async function showProduct(id) {
       { new: true }
     );
 
+<<<<<<< HEAD
     // Tạo thông báo hệ thống khi hiển thị sản phẩm
     await notificationController.createNotification({
       message: `Sản phẩm ${product.name} đã được hiển thị trở lại.`,
       type: "system",
     });
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     return result;
   } catch (error) {
     console.error(error);
@@ -257,6 +301,7 @@ async function updateProduct(data, id) {
       { new: true }
     );
 
+<<<<<<< HEAD
     // Tạo thông báo hệ thống khi cập nhật sản phẩm
     if (data.saleOff) {
       await notificationController.createNotification({
@@ -265,6 +310,8 @@ async function updateProduct(data, id) {
       });
     }
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     return result;
   } catch (error) {
     console.error("Lỗi khi cập nhật sản phẩm:", error.message);
@@ -293,17 +340,28 @@ async function getInactiveProducts() {
     throw new Error("Không thể lấy danh sách sản phẩm ngưng bán");
   }
 }
+<<<<<<< HEAD
 
 // Sản phẩm hot
 async function getHotProducts() {
   try {
     const result = await productsModel.find({}).sort({ view: -1 }).limit(4);
+=======
+ // sp hot
+async function getHotProducts() {
+  try {
+    const result = await productsModel
+      .find({})                 
+      .sort({ view: -1 })       
+      .limit(4);               
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     return result;
   } catch (error) {
     console.log(error);
     throw new Error("Lỗi khi lấy sản phẩm hot");
   }
 }
+<<<<<<< HEAD
 
 // Sản phẩm giảm giá
 async function getDiscountProduct() {
@@ -319,6 +377,20 @@ async function getDiscountProduct() {
         },
       })
       .limit(5);
+=======
+async function getDiscountProduct() {
+  try {
+    const productsWithDiscount = await productsModel.find({
+      status: true,
+      saleOff: true,
+      sizes: {
+        $elemMatch: {
+          "price.discount": { $exists: true }
+        }
+      }
+    })
+    .limit(5);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
     return productsWithDiscount;
   } catch (error) {
@@ -326,6 +398,7 @@ async function getDiscountProduct() {
     throw new Error("Không thể lấy sản phẩm giảm giá");
   }
 }
+<<<<<<< HEAD
 
 // Tìm kiếm sản phẩm
 function normalizeVietnamese(str) {
@@ -369,3 +442,5 @@ module.exports = {
   searchProducts,
   getProductsByCategory,
 };
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb

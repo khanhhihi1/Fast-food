@@ -2,12 +2,17 @@ const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
 const { Order, OrderStatus } = require("../model/orderModel.js");
 const TempOrder = require("../model/tempOrderModel.js");
+<<<<<<< HEAD
 const Voucher = require("../model/voucherModel.js");
+=======
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 module.exports = {
   createOrderFromCart,
   createOrderFromTempOrder,
   getUserOrders,
   getAllOrders,
+<<<<<<< HEAD
   getOrderById, 
   updateOrderStatus,
   cancelOrder,
@@ -50,6 +55,12 @@ async function getOrderById(req) {
   };
 }
 
+=======
+  updateOrderStatus,
+  cancelOrder,
+};
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 // Tạo đơn hàng từ giỏ hàng của người dùng
 async function createOrderFromCart(req) {
   const userId = req.userId;
@@ -134,6 +145,7 @@ async function createOrderFromCart(req) {
 // Lấy danh sách đơn hàng của người dùng
 async function getUserOrders(req) {
   const userId = req.userId;
+<<<<<<< HEAD
   let orders = await Order.find({ userId })
     .populate({
       path: "items.productId",
@@ -158,10 +170,14 @@ async function getUserOrders(req) {
     return orderDoc;
   });
 
+=======
+  const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   return orders;
 }
 
 // Lấy tất cả đơn hàng (admin)
+<<<<<<< HEAD
 async function getAllOrders(req) {
   let orders = await Order.find()
     .populate("userId", "name email")
@@ -187,6 +203,12 @@ async function getAllOrders(req) {
     return orderDoc;
   });
 
+=======
+async function getAllOrders() {
+  const orders = await Order.find()
+    .populate("userId", "name email")
+    .sort({ createdAt: -1 });
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   return orders;
 }
 
@@ -199,6 +221,7 @@ async function updateOrderStatus(req) {
     throw new Error("Trạng thái không hợp lệ");
   }
 
+<<<<<<< HEAD
   let updated = await Order.findByIdAndUpdate(id, { status }, { new: true })
     .populate("userId", "name email")
     .populate({
@@ -206,10 +229,14 @@ async function updateOrderStatus(req) {
       select: "name image",
     });
 
+=======
+  const updated = await Order.findByIdAndUpdate(id, { status }, { new: true });
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   if (!updated) {
     throw new Error("Không tìm thấy đơn hàng");
   }
 
+<<<<<<< HEAD
   // Format với prepend URL
   updated = updated.toObject();
   updated.items = updated.items.map((item) => {
@@ -225,6 +252,9 @@ async function updateOrderStatus(req) {
 
   return {
     status: true,
+=======
+  return {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     message: "Cập nhật trạng thái thành công",
     order: updated,
   };
@@ -248,6 +278,7 @@ async function createOrderFromTempOrder(req) {
     paymentMethod,
   } = tempOrder;
 
+<<<<<<< HEAD
   const enrichedItems = await Promise.all(
     tempOrder.items.map(async (item) => {
       const product = await Product.findById(item.productId); // Fetch product để lấy image chính xác nếu cần
@@ -281,6 +312,31 @@ async function createOrderFromTempOrder(req) {
       };
     })
   );
+=======
+  const enrichedItems = tempOrder.items.map((item) => {
+    const original =
+      item?.price?.original ?? item?.fullPrice?.original ?? item?.price ?? 0;
+
+    const discountPrice =
+      item?.price?.discount ?? item?.fullPrice?.discount ?? undefined;
+
+    const final = item?.finalPrice ?? discountPrice ?? original;
+
+    return {
+      productId: item.productId,
+      name: item.name,
+      image: item.image,
+      sizeName: item.sizeName,
+      taste: item.taste || [],
+      quantity: item.quantity,
+      price: {
+        original: original,
+        discount: discountPrice,
+      },
+      finalPrice: final,
+    };
+  });
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   const shippingFee = 0;
   const tax = 0;
@@ -342,6 +398,7 @@ async function cancelOrder(req) {
     order,
   };
 }
+<<<<<<< HEAD
 
 // Lấy trạng thái đơn hàng
 async function getOrderStatus(req) {
@@ -373,3 +430,5 @@ async function getOrderStatus(req) {
     orderId: order._id,
   };
 }
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb

@@ -44,7 +44,11 @@ const tempOrderSchema = new Schema(
     },
     paymentMethod: {
       type: String,
+<<<<<<< HEAD
       enum: ["cod", "momo", "vnpay", "stripe"],
+=======
+      enum: ["cod", "momo", "vnpay"],
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       default: "cod",
     },
     expiresAt: { type: Date, default: () => Date.now() + 15 * 60 * 1000 }, // Hết hạn sau 15 phút

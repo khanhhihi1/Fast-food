@@ -30,7 +30,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./cart.css";
 import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";
+<<<<<<< HEAD
 import useDarkMode from "../hooks/darkmode";
+=======
+import useDarkMode from "../useDarkMode/page";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 import AdminNavbar from "@/app/component/adminNavbar";
 import { Collapse } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -104,11 +108,19 @@ export default function CartManagementPage() {
   const { isDarkMode } = useDarkMode();
   const router = useRouter();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
       const res = await fetch(`${API_URL}/orders/admin/all`, {
+=======
+
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("http://localhost:5000/orders/admin/all", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "GET",
         credentials: "include",
       });
@@ -133,7 +145,11 @@ export default function CartManagementPage() {
         return;
       }
 
+<<<<<<< HEAD
       const res = await fetch(`${API_URL}/orders/admin/${orderId}`, {
+=======
+      const res = await fetch(`http://localhost:5000/orders/admin/${orderId}`, {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
