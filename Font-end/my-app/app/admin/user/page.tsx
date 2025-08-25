@@ -1,4 +1,5 @@
 "use client";
+<<<<<<< HEAD
 import React, { useEffect, useState, useMemo } from "react";
 import { Button, Container, Form, Table } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -9,6 +10,21 @@ import AdminSideBar from "../../component/adminSideBar";
 import useDarkMode from "../hooks/darkmode";
 import styles from "../styles/product.module.css";
 import { FaSearch } from "react-icons/fa";
+=======
+import React, { useEffect, useState } from "react";
+import { Button, Container, Table } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUserShield,
+  faUser,
+  faUserTie,
+} from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
+import AdminNavbar from "../../component/adminNavbar";
+import AdminSideBar from "../../component/adminSideBar";
+import "../admin.css";
+import useDarkMode from "../useDarkMode/page";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 interface UserType {
   _id: string;
@@ -27,6 +43,7 @@ export default function UserAdmin() {
   const usersPerPage = 10;
   const { isDarkMode } = useDarkMode();
 
+<<<<<<< HEAD
   // Thêm filter và search
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +52,11 @@ export default function UserAdmin() {
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${API_URL}/users`, {
+=======
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/users", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         credentials: "include",
       });
       const data = await res.json();
@@ -54,7 +76,11 @@ export default function UserAdmin() {
     value: string | boolean
   ) => {
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_URL}/users/${id}`, {
+=======
+      const res = await fetch(`http://localhost:5000/users/${id}`, {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -67,7 +93,11 @@ export default function UserAdmin() {
       }
 
       toast.success("Cập nhật thành công");
+<<<<<<< HEAD
       fetchUsers();
+=======
+      fetchUsers(); // refresh lại danh sách
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     } catch (error: any) {
       toast.error(error.message || "Lỗi khi cập nhật người dùng");
     }
@@ -77,6 +107,7 @@ export default function UserAdmin() {
     fetchUsers();
   }, []);
 
+<<<<<<< HEAD
   // Lọc và tìm kiếm
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -103,12 +134,19 @@ export default function UserAdmin() {
   const indexOfLast = currentPage * usersPerPage;
   const indexOfFirst = indexOfLast - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirst, indexOfLast);
+=======
+  const totalPages = Math.ceil(users.length / usersPerPage);
+  const indexOfLast = currentPage * usersPerPage;
+  const indexOfFirst = indexOfLast - usersPerPage;
+  const currentUsers = users.slice(indexOfFirst, indexOfLast);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   return (
     <div className="d-flex dark-mode">
       <AdminSideBar />
       <Container
         fluid
+<<<<<<< HEAD
         className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
           }`}
         style={{ minHeight: "100vh" }}
@@ -298,6 +336,121 @@ export default function UserAdmin() {
             </tbody>
           </Table>
         </div>
+=======
+        className={`content w-100 container-content ${
+          collapsed ? "collapsed-content" : ""
+        }`}
+      >
+        <AdminNavbar />
+        <h4 className="text-center mt-4">Danh sách người dùng</h4>
+
+        <Table striped bordered hover responsive className="mt-3 text-center">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tên người dùng</th>
+              <th>Email</th>
+              <th>Tên hiển thị</th>
+              <th>Vai trò</th>
+              <th>Trạng thái</th>
+              <th>Bị khóa?</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentUsers.map((user, idx) => (
+              <tr key={user._id}>
+                <td>{indexOfFirst + idx + 1}</td>
+                <td>{user.username}</td>
+                <td>{user.email}</td>
+                <td>{user.name}</td>
+
+                {/* Vai trò */}
+                <td>
+                  {user.role === "admin" ? (
+                    <span className="text-danger fw-bold">
+                      <FontAwesomeIcon icon={faUserShield} /> Admin
+                    </span>
+                  ) : (
+                    <select
+                      value={user.role}
+                      className="form-select fw-bold text-capitalize"
+                      onChange={(e) =>
+                        updateUserField(user._id, "role", e.target.value)
+                      }
+                    >
+                      <option value="user" className="text-primary">
+                        User
+                      </option>
+                      <option value="staff" className="text-warning">
+                        Staff
+                      </option>
+                    </select>
+                  )}
+                </td>
+
+                {/* Trạng thái */}
+                <td>
+                  {user.role === "admin" ? (
+                    <span className="fw-bold text-success">{user.status}</span>
+                  ) : (
+                    <select
+                      value={user.status}
+                      className={`form-select fw-bold text-capitalize ${
+                        user.status === "active"
+                          ? "text-success"
+                          : user.status === "banned"
+                          ? "text-danger"
+                          : "text-muted"
+                      }`}
+                      onChange={(e) =>
+                        updateUserField(user._id, "status", e.target.value)
+                      }
+                    >
+                      <option value="active" className="text-success">
+                        active
+                      </option>
+                      <option value="banned" className="text-danger">
+                        banned
+                      </option>
+                      <option value="pending" className="text-muted">
+                        pending
+                      </option>
+                    </select>
+                  )}
+                </td>
+
+                {/* Bị khóa */}
+                <td>
+                  {user.role === "admin" ? (
+                    <span className="text-success fw-bold">Không</span>
+                  ) : (
+                    <select
+                      value={user.isLocked ? "true" : "false"}
+                      className={`form-select fw-bold ${
+                        user.isLocked ? "text-danger" : "text-success"
+                      }`}
+                      onChange={(e) =>
+                        updateUserField(
+                          user._id,
+                          "isLocked",
+                          e.target.value === "true"
+                        )
+                      }
+                    >
+                      <option value="false" className="text-success">
+                        Không
+                      </option>
+                      <option value="true" className="text-danger">
+                        Có
+                      </option>
+                    </select>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
         {/* Pagination */}
         <div className="d-flex justify-content mt-3 gap-2">
@@ -312,9 +465,13 @@ export default function UserAdmin() {
             <Button
               key={i}
               onClick={() => setCurrentPage(i + 1)}
+<<<<<<< HEAD
               variant={
                 currentPage === i + 1 ? "primary" : "outline-secondary"
               }
+=======
+              variant={currentPage === i + 1 ? "primary" : "outline-secondary"}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
             >
               {i + 1}
             </Button>

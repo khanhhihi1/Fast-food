@@ -74,11 +74,18 @@ export default function AdminNavbar() {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const [user, setUser] = useState(null);
   const router = useRouter();
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleLogout = async () => {
     try {
       const res = await fetch(`${API_URL}/users/logout`, {
+=======
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/users/logout", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         credentials: "include",
       });
@@ -100,6 +107,22 @@ export default function AdminNavbar() {
         <Button variant="light" onClick={toggleSidebar} className="me-3">
           <FontAwesomeIcon icon={faBarsStaggered} />
         </Button>
+<<<<<<< HEAD
+=======
+        <Form className="d-flex search-form">
+          <div className="input-group">
+            <input
+              className="form-control search-input"
+              type="search"
+              placeholder="Tìm kiếm..."
+              aria-label="Search"
+            />
+            <button className="btn search-button" type="submit">
+              <FaSearch />
+            </button>
+          </div>
+        </Form>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         <div className="hihi">
           <span className="me-3">
             <FontAwesomeIcon icon={faBell} style={{ fontSize: 24 }} />

@@ -9,6 +9,7 @@
 }
 .box{
   border-bottom:  1px solid #ccc;
+<<<<<<< HEAD
 }
 .searchInput {
   padding: 6px 12px;
@@ -51,3 +52,6 @@
 .searchItem:hover {
   background-color: #f8f9fa;
 }
+=======
+}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb

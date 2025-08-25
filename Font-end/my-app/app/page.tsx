@@ -15,6 +15,7 @@ import DiscountPage from "./discount/page";
 import Slide from "./component/main/slide";
 import HotProduct from "./component/hotProduct";
 import Blog from "./blog/page";
+
 export default function Home() {
   return (
     <>

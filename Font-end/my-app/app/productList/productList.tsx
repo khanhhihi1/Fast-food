@@ -7,7 +7,11 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import styles from "../styles/productList.module.css";
+<<<<<<< HEAD
 import ProductItem from "../component/productItem";
+=======
+import ProductItem from "../productItem/productItem";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 interface Product {
   _id: string;
@@ -42,7 +46,10 @@ export default function ProductList({
   limit,
 }: ProductListProps) {
   const [products, setProducts] = useState<Product[]>([]);
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     const controller = new AbortController();
@@ -50,6 +57,7 @@ export default function ProductList({
 
     async function fetchProducts() {
       try {
+<<<<<<< HEAD
         let endpoint = `${API_URL}/products`;
 
         if (category === "hot") {
@@ -58,6 +66,16 @@ export default function ProductList({
           endpoint = `${API_URL}/products/discount`;
         } else if (category) {
           endpoint = `${API_URL}/products?category=${category}`;
+=======
+        let endpoint = "http://localhost:5000/products";
+
+        if (category === "hot") {
+          endpoint = "http://localhost:5000/products/hot";
+        } else if (category === "discount") {
+          endpoint = "http://localhost:5000/products/discount";
+        } else if (category) {
+          endpoint = `http://localhost:5000/products?category=${category}`;
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         }
 
         const res = await fetch(endpoint, { signal });
@@ -65,10 +83,17 @@ export default function ProductList({
         const productList = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
+<<<<<<< HEAD
           ? data.result
           : Array.isArray(data.data)
           ? data.data
           : [];
+=======
+            ? data.result
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
         setProducts(productList);
       } catch (error: any) {
@@ -83,6 +108,10 @@ export default function ProductList({
     return () => controller.abort();
   }, [category]);
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   return (
     <Container
       className="d-flex flex-column"

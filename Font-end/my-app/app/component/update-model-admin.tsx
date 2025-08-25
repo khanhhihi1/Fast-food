@@ -4,8 +4,28 @@ import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
 import { toast } from "react-toastify";
 import "./model.css"
+<<<<<<< HEAD
 import { PostType } from "../type/type";
 
+=======
+interface PostType {
+  _id?: string;
+  name: string;
+  image: string;
+  category: string;
+  quantity: number;
+  taste: string[] | string;
+  description: string;
+  sizes: {
+    name: string;
+    price: {
+      original: number;
+      discount?: number;
+    };
+  }[];
+  status?: boolean;
+}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 interface iShow {
   showUpdateModal: boolean;
@@ -37,14 +57,21 @@ function UpdateModelAdmin({
   const [categoriesList, setCategoriesList] = useState<
     { _id: string; name: string }[] | null
   >(null);
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     if (showUpdateModal) {
       const fetchCategories = async () => {
         setLoading(true);
         try {
+<<<<<<< HEAD
           const response = await fetch(`${API_URL}/categories`);
+=======
+          const response = await fetch("http://localhost:5000/categories");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           const data = await response.json();
           const categoriesData = Array.isArray(data) ? data : data.result;
           setCategoriesList(categoriesData);
@@ -147,7 +174,11 @@ function UpdateModelAdmin({
 
     try {
       const response = await fetch(
+<<<<<<< HEAD
         `${API_URL}/products/updateProduct/${productId}`,
+=======
+        `http://localhost:5000/products/updateProduct/${productId}`,
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

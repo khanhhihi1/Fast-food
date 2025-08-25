@@ -10,12 +10,18 @@ import {
   Tab,
   Nav,
   Form,
+<<<<<<< HEAD
   Modal,
   Spinner,
   Badge,
   Image,
   ListGroup,
   InputGroup,
+=======
+  Table,
+  Modal,
+  Spinner,
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -27,6 +33,7 @@ import {
   faInfoCircle,
   faEnvelope,
   faTrashAlt,
+<<<<<<< HEAD
   faStar,
   faBox,
   faTruck,
@@ -39,6 +46,8 @@ import {
   faCalendar,
   faEyeSlash,
   faEye,
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 } from "@fortawesome/free-solid-svg-icons";
 import "./account.css";
 import ProtectedRoute from "../component/ProtectedRoute";
@@ -51,12 +60,20 @@ interface User {
   email: string;
   role: string;
 }
+<<<<<<< HEAD
 type ProductIdLike = string | { _id: string };
 
 interface OrderItem {
   productId: ProductIdLike;
   name: string;
   image: string;
+=======
+
+interface OrderItem {
+  productId: string;
+  name: string;
+  image?: string;
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   sizeName: string;
   taste: string[];
   quantity: number;
@@ -96,18 +113,22 @@ interface Order {
   createdAt: string;
 }
 
+<<<<<<< HEAD
 interface CommentableProduct {
   productId: string;
   name: string;
   image?: string;
 }
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 const OrderStatusText = {
   0: "Chờ xác nhận",
   1: "Chờ thanh toán",
   2: "Đã xác nhận",
   3: "Đang vận chuyển",
   4: "Hoàn tất",
+<<<<<<< HEAD
   5: "Đã hủy",
 };
 const OrderStatusBadge: Record<number, { text: string; variant: string }> = {
@@ -122,12 +143,17 @@ const OrderStatusBadge: Record<number, { text: string; variant: string }> = {
 // ---- Helper để chuẩn hóa productId về string ----
 const resolveProductId = (pid: ProductIdLike): string =>
   typeof pid === "string" ? pid : pid._id;
+=======
+  5: "Hủy đơn hàng",
+};
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 const UserProfile = () => {
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+<<<<<<< HEAD
   const [commentableProducts, setCommentableProducts] = useState<{ [orderId: string]: CommentableProduct[] }>({});
   const [canCommentOrder, setCanCommentOrder] = useState<{ [orderId: string]: boolean }>({});
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -143,12 +169,15 @@ const UserProfile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     const fetchUserAndOrders = async () => {
       try {
         setLoading(true);
 
+<<<<<<< HEAD
         const [userRes, ordersRes] = await Promise.all([
           fetch(`${API_URL}/users/profile`, {
             credentials: "include",
@@ -164,10 +193,18 @@ const UserProfile = () => {
         console.log("User Data:", JSON.stringify(userData, null, 2));
         console.log("Orders Data:", JSON.stringify(ordersData, null, 2));
 
+=======
+        // Fetch user profile
+        const userRes = await fetch("http://localhost:5000/users/profile", {
+          credentials: "include",
+        });
+        const userData = await userRes.json();
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         if (userRes.ok && userData.status) {
           setUser(userData.result);
         } else {
           setUser(null);
+<<<<<<< HEAD
           toast.error(userData.message || "Không thể lấy thông tin người dùng");
         }
 
@@ -245,17 +282,40 @@ const UserProfile = () => {
         toast.error("Lỗi kết nối đến máy chủ");
         setUser(null);
         setOrders([]);
+=======
+        }
+
+        // Fetch orders
+        const ordersRes = await fetch("http://localhost:5000/orders", {
+          credentials: "include",
+        });
+        const ordersData = await ordersRes.json();
+        if (ordersRes.ok && ordersData.status) {
+          setOrders(ordersData.result || []);
+        } else {
+          setOrders([]);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setUser(null);
+        setOrders([]);
+        toast.error("Có lỗi khi tải dữ liệu");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       } finally {
         setLoading(false);
       }
     };
+<<<<<<< HEAD
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     fetchUserAndOrders();
   }, []);
 
   const cancelOrder = async (orderId: string) => {
     if (!confirm("Bạn có chắc muốn hủy đơn hàng này?")) return;
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -264,6 +324,20 @@ const UserProfile = () => {
       const data = await res.json();
       if (!data.status) throw new Error(data.message || "Không thể hủy đơn hàng");
 
+=======
+      const res = await fetch(
+        `http://localhost:5000/orders/${orderId}/cancel`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể hủy đơn hàng");
+      }
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       setOrders((prev) =>
         prev.map((order) =>
           order._id === orderId ? { ...order, status: 5 } : order
@@ -275,6 +349,7 @@ const UserProfile = () => {
     }
   };
 
+<<<<<<< HEAD
   const openCommentModal = (orderId: string, productId?: string) => {
     if (!user?._id) {
       toast.error("Vui lòng đăng nhập để bình luận");
@@ -425,6 +500,8 @@ const UserProfile = () => {
       : address;
   };
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   if (loading) {
     return (
       <ProtectedRoute>
@@ -445,13 +522,20 @@ const UserProfile = () => {
                 <h3 className="mt-3 mb-0">{user?.name || "Người dùng"}</h3>
               </div>
 
+<<<<<<< HEAD
               <Tab.Container defaultActiveKey="orders">
+=======
+              <Tab.Container defaultActiveKey="profile">
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                 <Nav variant="pills" className="justify-content-center mt-4">
                   <Nav.Item>
                     <Nav.Link eventKey="profile">
                       <FontAwesomeIcon icon={faUserCircle} className="me-2" />
                       Thông tin cá nhân
+<<<<<<< HEAD
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                     </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
@@ -476,6 +560,7 @@ const UserProfile = () => {
 
                 <Tab.Content className="mt-4">
                   <Tab.Pane eventKey="profile">
+<<<<<<< HEAD
                     <Card className="p-4 border-0 shadow-sm">
                       <h5 className="mb-4 text-center">
                         <FontAwesomeIcon icon={faUserCircle} className="text-primary me-2" />
@@ -809,6 +894,204 @@ const UserProfile = () => {
                     </Card>
                   </Tab.Pane>
                   <Tab.Pane eventKey="settings">{/* ... */}</Tab.Pane>
+=======
+                    <Row>
+                      <Col md={6}>
+                        <Card className="p-4 mb-3 position-relative">
+                          <h5>
+                            <FontAwesomeIcon
+                              icon={faInfoCircle}
+                              className="text-primary me-2"
+                            />
+                            Thông tin cơ bản
+                          </h5>
+                          <p>
+                            <strong>Họ và tên:</strong> {user?.name}
+                          </p>
+                          <p>
+                            <strong>Email:</strong> {user?.email}
+                          </p>
+                          <p>
+                            <strong>Tên đăng nhập:</strong> {user?.username}
+                          </p>
+                        </Card>
+                      </Col>
+                      <Col md={6}>
+                        <Card className="p-4 mb-3">
+                          <h5>
+                            <FontAwesomeIcon
+                              icon={faEnvelope}
+                              className="text-primary me-2"
+                            />
+                            Liên hệ
+                          </h5>
+                          <p>
+                            <strong>Email:</strong> {user?.email}
+                          </p>
+                        </Card>
+                      </Col>
+                    </Row>
+                  </Tab.Pane>
+
+                  <Tab.Pane eventKey="security">
+                    <Card className="p-4">
+                      <h5>
+                        <FontAwesomeIcon
+                          icon={faLock}
+                          className="text-primary me-2"
+                        />
+                        Bảo mật
+                      </h5>
+                      <p>Chức năng đổi mật khẩu sẽ được cập nhật sau.</p>
+                    </Card>
+                  </Tab.Pane>
+
+                  <Tab.Pane eventKey="orders">
+                    <Card className="p-4">
+                      <h5>
+                        <FontAwesomeIcon
+                          icon={faShoppingBag}
+                          className="text-primary me-2"
+                        />
+                        Lịch sử đơn hàng
+                      </h5>
+                      {orders.length === 0 ? (
+                        <p>Chưa có đơn hàng nào.</p>
+                      ) : (
+                        <Table
+                          striped
+                          bordered
+                          hover
+                          responsive
+                          className="mt-3 text-center"
+                        >
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Sản phẩm</th>
+                              <th>Thông tin giao hàng</th>
+                              <th>Voucher</th>
+                              <th>Thành tiền</th>
+                              <th>Phương thức thanh toán</th>
+                              <th>Trạng thái</th>
+                              <th>Ngày tạo</th>
+                              <th>Hành động</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {orders.map((order, idx) => (
+                              <tr key={order._id}>
+                                <td>{idx + 1}</td>
+                                <td>
+                                  <div>
+                                    {order.items.map((item) => (
+                                      <div key={item.productId + item.sizeName}>
+                                        <strong>Tên:</strong> {item.name} (
+                                        {item.sizeName}, {item.quantity} x{" "}
+                                        {item.finalPrice.toLocaleString()} ₫)
+                                        {item.taste.length > 0 && (
+                                          <>
+                                            <br />
+                                            <strong>Hương vị:</strong>{" "}
+                                            {item.taste.join(", ")}
+                                          </>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div>
+                                    <strong>Tên:</strong>{" "}
+                                    {order.shippingInfo.name}
+                                    <br />
+                                    <strong>SĐT:</strong>{" "}
+                                    {order.shippingInfo.phone}
+                                    <br />
+                                    <strong>Địa chỉ:</strong>{" "}
+                                    {order.shippingInfo.address}
+                                  </div>
+                                </td>
+                                <td>
+                                  {order.voucherCode ? (
+                                    <div>
+                                      <strong>Mã:</strong> {order.voucherCode}
+                                      <br />
+                                      <strong>Mô tả:</strong>{" "}
+                                      {order.voucherData?.description || "N/A"}
+                                      <br />
+                                      <strong>Giảm giá:</strong>{" "}
+                                      {order.discount.toLocaleString()} ₫
+                                    </div>
+                                  ) : (
+                                    "Không áp dụng"
+                                  )}
+                                </td>
+                                <td>{order.total.toLocaleString()} ₫</td>
+                                <td className="text-capitalize">
+                                  {order.paymentMethod}
+                                </td>
+                                <td
+                                  className={`fw-bold ${
+                                    order.status === 0
+                                      ? "text-warning"
+                                      : order.status === 1
+                                      ? "text-info"
+                                      : order.status === 2
+                                      ? "text-primary"
+                                      : order.status === 3
+                                      ? "text-secondary"
+                                      : order.status === 4
+                                      ? "text-success"
+                                      : "text-danger"
+                                  }`}
+                                >
+                                  {OrderStatusText[order.status]}
+                                </td>
+                                <td>
+                                  {new Date(order.createdAt).toLocaleDateString(
+                                    "vi-VN"
+                                  )}
+                                </td>
+                                <td>
+                                  {(order.status === 0 ||
+                                    order.status === 1) && (
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => cancelOrder(order._id)}
+                                    >
+                                      Hủy đơn
+                                    </Button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      )}
+                    </Card>
+                  </Tab.Pane>
+
+                  <Tab.Pane eventKey="settings">
+                    <Card className="p-4 text-danger border-danger">
+                      <h5>
+                        <FontAwesomeIcon icon={faTrashAlt} className="me-2" />
+                        Vô hiệu hóa tài khoản
+                      </h5>
+                      <p>
+                        Bạn sẽ không thể khôi phục lại tài khoản sau khi vô hiệu
+                        hóa.
+                      </p>
+                      <Button
+                        variant="outline-danger"
+                        onClick={() => setShowModal(true)}
+                      >
+                        Vô hiệu hóa
+                      </Button>
+                    </Card>
+                  </Tab.Pane>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                 </Tab.Content>
               </Tab.Container>
             </Card>
@@ -824,6 +1107,7 @@ const UserProfile = () => {
             <Form.Check type="checkbox" label="Tôi hiểu và đồng ý" />
           </Modal.Body>
           <Modal.Footer>
+<<<<<<< HEAD
             <Button variant="secondary" onClick={() => setShowModal(false)}>Hủy</Button>
             <Button variant="danger">Vô hiệu hóa</Button>
           </Modal.Footer>
@@ -884,6 +1168,12 @@ const UserProfile = () => {
               <FontAwesomeIcon icon={faCheckCircle} className="me-1" />
               Gửi đánh giá
             </Button>
+=======
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Hủy
+            </Button>
+            <Button variant="danger">Vô hiệu hóa</Button>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           </Modal.Footer>
         </Modal>
       </Container>

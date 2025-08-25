@@ -1,27 +1,42 @@
 "use client";
 import React, { useState, useEffect } from "react";
+<<<<<<< HEAD
 import { Container, Table, Button, Alert, Spinner, Form } from "react-bootstrap";
+=======
+import { Container, Table, Button, Alert, Spinner } from "react-bootstrap";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
 import CategoryFormModal from "@/app/component/CategoryFormModal";
 import CategoryUpdateModal from "@/app/component/CategoryUpdateModal";
+<<<<<<< HEAD
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faPenToSquare, faPlus, faSearch, faRotate } from "@fortawesome/free-solid-svg-icons";
 import useDarkMode from "../hooks/darkmode";
 import styles from "../styles/product.module.css";
 import { toast } from "react-toastify";
+=======
+import "../admin.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEyeSlash, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import useDarkMode from "../useDarkMode/page";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 interface CategoryType {
   _id: string;
   name: string;
   imageUrl: string;
+<<<<<<< HEAD
   isHidden?: boolean;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 }
 
 export default function ProductCategory() {
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+<<<<<<< HEAD
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,10 +45,21 @@ export default function ProductCategory() {
   const [visibleCount, setVisibleCount] = useState(15);
   const { isDarkMode } = useDarkMode();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { isDarkMode } = useDarkMode();
+
+  const API_BASE = "http://localhost:5000/categories";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
+<<<<<<< HEAD
       const res = await fetch(`${API_URL}/categories`);
       const data = await res.json();
 
@@ -56,6 +82,17 @@ export default function ProductCategory() {
       }
     } catch (err: any) {
       setError("Lỗi khi tải danh mục: " + (err.message || "Không xác định"));
+=======
+      const res = await fetch(API_BASE);
+      const data = await res.json();
+      if (data.status) {
+        setCategories(data.result);
+      } else {
+        setError("Không thể tải danh mục.");
+      }
+    } catch (err) {
+      setError("Lỗi khi tải danh mục.");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     } finally {
       setLoading(false);
     }
@@ -63,6 +100,7 @@ export default function ProductCategory() {
 
   useEffect(() => {
     fetchCategories();
+<<<<<<< HEAD
   }, [filter]);
 
   const handleHide = async (id: string) => {
@@ -98,6 +136,21 @@ export default function ProductCategory() {
       }
     } catch {
       setError("Lỗi khi khôi phục danh mục.");
+=======
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/delete/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.status) {
+        fetchCategories();
+      } else {
+        setError("Không thể xóa danh mục.");
+      }
+    } catch (err) {
+      setError("Lỗi khi xóa danh mục.");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     }
   };
 
@@ -106,6 +159,7 @@ export default function ProductCategory() {
     setShowEditModal(true);
   };
 
+<<<<<<< HEAD
   const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -177,12 +231,31 @@ export default function ProductCategory() {
               </Form>
             </div>
           </div>
+=======
+  return (
+    <div className="d-flex">
+      <AdminSideBar />
+      <Container fluid className="content w-100 container-content">
+        <AdminNavbar />
+        <div className="p-4 productCategory">
+          <h3>Quản lý danh mục sản phẩm</h3>
+          <Button variant="primary" onClick={() => setShowAddModal(true)}>
+            Thêm danh mục
+          </Button>
+
+          {error && (
+            <Alert variant="danger" className="mt-3">
+              {error}
+            </Alert>
+          )}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
           {loading ? (
             <div className="text-center mt-4">
               <Spinner animation="border" />
             </div>
           ) : (
+<<<<<<< HEAD
             <>
               <Table striped bordered hover className={styles.table}>
                 <thead>
@@ -238,6 +311,43 @@ export default function ProductCategory() {
                 </div>
               )}
             </>
+=======
+            <Table striped bordered hover className="mt-3 table1 text-center">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Tên</th>
+                  <th>Hình ảnh</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((cat, index) => (
+                  <tr key={cat._id}>
+                    <td>{index + 1}</td>
+                    <td>{cat.name}</td>
+                    <td>
+                      <img src={cat.imageUrl} alt={cat.name} width="80" />
+                    </td>
+                    <td>
+                      <button
+                        className="action-btn edit-btn mx-2"
+                        onClick={() => handleEdit(cat)}
+                      >
+                        <FontAwesomeIcon icon={faPenToSquare} />
+                      </button>
+                      <button
+                        className="action-btn delete-btn mx-2"
+                        onClick={() => handleDelete(cat._id)}
+                      >
+                        <FontAwesomeIcon icon={faEyeSlash} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           )}
 
           {/* Modal Thêm */}

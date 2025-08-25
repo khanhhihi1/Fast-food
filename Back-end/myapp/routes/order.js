@@ -35,6 +35,7 @@ router.get("/admin/all", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 // Admin lấy chi tiết đơn hàng theo ID (mới thêm cho modal frontend)
 router.get("/admin/:id", authMiddleware, isAdmin, async (req, res) => {
   try {
@@ -45,11 +46,17 @@ router.get("/admin/:id", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 // Admin cập nhật trạng thái đơn hàng
 router.put("/admin/:id", authMiddleware, isAdmin, async (req, res) => {
   try {
     const result = await orderController.updateOrderStatus(req, res);
+<<<<<<< HEAD
     res.json(result);
+=======
+    res.json({ status: true, result });
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
   }
@@ -75,6 +82,7 @@ router.put("/:id/cancel", authMiddleware, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 // Lấy trạng thái đơn hàng
 router.get("/:id/status", authMiddleware, async (req, res) => {
   try {
@@ -86,3 +94,6 @@ router.get("/:id/status", authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+=======
+module.exports = router;
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
