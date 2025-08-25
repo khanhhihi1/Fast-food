@@ -24,14 +24,14 @@ const notificationRoutes = require("./routes/notification");
 const app = express();
 
 // Kết nối MongoDB
-// mongoose
-//   .connect("mongodb://localhost:27017/Fried_King")
-//   .then(() => console.log("✅ Kết nối MongoDB thành công!"))
-//   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Kết nối MongoDB Atlas thành công!"))
-  .catch((err) => console.error("❌ Lỗi kết nối MongoDB Atlas:", err));
+  .connect("mongodb://localhost:27017/Fried_King")
+  .then(() => console.log("✅ Kết nối MongoDB thành công!"))
+  .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
+// mongoose
+//   .connect(process.env.MONGO_URI)
+//   .then(() => console.log("✅ Kết nối MongoDB Atlas thành công!"))
+//   .catch((err) => console.error("❌ Lỗi kết nối MongoDB Atlas:", err));
 
 // Cấu hình view engine
 app.set("views", path.join(__dirname, "views"));
