@@ -30,7 +30,10 @@ export default function ShippingInfo() {
   const [phone, setPhone] = useState("");
   const [district, setDistrict] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +47,11 @@ export default function ShippingInfo() {
 
     try {
       const res = await fetch(
+<<<<<<< HEAD
         `${API_URL}/temp-order/update-shipping`,
+=======
+        "http://localhost:5000/temp-order/update-shipping",
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

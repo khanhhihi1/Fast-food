@@ -61,22 +61,33 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+<<<<<<< HEAD
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
 
   // Tính tổng tiền trước giảm giá
+=======
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   const total = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Lấy thông tin đơn hàng tạm thời
   const fetchTempOrder = async () => {
     try {
       const res = await fetch(`${API_URL}/temp-order`, {
+=======
+
+  const fetchTempOrder = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/temp-order", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         credentials: "include",
       });
       const data = await res.json();
@@ -104,6 +115,7 @@ export default function Checkout() {
     }
   };
 
+<<<<<<< HEAD
   // Lấy danh sách voucher
   const fetchVouchers = async () => {
     try {
@@ -123,11 +135,21 @@ export default function Checkout() {
       } else {
         toast.error(data.message || "Không thể tải danh sách voucher");
       }
+=======
+  const fetchVouchers = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/voucher", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.status) setVouchers(data.result);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     } catch {
       toast.error("Không thể tải danh sách voucher");
     }
   };
 
+<<<<<<< HEAD
   // Áp dụng voucher
   const applyVoucher = async (voucherParam?: Voucher) => {
     const voucher = voucherParam || vouchers.find((v) => v.code === selectedCode);
@@ -138,6 +160,15 @@ export default function Checkout() {
 
     try {
       const res = await fetch(`${API_URL}/voucher/apply`, {
+=======
+  const applyVoucher = async (voucherParam?: Voucher) => {
+    const voucher =
+      voucherParam || vouchers.find((v) => v.code === selectedCode);
+    if (!voucher) return;
+
+    try {
+      const res = await fetch("http://localhost:5000/voucher/apply", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -152,12 +183,18 @@ export default function Checkout() {
         setAppliedVoucher(voucher);
         setDiscountAmount(data.result.discountAmount);
         setTotalAfterDiscount(data.result.finalTotal);
+<<<<<<< HEAD
 
         toast.success(`Áp dụng voucher ${voucher.code} thành công!`, {
           toastId: `apply-${voucher.code}`, // ✅ Toast ID duy nhất cho từng voucher
         });
 
         await fetch(`${API_URL}/temp-order/update-voucher`, {
+=======
+        toast.success("Áp dụng voucher thành công!");
+
+        await fetch("http://localhost:5000/temp-order/update-voucher", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -168,6 +205,7 @@ export default function Checkout() {
           }),
         });
       } else {
+<<<<<<< HEAD
         toast.warning(data.message || "Voucher không hợp lệ", {
           toastId: "voucher-invalid",
         });
@@ -176,12 +214,22 @@ export default function Checkout() {
     } catch (error) {
       console.error("Lỗi khi áp dụng voucher:", error);
       toast.error("Lỗi khi áp dụng voucher", { toastId: "voucher-error" });
+=======
+        toast.warning(data.message || "Voucher không hợp lệ");
+        handleCancelVoucher();
+      }
+    } catch {
+      toast.error("Lỗi khi áp dụng voucher");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       handleCancelVoucher();
     }
   };
 
+<<<<<<< HEAD
 
   // Hủy voucher
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   const handleCancelVoucher = async () => {
     setAppliedVoucher(null);
     setDiscountAmount(0);
@@ -190,7 +238,11 @@ export default function Checkout() {
     localStorage.removeItem("selectedVoucher");
 
     try {
+<<<<<<< HEAD
       await fetch(`${API_URL}/temp-order/update-voucher`, {
+=======
+      await fetch("http://localhost:5000/temp-order/update-voucher", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -200,6 +252,7 @@ export default function Checkout() {
           total,
         }),
       });
+<<<<<<< HEAD
       toast.success("Đã hủy voucher", { toastId: "voucher-cancel" });
     } catch {
       toast.error("Không thể hủy voucher trong đơn hàng tạm thời", {
@@ -214,6 +267,17 @@ export default function Checkout() {
     try {
       const res = await fetch(
         `${API_URL}/temp-order/update-payment`,
+=======
+    } catch {
+      toast.error("Không thể hủy voucher trong đơn hàng tạm thời");
+    }
+  };
+
+  const updatePaymentMethod = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/temp-order/update-payment",
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -229,7 +293,10 @@ export default function Checkout() {
     }
   };
 
+<<<<<<< HEAD
   // Xử lý đặt hàng
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   const handleOrder = async () => {
     if (cartItems.length === 0) {
       toast.warning("Không có sản phẩm nào để đặt hàng");
@@ -243,15 +310,24 @@ export default function Checkout() {
     }
 
     try {
+<<<<<<< HEAD
       await updatePaymentMethod();
 
       const orderRes = await fetch(`${API_URL}/orders/from-temp`, {
+=======
+      // Cập nhật phương thức thanh toán
+      await updatePaymentMethod();
+
+      // Tạo đơn hàng từ temp-order
+      const orderRes = await fetch("http://localhost:5000/orders/from-temp", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ paymentMethod }),
       });
 
+<<<<<<< HEAD
       const orderData = await orderRes.json();
       console.log("orderRes data:", orderData);
 
@@ -281,6 +357,46 @@ export default function Checkout() {
         localStorage.removeItem("selectedVoucher");
         localStorage.removeItem("shippingInfo");
 
+=======
+      if (!orderRes.ok) {
+        const errorData = await orderRes.json();
+        toast.error(errorData.message || "Đặt hàng thất bại");
+        return;
+      }
+
+      const orderData = await orderRes.json();
+      if (orderData.status) {
+        // Xóa giỏ hàng
+        const clearCartRes = await fetch("http://localhost:5000/cart/clear", {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const clearCartData = await clearCartRes.json();
+        if (!clearCartRes.ok || !clearCartData.status) {
+          throw new Error(clearCartData.message || "Không thể xóa giỏ hàng");
+        }
+
+        // Xóa đơn hàng tạm thời
+        const clearTempOrderRes = await fetch(
+          "http://localhost:5000/temp-order",
+          {
+            method: "DELETE",
+            credentials: "include",
+          }
+        );
+        if (!clearTempOrderRes.ok) {
+          const errorData = await clearTempOrderRes.json();
+          throw new Error(
+            errorData.message || "Không thể xóa đơn hàng tạm thời"
+          );
+        }
+
+        // Xóa localStorage
+        localStorage.removeItem("selectedVoucher");
+        localStorage.removeItem("shippingInfo");
+
+        // Reset state
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         setCartItems([]);
         setAppliedVoucher(null);
         setSelectedCode("");
@@ -290,6 +406,7 @@ export default function Checkout() {
 
         toast.success("Đặt hàng thành công!");
         router.push("/cart");
+<<<<<<< HEAD
       }
 
       // Nếu MoMo → redirect sang trang thanh toán MoMo
@@ -325,6 +442,21 @@ export default function Checkout() {
   };
 
   // Tải dữ liệu khi component mount
+=======
+      } else {
+        toast.error(orderData.message || "Đặt hàng thất bại");
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi đơn hàng:", error);
+      if (error instanceof Error) {
+        toast.error(error.message || "Có lỗi khi gửi đơn hàng");
+      } else {
+        toast.error("Có lỗi khi gửi đơn hàng");
+      }
+    }
+  };
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   useEffect(() => {
     fetchTempOrder();
     fetchVouchers();
@@ -337,6 +469,7 @@ export default function Checkout() {
     }
   }, []);
 
+<<<<<<< HEAD
   // Áp dụng voucher tự động khi có selectedCode
   useEffect(() => {
     if (vouchers.length > 0 && selectedCode && !appliedVoucher) {
@@ -344,6 +477,12 @@ export default function Checkout() {
       if (found) {
         applyVoucher(found);
       }
+=======
+  useEffect(() => {
+    if (vouchers.length > 0 && selectedCode && !appliedVoucher) {
+      const found = vouchers.find((v) => v.code === selectedCode);
+      if (found) applyVoucher(found);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     }
   }, [vouchers, selectedCode]);
 

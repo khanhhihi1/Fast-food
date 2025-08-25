@@ -17,7 +17,10 @@ function CategoryUpdateModal(props: iShow) {
   const { showModal, setShowModal, category } = props;
   const [name, setName] = useState<string>(category.name);
   const [image, setImage] = useState<string>(category.imageUrl);
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     setName(category.name);
@@ -38,7 +41,11 @@ function CategoryUpdateModal(props: iShow) {
 
     try {
       const response = await fetch(
+<<<<<<< HEAD
         `${API_URL}/categories/update/${category._id}`,
+=======
+        `http://localhost:5000/categories/update/${category._id}`,
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         {
           method: "PUT",
           headers: {

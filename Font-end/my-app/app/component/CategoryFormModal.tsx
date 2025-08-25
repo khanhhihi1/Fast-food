@@ -15,8 +15,11 @@ function CategoryFormModal(props: iShow) {
   const [name, setName] = useState<string>("");
   const [image, setImage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   const handleSubmit = async () => {
     if (!name || !image) {
       toast.error("Vui lòng nhập đầy đủ thông tin!");
@@ -34,7 +37,11 @@ function CategoryFormModal(props: iShow) {
     };
 
     try {
+<<<<<<< HEAD
       const response = await fetch(`${API_URL}/categories/add`, {
+=======
+      const response = await fetch("http://localhost:5000/categories/add", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         headers: {
           Accept: "application/json",

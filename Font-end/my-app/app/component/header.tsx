@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
 import {
   Dropdown,
   Navbar,
@@ -12,6 +13,13 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
+=======
+import { Dropdown } from "react-bootstrap";
+import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
+import Image from "react-bootstrap/Image";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPhone,
@@ -19,6 +27,7 @@ import {
   faSearch,
   faUser,
   faShoppingBag,
+<<<<<<< HEAD
   faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import debounce from "lodash/debounce";
@@ -77,6 +86,14 @@ export default function Header() {
       return `${original.toLocaleString()}đ`;
     }
   };
+=======
+} from "@fortawesome/free-solid-svg-icons";
+import styles from "../styles/header.module.css";
+
+export default function Header() {
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -86,9 +103,15 @@ export default function Header() {
         });
         const data = await res.json();
         if (res.ok && data.status) {
+<<<<<<< HEAD
           setUser(data.result);
         } else {
           setUser(null);
+=======
+          setUser(data.result); // đã đăng nhập
+        } else {
+          setUser(null); // chưa đăng nhập
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         }
       } catch (error) {
         setUser(null);
@@ -106,7 +129,11 @@ export default function Header() {
       const data = await res.json();
       if (res.ok && data.status) {
         setUser(null);
+<<<<<<< HEAD
         router.push("/login");
+=======
+        router.push("/login"); // chuyển hướng về trang login
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       } else {
         alert("Đăng xuất thất bại!");
       }
@@ -115,6 +142,7 @@ export default function Header() {
     }
   };
 
+<<<<<<< HEAD
   const fetchSearchResults = async (keyword: string) => {
     if (!keyword.trim()) {
       setSearchResults([]);
@@ -171,6 +199,10 @@ export default function Header() {
   return (
     <>
       {/* Thanh thông tin */}
+=======
+  return (
+    <>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       <Container fluid style={{ backgroundColor: "#c10a28" }} className="p-2">
         <Container>
           <Row className="d-flex align-items-center">
@@ -206,8 +238,14 @@ export default function Header() {
                 <Dropdown>
                   <Dropdown.Toggle
                     variant="link"
+<<<<<<< HEAD
                     className="text-white p-0 border-0"
                     style={{ fontSize: "18px" }}
+=======
+                    id="dropdown-user"
+                    className="text-white p-0 border-0"
+                    style={{ fontSize: "16px" }}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                   >
                     <FontAwesomeIcon icon={faUser} />
                   </Dropdown.Toggle>
@@ -226,13 +264,18 @@ export default function Header() {
                   style={{
                     textDecoration: "none",
                     color: "white",
+<<<<<<< HEAD
                     fontSize: "18px",
+=======
+                    fontSize: "16px",
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                     fontWeight: "600",
                   }}
                 >
                   <FontAwesomeIcon icon={faUser} />
                 </Link>
               )}
+<<<<<<< HEAD
 
               {/* Tìm kiếm */}
               <div className="d-flex align-items-center position-relative">
@@ -289,10 +332,18 @@ export default function Header() {
                 )}
               </div>
 
+=======
+              <FontAwesomeIcon
+                icon={faSearch}
+                className="text-light"
+                style={{ fontSize: "16px" }}
+              />
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
               <Link href="/cart">
                 <FontAwesomeIcon
                   icon={faShoppingBag}
                   className="text-light me-2"
+<<<<<<< HEAD
                   style={{ fontSize: "18px" }}
                 />
               </Link>
@@ -301,20 +352,31 @@ export default function Header() {
                   icon={faHeart}
                   className="text-light me-2"
                   style={{ fontSize: "18px" }}
+=======
+                  style={{ fontSize: "16px" }}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                 />
               </Link>
             </Col>
           </Row>
         </Container>
       </Container>
+<<<<<<< HEAD
 
       {/* Menu chính */}
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       <Container fluid className={styles.box}>
         <Container
           style={{
             paddingLeft: "100px",
             paddingRight: "100px",
+<<<<<<< HEAD
             height: "auto",
+=======
+            height: "150px",
+            paddingTop: "20px",
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           }}
         >
           <Row>
@@ -323,6 +385,7 @@ export default function Header() {
               className="d-flex align-items-center justify-content-center"
               style={{ gap: "30px" }}
             >
+<<<<<<< HEAD
               <Link href="/" className={styles.aLink}>
                 TRANG CHỦ
               </Link>
@@ -330,6 +393,15 @@ export default function Header() {
                 GIỚI THIỆU
               </Link>
               <Link href="/category/all" className={styles.aLink}>
+=======
+              <Link href="/" className={`${styles.aLink}`}>
+                TRANG CHỦ
+              </Link>
+              <Link href="/" className={`${styles.aLink}`}>
+                GIỚI THIỆU
+              </Link>
+              <Link href="/menu" className={`${styles.aLink}`}>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                 THỰC ĐƠN
               </Link>
             </Col>
@@ -338,7 +410,11 @@ export default function Header() {
               className="d-flex align-items-center justify-content-center"
             >
               <Image
+<<<<<<< HEAD
                 src="/logo.png"
+=======
+                src="/Logo.png"
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                 alt="Logo"
                 style={{ width: "130px", height: "130px" }}
               />
@@ -348,6 +424,7 @@ export default function Header() {
               className="d-flex align-items-center justify-content-center"
               style={{ gap: "30px" }}
             >
+<<<<<<< HEAD
               <Link href="/new" className={styles.aLink}>
                 TIN TỨC
               </Link>
@@ -356,6 +433,16 @@ export default function Header() {
               </Link>
               <Link href="/blogtext" className={styles.aLink}>
                 BLOG
+=======
+              <Link href="/" className={`${styles.aLink}`}>
+                TIN TỨC
+              </Link>
+              <Link href="/" className={`${styles.aLink}`}>
+                LIÊN HỆ
+              </Link>
+              <Link href="/" className={`${styles.aLink}`}>
+                NHƯỢNG QUYỀN
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
               </Link>
             </Col>
           </Row>

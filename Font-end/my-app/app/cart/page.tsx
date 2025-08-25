@@ -65,12 +65,18 @@ interface Voucher {
   _id: string;
   code: string;
   description: string;
+<<<<<<< HEAD
   discountType: "fixed" | "percentage";
   discountValue: number;
   minOrderValue: number;
   maxDiscount?: number;
   expiresAt: string;
   isActive?: boolean;
+=======
+  discountValue: number;
+  minOrderValue: number;
+  expiresAt: string;
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 }
 
 export default function Cart() {
@@ -82,23 +88,39 @@ export default function Cart() {
   const [discount, setDiscount] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
   const router = useRouter();
+<<<<<<< HEAD
   const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchCart = async () => {
     try {
       setIsLoading(true);
       const res = await fetch(`${API_URL}/cart`, {
+=======
+
+  // Lấy giỏ hàng từ server
+  const fetchCart = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("http://localhost:5000/cart", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         credentials: "include",
       });
       const data = await res.json();
       if (!data.status) {
+<<<<<<< HEAD
         setCartItems([]);
+=======
+        setCartItems([]); // Đặt rỗng nếu không có dữ liệu
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         throw new Error(data.message || "Không thể tải giỏ hàng");
       }
 
@@ -106,7 +128,11 @@ export default function Cart() {
         data.result.items.map(async (item: CartItem) => {
           try {
             const productRes = await fetch(
+<<<<<<< HEAD
               `${API_URL}/products/${item.productId}`
+=======
+              `http://localhost:5000/products/${item.productId}`
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
             );
             const productData: Product = (await productRes.json()).result;
             const selectedSize = productData.sizes?.find(
@@ -137,10 +163,17 @@ export default function Cart() {
       setError(
         typeof error === "object" && error !== null && "message" in error
           ? (error as { message?: string }).message ||
+<<<<<<< HEAD
           "Không thể tải giỏ hàng. Vui lòng thử lại."
           : "Không thể tải giỏ hàng. Vui lòng thử lại."
       );
       setCartItems([]);
+=======
+              "Không thể tải giỏ hàng. Vui lòng thử lại."
+          : "Không thể tải giỏ hàng. Vui lòng thử lại."
+      );
+      setCartItems([]); // Đặt rỗng trong trường hợp lỗi
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     } finally {
       setIsLoading(false);
     }
@@ -148,11 +181,16 @@ export default function Cart() {
 
   const fetchVouchers = async () => {
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_URL}/voucher`, {
+=======
+      const res = await fetch("http://localhost:5000/voucher", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         credentials: "include",
       });
       const data = await res.json();
       if (data.status) {
+<<<<<<< HEAD
         const now = new Date();
         const validVouchers = (data.result || []).filter((v: Voucher) => {
           const notExpired = !v.expiresAt || new Date(v.expiresAt) > now;
@@ -161,6 +199,9 @@ export default function Cart() {
           return notExpired && active && enoughOrder;
         });
         setVouchers(validVouchers);
+=======
+        setVouchers(data.result || []);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       } else {
         toast.error(data.message || "Không thể tải danh sách voucher");
       }
@@ -179,7 +220,11 @@ export default function Cart() {
       );
       const price = selectedSize?.price || { original: updatedItem.price };
       const res = await fetch(
+<<<<<<< HEAD
         `${API_URL}/cart/update/${updatedItem.id}`,
+=======
+        `http://localhost:5000/cart/update/${updatedItem.id}`,
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -204,10 +249,15 @@ export default function Cart() {
     const voucher = voucherToApply || selectedVoucher;
     if (!voucher) return;
 
+<<<<<<< HEAD
     setIsApplyingVoucher(true);
 
     try {
       const res = await fetch(`${API_URL}/voucher/apply`, {
+=======
+    try {
+      const res = await fetch("http://localhost:5000/voucher/apply", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -216,11 +266,15 @@ export default function Cart() {
           orderTotal: totalPrice,
         }),
       });
+<<<<<<< HEAD
 
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       const data = await res.json();
       if (data.status) {
         setFinalTotal(data.result.finalTotal);
         setDiscount(data.result.discountAmount);
+<<<<<<< HEAD
         toast.success(`Áp dụng voucher ${voucher.code} thành công!`, {
           toastId: "applyVoucherSuccess",
         });
@@ -240,6 +294,20 @@ export default function Cart() {
   const handleRemove = async (id: string) => {
     try {
       const res = await fetch(`${API_URL}/cart/remove/${id}`, {
+=======
+        toast.success("Áp dụng voucher thành công");
+      } else {
+        toast.warning(data.message || "Không thể áp dụng voucher");
+      }
+    } catch {
+      toast.error("Lỗi khi áp dụng voucher");
+    }
+  };
+
+  const handleRemove = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/cart/remove/${id}`, {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "DELETE",
         credentials: "include",
       });
@@ -265,6 +333,7 @@ export default function Cart() {
       return;
     }
 
+<<<<<<< HEAD
     if (selectedVoucher) {
       if (totalPrice < selectedVoucher.minOrderValue) {
         toast.warning(
@@ -281,6 +350,10 @@ export default function Cart() {
 
     try {
       const res = await fetch(`${API_URL}/temp-order`, {
+=======
+    try {
+      const res = await fetch("http://localhost:5000/temp-order", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -302,11 +375,14 @@ export default function Cart() {
       toast.error("Lỗi khi tạo đơn hàng tạm thời");
     }
   };
+<<<<<<< HEAD
   useEffect(() => {
     if (!isLoading) {
       fetchVouchers();
     }
   }, [cartItems]);
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     fetchCart();
@@ -329,6 +405,12 @@ export default function Cart() {
     <ProtectedRoute>
       <Container className="py-5">
         <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
+<<<<<<< HEAD
+=======
+        <Button variant="primary" onClick={fetchCart} className="mb-3">
+          Đồng bộ giỏ hàng
+        </Button>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         {error && <Alert variant="danger">{error}</Alert>}
         {isLoading ? (
           <Alert variant="info">Đang tải giỏ hàng...</Alert>
@@ -464,7 +546,11 @@ export default function Cart() {
                           "selectedVoucher",
                           JSON.stringify(found)
                         );
+<<<<<<< HEAD
                         applyVoucher(found);
+=======
+                        setTimeout(() => applyVoucher(found), 0);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                       } else {
                         localStorage.removeItem("selectedVoucher");
                         setDiscount(0);
@@ -475,10 +561,15 @@ export default function Cart() {
                     <option value="">-- Chọn voucher --</option>
                     {vouchers.map((voucher) => (
                       <option key={voucher._id} value={voucher.code}>
+<<<<<<< HEAD
                         {voucher.code} - {voucher.description} - 
                         {voucher.discountType === "fixed"
                           ? `${voucher.discountValue.toLocaleString()} ₫`
                           : ` Giảm tối đa: ${voucher.maxDiscount?.toLocaleString()}đ`}
+=======
+                        {voucher.code} - Giảm{" "}
+                        {voucher.discountValue.toLocaleString()} ₫
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                       </option>
                     ))}
                   </Form.Select>
@@ -511,4 +602,8 @@ export default function Cart() {
       </Container>
     </ProtectedRoute>
   );
+<<<<<<< HEAD
 }  
+=======
+}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb

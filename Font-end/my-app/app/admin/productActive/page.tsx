@@ -1,4 +1,5 @@
 "use client";
+<<<<<<< HEAD
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Button, Container, Table, Form, Image } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -91,10 +92,80 @@ export default function ShowAdmin() {
       fetchAllProducts();
     }
   }, [filter, fetchAllProducts, fetchInactiveProducts]);
+=======
+import React from "react";
+import { Button, Container, Table } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faPlus,
+  faPenToSquare,
+  faEyeSlash,
+} from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import ModalsAdmin from "@/app/component/create.model.admin";
+import UpdateModelAdmin from "@/app/component/update-model-admin";
+import useDarkMode from "../useDarkMode/page";
+import AdminSideBar from "../../component/adminSideBar";
+import AdminNavbar from "../../component/adminNavbar";
+import "../admin.css"
+export default function ShowAdmin() {
+  interface PostType {
+    _id: string;
+    name: string;
+    categoryId?: string | { _id: string; name: string };
+    image: string;
+    quantity: number;
+    taste?: string[];
+    sizes?: {
+      name: string;
+      price: {
+        original: number;
+        discount?: number;
+      };
+    }[];
+    description: string;
+    isHidden?: boolean;
+  }
+
+  const [posts, setPosts] = useState<PostType[]>([]);
+  const [post, setPost] = useState<PostType | null>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [showUpdateModal, setUpdateModal] = useState<boolean>(false);
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>(
+    []
+  );
+  const [collapsed, setCollapsed] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 10;
+  const { isDarkMode } = useDarkMode();
+
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/products/active");
+      const data = await res.json();
+      if (data?.result) setPosts(data.result);
+    } catch (e) {
+      toast.error("Lỗi tải sản phẩm");
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/categories");
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data.result;
+      setCategories(list);
+    } catch (e) {
+      toast.error("Lỗi tải danh mục");
+    }
+  };
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     fetchPosts();
     fetchCategories();
+<<<<<<< HEAD
   }, [fetchPosts, fetchCategories]);
 
   const filteredProducts = useMemo(
@@ -116,12 +187,16 @@ export default function ShowAdmin() {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+=======
+  }, []);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   const handleEdit = (product: PostType) => {
     setPost(product);
     setUpdateModal(true);
   };
 
+<<<<<<< HEAD
   const handleShowProduct = async (id: string) => {
     if (!confirm("Bạn có chắc muốn khôi phục sản phẩm này?")) return;
     try {
@@ -170,11 +245,27 @@ export default function ShowAdmin() {
       }
     } catch (e) {
       toast.error(`Ẩn sản phẩm thất bại: ${(e as Error).message}`);
+=======
+  const handleHideProduct = async (id: string) => {
+    try {
+      await fetch(`http://localhost:5000/products/hide/${id}`, {
+        method: "DELETE",
+      });
+      fetchPosts();
+      toast.success("Ẩn sản phẩm thành công");
+    } catch (e) {
+      toast.error("Ẩn sản phẩm thất bại");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     }
   };
 
   const renderSizes = (sizes?: PostType["sizes"]) => {
     if (!sizes || sizes.length === 0) return "Không có";
+<<<<<<< HEAD
+=======
+
+    // Nếu chỉ có 1 size và tên là "default" thì hiển thị giá không kèm chữ "default"
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     if (sizes.length === 1 && sizes[0].name === "default") {
       const s = sizes[0].price;
       return s.discount ? (
@@ -186,6 +277,11 @@ export default function ShowAdmin() {
         <>{s.original.toLocaleString()}đ</>
       );
     }
+<<<<<<< HEAD
+=======
+
+    // Ngược lại hiển thị từng size như S, M, L
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     return (
       <>
         {sizes.map((s) => (
@@ -205,6 +301,7 @@ export default function ShowAdmin() {
     );
   };
 
+<<<<<<< HEAD
   const indexOfLast = currentPage * productsPerPage;
   const indexOfFirst = indexOfLast - productsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
@@ -350,3 +447,121 @@ export default function ShowAdmin() {
     </div>
   );
 }
+=======
+
+  const totalPages = Math.ceil(posts.length / productsPerPage);
+  const indexOfLast = currentPage * productsPerPage;
+  const indexOfFirst = indexOfLast - productsPerPage;
+  const current = posts.slice(indexOfFirst, indexOfLast);
+
+  return (
+    <div className="d-flex dark-mode">
+      <AdminSideBar />
+      <Container
+        fluid
+        className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
+          }`}
+      >
+        <AdminNavbar />
+        <h4 className="text-center mt-4">Danh sách sản phẩm đang bán</h4>
+        <div className="d-flex justify-content-end">
+          <Button onClick={() => setShowModal(true)}>
+            <FontAwesomeIcon icon={faPlus} /> Thêm sản phẩm
+          </Button>
+        </div>
+        <Table striped bordered hover responsive className="mt-3 text-center">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Ảnh</th>
+              <th>Tên</th>
+              <th>Giá (các size)</th>
+              <th>Số lượng</th>
+              <th>Vị</th>
+              <th>Danh mục</th>
+              <th>Chức năng</th>
+            </tr>
+          </thead>
+          <tbody>
+            {current.map((product, idx) => (
+              <tr key={product._id}>
+                <td>{idx + 1}</td>
+                <td>
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    style={{ width: "60px" }}
+                  />
+                </td>
+                <td>{product.name}</td>
+                <td>{renderSizes(product.sizes)}</td>
+                <td>{product.quantity}</td>
+                <td>
+                  {product.taste?.[0] === "Không"
+                    ? "Không có"
+                    : product.taste?.join(", ")}
+                </td>
+                <td>
+                  {typeof product.categoryId === "object"
+                    ? product.categoryId.name
+                    : categories.find((c) => c._id === product.categoryId)
+                      ?.name || "Không rõ"}
+                </td>
+                <td>
+                  <Button
+                    variant="warning"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => handleEdit(product)}
+                  >
+                    <FontAwesomeIcon icon={faPenToSquare} />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleHideProduct(product._id)}
+                  >
+                    <FontAwesomeIcon icon={faEyeSlash} />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        <div className="d-flex justify-content mt-3 gap-2">
+          <Button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            variant="outline-secondary"
+          >
+            Trang trước
+          </Button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <Button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              variant={currentPage === i + 1 ? "primary" : "outline-secondary"}
+            >
+              {i + 1}
+            </Button>
+          ))}
+          <Button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            variant="outline-secondary"
+          >
+            Trang sau
+          </Button>
+        </div>
+      </Container>
+      <ModalsAdmin showModal={showModal} setShowModal={setShowModal} />
+      <UpdateModelAdmin
+        showUpdateModal={showUpdateModal}
+        setUpdateModal={setUpdateModal}
+        post={post}
+        fetchPosts={fetchPosts}
+      />
+    </div>
+  );
+}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb

@@ -7,16 +7,24 @@ import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Image from "react-bootstrap/Image";
+<<<<<<< HEAD
 import Card from "react-bootstrap/Card";
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Counter from "@/app/count/count";
 import "./productList.css";
+<<<<<<< HEAD
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faHeartBroken, faStar } from "@fortawesome/free-solid-svg-icons";
 import styles from "../../styles/HotProduct.module.css";
 import Link from "next/link";
+=======
+import ProductList from "../productList";
+import { toast } from "react-toastify";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 interface SizeType {
   name: string;
@@ -43,6 +51,7 @@ interface ProductType {
   quantity: number;
   taste?: string[];
   sizes?: SizeType[];
+<<<<<<< HEAD
   categoryId?: string | CategoryInfo;
   status?: boolean;
 }
@@ -75,15 +84,23 @@ const PaginationComponent: React.FC<PaginationProps> = ({
     </div>
   );
 };
+=======
+  categoryId?: CategoryInfo;
+}
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 const ProductDetail = () => {
   const { id } = useParams();
   const [productId, setProductId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedTaste, setSelectedTaste] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
+<<<<<<< HEAD
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     if (id && typeof id === "string") {
@@ -92,6 +109,7 @@ const ProductDetail = () => {
   }, [id]);
 
   const fetcher = async (url: string) => {
+<<<<<<< HEAD
     const res = await fetch(url, { credentials: "include" });
     if (!res.ok) {
       const text = await res.text();
@@ -101,10 +119,16 @@ const ProductDetail = () => {
       );
     }
     const data = await res.json();
+=======
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(`Lỗi ${res.status}: ${data.message || data}`);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     if (!data.result) throw new Error("API không trả về 'result'");
     return data.result;
   };
 
+<<<<<<< HEAD
   const {
     data: product,
     error: productError,
@@ -189,6 +213,24 @@ const ProductDetail = () => {
     if (!product?.sizes || product.sizes.length === 0)
       return "Giá không khả dụng";
     const size = product.sizes.find((s) => s.name === selectedSize);
+=======
+  const { data, error, isLoading } = useSWR(
+    productId ? `http://localhost:5000/products/${productId}` : null,
+    fetcher
+  );
+
+  useEffect(() => {
+    if (data?.sizes && data.sizes.length > 0) {
+      setSelectedSize(data.sizes[0].name);
+    } else {
+      setSelectedSize(null);
+    }
+  }, [data]);
+
+  const renderPrice = () => {
+    if (!data?.sizes || data.sizes.length === 0) return "Giá không khả dụng";
+    const size = data.sizes.find((s) => s.name === selectedSize);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     if (!size) return "Không có size phù hợp";
 
     const { original, discount } = size.price;
@@ -205,6 +247,7 @@ const ProductDetail = () => {
       </span>
     );
   };
+<<<<<<< HEAD
   const toggleFavorite = async (productId: string) => {
     try {
       const response = await fetch(
@@ -248,11 +291,20 @@ const ProductDetail = () => {
 
   const handleAddToCart = async (product: ProductType) => {
     if (!selectedSize || !product?._id) {
+=======
+
+  const handleAddToCart = async (product: ProductType) => {
+    if (!selectedSize || !data?._id) {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
       toast.error("Vui lòng chọn kích cỡ");
       return;
     }
 
+<<<<<<< HEAD
     const sizeInfo = product.sizes?.find((s) => s.name === selectedSize);
+=======
+    const sizeInfo = data.sizes?.find((s) => s.name === selectedSize);
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     if (!sizeInfo) {
       toast.error("Kích cỡ không hợp lệ");
       return;
@@ -264,14 +316,22 @@ const ProductDetail = () => {
     };
 
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_URL}/cart/add`, {
+=======
+      const res = await fetch("http://localhost:5000/cart/add", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+<<<<<<< HEAD
           productId: product._id,
+=======
+          productId: data._id,
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           sizeName: selectedSize,
           taste: selectedTaste ? [selectedTaste] : [],
           quantity,
@@ -285,6 +345,7 @@ const ProductDetail = () => {
       toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
     } catch (error: any) {
       toast.error(`Thêm giỏ hàng thất bại: ${error.message}`);
+<<<<<<< HEAD
     }
   };
 
@@ -339,14 +400,57 @@ const ProductDetail = () => {
                     <p className={styles.optionTitle}>Chọn kích thước:</p>
                     <Form>
                       {product.sizes.map((size, index) => (
+=======
+      console.error("Lỗi khi thêm giỏ hàng:", error);
+    }
+  };
+
+  if (isLoading) return <p>Đang tải...</p>;
+  if (error) return <p>Lỗi khi tải sản phẩm: {error.message}</p>;
+  if (!data || !data._id) return <p>Không tìm thấy sản phẩm</p>;
+
+  return (
+    <>
+      <Container fluid className="mt-4">
+        <Breadcrumb className="ms-5">
+          <Breadcrumb.Item href="/" className="breadCrumbItem">
+            Trang chủ
+          </Breadcrumb.Item>
+          <Breadcrumb.Item href="" className="breadCrumbItem">
+            {data.categoryId?.name || "Danh mục"}
+          </Breadcrumb.Item>
+          <Breadcrumb.Item active>{data.name}</Breadcrumb.Item>
+        </Breadcrumb>
+
+        <Container fluid className="p-5">
+          <Row>
+            <Col xs={8} className="d-flex justify-content-center">
+              <Image src={data.image} fluid />
+            </Col>
+            <Col xs={4}>
+              <Row className="d-flex flex-column" style={{ gap: "12px" }}>
+                <h1 style={{ fontSize: "20px", color: "#252a2b" }}>{data.name}</h1>
+
+                <span>{renderPrice()}</span>
+
+                {data.sizes && data.sizes.length > 0 && (
+                  <>
+                    <p className="m-0">Chọn kích thước:</p>
+                    <Form>
+                      {data.sizes.map((size, index) => (
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                         <Form.Check
                           type="radio"
                           key={index}
                           id={`size-${index}`}
+<<<<<<< HEAD
                           label={`${size.name} (${size.price.discount
                             ? size.price.discount.toLocaleString()
                             : size.price.original.toLocaleString()
                             }đ)`}
+=======
+                          label={`${size.name} (${size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()}đ)`}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}
@@ -356,9 +460,18 @@ const ProductDetail = () => {
                   </>
                 )}
 
+<<<<<<< HEAD
                 <p className={styles.optionTitle}>Chọn vị:</p>
                 <Form>
                   {Array.isArray(product.taste) && product.taste.length > 0 ? (
+=======
+                <span>{data.time || "Thời gian không khả dụng"}</span>
+                <span>Đánh giá: 0 sao</span>
+
+                <p className="m-0">Chọn vị:</p>
+                <Form>
+                  {Array.isArray(data.taste) && data.taste.length > 0 ? (
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                     <>
                       <Form.Check
                         key="no-taste"
@@ -369,7 +482,11 @@ const ProductDetail = () => {
                         checked={selectedTaste === null}
                         onChange={() => setSelectedTaste(null)}
                       />
+<<<<<<< HEAD
                       {product.taste.map((item, index) => (
+=======
+                      {data.taste.map((item, index) => (
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                         <Form.Check
                           key={index}
                           id={`taste-radio-${index}`}
@@ -387,6 +504,7 @@ const ProductDetail = () => {
                 </Form>
 
                 <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
+<<<<<<< HEAD
                 <ul className={styles.productDesc}>
                   <li>{product.description || "Không có mô tả"}</li>
                 </ul>
@@ -499,6 +617,28 @@ const ProductDetail = () => {
           })}
         </Row>
       </Container>
+=======
+                <ul>
+                  <li>{data.description || "Không có mô tả"}</li>
+                </ul>
+
+                <Counter value={quantity} setValue={setQuantity} />
+
+                <Button
+                  className="text-light p-2"
+                  style={{ border: "none", borderRadius: "0", backgroundColor: "#e00000" }}
+                  onClick={() => handleAddToCart(data)}
+                >
+                  Thêm vào giỏ
+                </Button>
+              </Row>
+            </Col>
+          </Row>
+        </Container>
+      </Container>
+
+      <ProductList category="related" title="Sản phẩm liên quan" limit={6} />
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     </>
   );
 };

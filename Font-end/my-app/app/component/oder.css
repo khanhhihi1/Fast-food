@@ -6,7 +6,11 @@
 
 /* Header */
 .modal-header {
+<<<<<<< HEAD
   background-color: #797c7f;
+=======
+ background-color: #797c7f;
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   border-bottom: 1px solid #dee2e6;
 }
 
@@ -50,6 +54,14 @@
   border: 1px solid #e2e2e2;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
+<<<<<<< HEAD
+=======
+.table>:not(caption)>*>* {
+  background-color: #efeded;
+  color: #212529;
+}
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 /* Tổng cộng */
 .fw-bold {
   color: #212529;
@@ -78,6 +90,7 @@
 .btn-secondary:hover {
   background-color: #5a6268;
 }
+<<<<<<< HEAD
 
 .card-body {
   background-color: white !important;
@@ -90,4 +103,15 @@
 
 .table img {
   margin-right: 82px !important;
+=======
+.card-body{
+    background-color:white !important;
+       color: #212529 !important;
+}
+.card-body p{
+    color: #212529 !important;
+}
+.table img {
+    margin-right: 82px !important;
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 }

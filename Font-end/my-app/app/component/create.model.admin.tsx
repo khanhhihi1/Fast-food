@@ -7,10 +7,16 @@ import { toast } from "react-toastify";
 interface iShow {
   showModal: boolean;
   setShowModal: (value: boolean) => void;
+<<<<<<< HEAD
   fetchPosts: () => void;
 }
 
 function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
+=======
+}
+
+function ModalsAdmin({ showModal, setShowModal }: iShow) {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [image, setImage] = useState("");
@@ -24,14 +30,21 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const [status, setStatus] = useState(true);
   const [categoriesList, setCategoriesList] = useState<{ _id: string; name: string }[] | null>(null);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     if (showModal) {
       const fetchCategories = async () => {
         setLoading(true);
         try {
+<<<<<<< HEAD
           const response = await fetch(`${API_URL}/categories`);
+=======
+          const response = await fetch("http://localhost:5000/categories");
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           const data = await response.json();
           const categoriesData = Array.isArray(data) ? data : data.result;
           setCategoriesList(categoriesData);
@@ -88,8 +101,13 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
           original: variantPrices[`${sz}_original`],
           ...(variantPrices[`${sz}_discount`] &&
             variantPrices[`${sz}_discount`] < variantPrices[`${sz}_original`]
+<<<<<<< HEAD
             ? { discount: variantPrices[`${sz}_discount`] }
             : {}),
+=======
+              ? { discount: variantPrices[`${sz}_discount`] }
+              : {}),
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         },
       }));
     }
@@ -106,7 +124,11 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
     };
 
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_URL}/products/addProduct`, {
+=======
+      const res = await fetch("http://localhost:5000/products/addProduct", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

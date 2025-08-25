@@ -3,6 +3,16 @@ import { useAuth } from "../hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+<<<<<<< HEAD
+=======
+interface User {
+  _id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: string;
+}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 export default function ProtectedRoute({
   children,
