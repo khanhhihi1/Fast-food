@@ -30,24 +30,23 @@ const HotProducts = () => {
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  // Fetch sản phẩm nổi bật
+
   useEffect(() => {
     const controller = new AbortController();
-    const signal = controller.signal;
     async function fetchProducts() {
       try {
         const res = await fetch(`${API_URL}/products/hot`, {
-          signal,
+          signal: controller.signal,
         });
         const data = await res.json();
 
         const productList = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-            ? data.result
-            : Array.isArray(data.data)
-              ? data.data
-              : [];
+          ? data.result
+          : Array.isArray(data.data)
+          ? data.data
+          : [];
 
         setHotProducts(productList);
       } catch (error: any) {
@@ -58,22 +57,17 @@ const HotProducts = () => {
     }
 
     fetchProducts();
-
     return () => controller.abort();
   }, []);
 
-  // Fetch danh sách sản phẩm yêu thích từ server
+  // fetch danh sách yêu thích
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const res = await fetch(
-          `${API_URL}/favoriteProduct/favorites`,
-          {
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
-
+        const res = await fetch(`${API_URL}/favoriteProduct/favorites`, {
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
         const data = await res.json();
 
         if (data.status && Array.isArray(data.result)) {
@@ -91,7 +85,6 @@ const HotProducts = () => {
     fetchFavorites();
   }, []);
 
-  // Toggle yêu thích theo từng sản phẩm
   const toggleFavorite = async (productId: string) => {
     try {
       const response = await fetch(
