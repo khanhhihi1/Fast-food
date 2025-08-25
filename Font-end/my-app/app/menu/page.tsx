@@ -5,7 +5,7 @@ import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
 import Image from "react-bootstrap/Image";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Service from "../category/page";
+import Service from "../category/category";
 import ProductList from "../productList/productList";
 export default function Menu() {
   return (
