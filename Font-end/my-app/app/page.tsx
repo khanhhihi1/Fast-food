@@ -1,20 +1,13 @@
 "use client";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import Image from "react-bootstrap/Image";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import Service from "./category/page";
-import { Navbar, Nav, NavDropdown, Container } from "react-bootstrap";
+import Service from "./category/category";
 import ProductList from "./productList/productList";
-import About from "./about/page";
+import About from "./component/about";
 import styles from "./styles/home.module.css";
-import SalePage from "./sale/page";
-import DiscountPage from "./discount/page";
+import SalePage from "./component/sale";
+import DiscountPage from "./discount/discount";
 import Slide from "./component/main/slide";
 import HotProducts from "./component/hotProduct";
-import Blog from "./blog/page";
+import Blog from "./blog/blog";
 export default function Home() {
   return (
     <>
