@@ -38,7 +38,6 @@ export default function SignInPage() {
       }
 
       alert("Đăng nhập thành công!");
-      // ✅ Điều hướng theo vai trò
       if (data.result.user.role === "admin") {
         router.push("/admin");
       } else {
