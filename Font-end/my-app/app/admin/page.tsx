@@ -1,5 +1,9 @@
 "use client";
+<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
+=======
+import React, { useState } from "react";
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 import {
   Container,
   Row,
@@ -39,10 +43,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import AdminSideBar from "../component/adminSideBar";
 import AdminNavbar from "../component/adminNavbar";
 import ProtectedRoute from "../component/ProtectedRoute";
+<<<<<<< HEAD
 import Image from "react-bootstrap/Image";
 import { Order } from "../type/oder";
 import { OrderItem } from "../type/oder";
 import { toast } from "react-toastify";
+=======
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 ChartJS.register(ArcElement, Tooltip, Legend);
 const useDarkMode = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -70,6 +78,7 @@ const useDarkMode = () => {
 
   return { isDarkMode, toggleDarkMode };
 };
+<<<<<<< HEAD
 interface Product {
   _id: string;
   id?: string;
@@ -212,6 +221,62 @@ export default function ShowAdmin() {
     fetchUsers();
     fetchComments();
   }, []);
+=======
+
+export default function ShowAdmin() {
+  const [openProductMenu, setOpenProductMenu] = useState(false);
+  const [show, setShow] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+  const toggleSidebar = () => setCollapsed(!collapsed);
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
+
+  const products = [
+    {
+      sno: "01",
+      name: "Mì ý",
+      popularity: 50,
+      percentage: 50,
+      barColor: "#4dabf7",
+    },
+    {
+      sno: "02",
+      name: "Gà rán",
+      popularity: 20,
+      percentage: 20,
+      barColor: "#2ecc71",
+    },
+    {
+      sno: "03",
+      name: "Combo mì gà",
+      popularity: 30,
+      percentage: 30,
+      barColor: "#4dabf7",
+    },
+    {
+      sno: "04",
+      name: "Pizza sốt cà",
+      popularity: 45,
+      percentage: 45,
+      barColor: "#2ecc71",
+    },
+    {
+      sno: "05",
+      name: "Cơm gạo Nhật",
+      popularity: 70,
+      percentage: 70,
+      barColor: "#f1c40f",
+    },
+    {
+      sno: "06",
+      name: "Combo 2 gà",
+      popularity: 45,
+      percentage: 45,
+      barColor: "#e74c3c",
+    },
+  ];
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   const activities = [
     { icon: "blue", text: "Vượng vừa sủa.", time: "4:45 PM" },
@@ -229,8 +294,11 @@ export default function ShowAdmin() {
     },
     { icon: "blue", text: "Trí đẳng cấp.", time: "12 hrs" },
   ];
+<<<<<<< HEAD
 
   const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
   return (
     <ProtectedRoute requireAdmin>
       <div className="d-flex">
@@ -239,9 +307,15 @@ export default function ShowAdmin() {
         {/* Main Content */}
         <Container
           fluid
+<<<<<<< HEAD
           className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
             }`}
           style={{ minHeight: "100vh" }}
+=======
+          className={`content w-100 container-content ${
+            collapsed ? "collapsed-content" : ""
+          }`}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         >
           <AdminNavbar />
           {/* Dashboard Cards */}
@@ -251,11 +325,22 @@ export default function ShowAdmin() {
                 <div className="dashboard-card">
                   <div className="card-header">
                     <span>Tổng doanh thu</span>
+<<<<<<< HEAD
 
                   </div>
                   <p className="card-subtext">Tổng quan tháng này</p>
                   <div className="card-content">
                     <h3>{totalRevenue.toLocaleString('vi-VN')} VNĐ</h3>
+=======
+                    <div className="toggle-switch">
+                      <input type="checkbox" id="toggle1" />
+                      <label htmlFor="toggle1"></label>
+                    </div>
+                  </div>
+                  <p className="card-subtext">Tổng quan tháng này</p>
+                  <div className="card-content">
+                    <h3>3,456 VND</h3>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                     <FontAwesomeIcon
                       icon={faDollar}
                       style={{
@@ -271,11 +356,22 @@ export default function ShowAdmin() {
                 <div className="dashboard-card">
                   <div className="card-header">
                     <span>Tổng đơn hàng</span>
+<<<<<<< HEAD
 
                   </div>
                   <p className="card-subtext">Tổng quan tháng này</p>
                   <div className="card-content">
                     <h3>{orders.length}</h3>
+=======
+                    <div className="toggle-switch">
+                      <input type="checkbox" id="toggle2" defaultChecked />
+                      <label htmlFor="toggle2"></label>
+                    </div>
+                  </div>
+                  <p className="card-subtext">Tổng quan tháng này</p>
+                  <div className="card-content">
+                    <h3>4,738</h3>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                     <FontAwesomeIcon
                       icon={faCartShopping}
                       style={{
@@ -291,11 +387,22 @@ export default function ShowAdmin() {
                 <div className="dashboard-card">
                   <div className="card-header">
                     <span>Người dùng mới</span>
+<<<<<<< HEAD
 
                   </div>
                   <p className="card-subtext">Tổng quan tháng này</p>
                   <div className="card-content">
                     <h3>{users.length}</h3>
+=======
+                    <div className="toggle-switch">
+                      <input type="checkbox" id="toggle3" />
+                      <label htmlFor="toggle3"></label>
+                    </div>
+                  </div>
+                  <p className="card-subtext">Tổng quan tháng này</p>
+                  <div className="card-content">
+                    <h3>6,738</h3>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                     <FaUsers className="card-icon green-icon" />
                   </div>
                 </div>
@@ -304,10 +411,21 @@ export default function ShowAdmin() {
                 <div className="dashboard-card">
                   <div className="card-header">
                     <span>Tổng đánh giá</span>
+<<<<<<< HEAD
                   </div>
                   <p className="card-subtext">Tổng quan tháng này</p>
                   <div className="card-content">
                     <h3>{comments.length}</h3>
+=======
+                    <div className="toggle-switch">
+                      <input type="checkbox" id="toggle4" />
+                      <label htmlFor="toggle4"></label>
+                    </div>
+                  </div>
+                  <p className="card-subtext">Tổng quan tháng này</p>
+                  <div className="card-content">
+                    <h3>$8,963</h3>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                     <FontAwesomeIcon
                       icon={faComments}
                       style={{
@@ -331,6 +449,7 @@ export default function ShowAdmin() {
                   <div className="table">
                     <Table className="table">
                       <thead>
+<<<<<<< HEAD
                         <tr className="text-center">
                           <th style={{ color: "white" }}>Hình ảnh</th>
                           <th style={{ color: "white" }}>Tên sản phẩm</th>
@@ -346,6 +465,32 @@ export default function ShowAdmin() {
                             </td>
                             <td>{product.name}</td>
                             <td>{product.view}</td>
+=======
+                        <tr>
+                          <th></th>
+                          <th>Tên sản phẩm</th>
+                          <th>Sự phổ biến</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.map((product) => (
+                          <tr key={product.sno}>
+                            <td>{product.sno}</td>
+                            <td>{product.name}</td>
+                            <td>
+                              <ProgressBar
+                                now={product.popularity}
+                                style={{
+                                  height: "5px",
+                                  backgroundColor: "#2a3b4c",
+                                }}
+                                variant="custom"
+                                className={`progress-bar-${product.barColor}`}
+                              />
+                            </td>
+                            <td>{product.percentage}%</td>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                           </tr>
                         ))}
                       </tbody>

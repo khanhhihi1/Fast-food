@@ -1,8 +1,22 @@
 import { useEffect, useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { toast } from "react-toastify";
+<<<<<<< HEAD
 import { Voucher } from "../type/voucher";
 
+=======
+
+interface Voucher {
+  _id: string;
+  code: string;
+  description: string;
+  discountValue: number;
+  discountType: string;
+  minOrderValue: number;
+  expiresAt: string;
+  maxDiscount: number;
+}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
 interface Props {
   showModal: boolean;
@@ -19,7 +33,10 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher, onUpdated }: Pro
   const [minOrderValue, setMinOrderValue] = useState<number>(voucher.minOrderValue);
   const [expiresAt, setExpiresAt] = useState(voucher.expiresAt.split("T")[0]);
   const [maxDiscount, setMaxDiscount] = useState<number>(voucher.maxDiscount);
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   useEffect(() => {
     setCode(voucher.code);
@@ -48,7 +65,11 @@ function VoucherUpdateModal({ showModal, setShowModal, voucher, onUpdated }: Pro
     };
 
     try {
+<<<<<<< HEAD
       const response = await fetch(`${API_URL}/voucher/update/${voucher._id}`, {
+=======
+      const response = await fetch(`http://localhost:5000/voucher/update/${voucher._id}`, {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "PUT",
         headers: {
           Accept: "application/json",

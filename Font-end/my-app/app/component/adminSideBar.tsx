@@ -27,8 +27,13 @@ export default function AdminSideBar() {
       <h3 className="text-center">
         <img
           className="rounded-circle"
+<<<<<<< HEAD
           src="/logo.png"
           style={{ width: "150px", height: "150px", marginLeft: 50 }}
+=======
+          src="/logo-admin.jpg"
+          style={{ width: "100px", height: "100px", marginLeft: 50 }}
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
           alt="Logo"
         />
       </h3>
@@ -81,7 +86,13 @@ export default function AdminSideBar() {
                   <Link href="/admin/productActive" className="nav-link2">
                     Sản phẩm đang bán
                   </Link>
+<<<<<<< HEAD
                  
+=======
+                  <Link href="/admin/productHidden" className="nav-link2">
+                    Sản phẩm ngưng bán
+                  </Link>
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
                   <Link href="/admin/productCategory" className="nav-link2">
                     Danh mục sản phẩm
                   </Link>
@@ -174,7 +185,11 @@ export default function AdminSideBar() {
             />
             <Link
               style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
+<<<<<<< HEAD
               href="/admin/commentmanagement"
+=======
+              href="#"
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
             >
               Đánh giá
             </Link>

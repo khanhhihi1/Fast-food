@@ -11,6 +11,7 @@ const getAllCate = async () => {
     throw new Error("Không thể lấy danh mục");
   }
 };
+<<<<<<< HEAD
 const getActiveCate = async () => {
   try {
     const result = await CategoriesModel.find({ isHidden: false });
@@ -31,6 +32,9 @@ const getHiddenCate = async () => {
     throw new Error("Không thể lấy danh mục đã ẩn");
   }
 };
+=======
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 // Lấy chi tiết danh mục theo ID
 const getDetailCate = async (id) => {
   try {
@@ -59,6 +63,7 @@ const addCate = async (data) => {
   }
 };
 
+<<<<<<< HEAD
 const hideCate = async (id) => {
   try {
     // Kiểm tra xem danh mục có sản phẩm không
@@ -87,6 +92,30 @@ const hideCate = async (id) => {
 // Cập nhật danh mục
 const updateCate = async (id, data) => {
   try {
+=======
+// Xoá danh mục (kiểm tra nếu có sản phẩm thì không xoá)
+const deleteCate = async (id) => {
+  try {
+    const pros = await productModel.find({ Categories: id });
+    if (pros.length > 0) {
+      throw new Error("Không thể xoá vì danh mục còn chứa sản phẩm");
+    }
+    const cate = await CategoriesModel.findByIdAndDelete(id);
+    if (!cate) {
+      throw new Error("Không tìm thấy danh mục để xoá");
+    }
+    return cate;
+  } catch (error) {
+    console.error("Lỗi khi xoá danh mục:", error.message);
+    throw new Error(error.message || "Không thể xoá danh mục");
+  }
+};
+
+// Cập nhật danh mục
+const updateCate = async (id, data) => {
+  try {
+    // updateCate
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
     const { name, imageUrl } = data;
     const updatedCate = await CategoriesModel.findByIdAndUpdate(
       id,
@@ -104,6 +133,7 @@ const updateCate = async (id, data) => {
     throw new Error("Không thể cập nhật danh mục");
   }
 };
+<<<<<<< HEAD
 const restoreCate = async (id) => {
   try {
     const cate = await CategoriesModel.findByIdAndUpdate(
@@ -122,13 +152,22 @@ const restoreCate = async (id) => {
     throw new Error(error.message || "Không thể khôi phục danh mục");
   }
 };
+=======
+
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 module.exports = {
   getAllCate,
   getDetailCate,
   addCate,
+<<<<<<< HEAD
   hideCate,
   updateCate,
   restoreCate,
   getActiveCate,
   getHiddenCate,
 };
+=======
+  deleteCate,
+  updateCate,
+};
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb

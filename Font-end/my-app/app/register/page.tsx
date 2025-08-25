@@ -14,7 +14,10 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
   });
+<<<<<<< HEAD
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+=======
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,7 +40,11 @@ export default function SignUpPage() {
     };
 
     try {
+<<<<<<< HEAD
       const response = await fetch(`${API_URL}/users/register`, {
+=======
+      const response = await fetch("http://localhost:5000/users/register", {
+>>>>>>> e2df97ba9c0533a07c22052c53f90a2eba1607fb
         method: "POST",
         headers: {
           "Content-Type": "application/json",
