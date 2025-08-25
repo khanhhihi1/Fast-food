@@ -26,7 +26,7 @@ interface Product {
   view: number;
 }
 
-const HotProducts = () => {
+const HotProduct = () => {
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -180,4 +180,4 @@ const HotProducts = () => {
   );
 };
 
-export default HotProducts;
+export default HotProduct;
