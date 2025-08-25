@@ -13,7 +13,7 @@ import styles from "./styles/home.module.css";
 import SalePage from "./sale/page";
 import DiscountPage from "./discount/page";
 import Slide from "./component/main/slide";
-import HotProducts from "./component/hotProduct";
+import HotProduct from "./component/hotProduct";
 import Blog from "./blog/page";
 export default function Home() {
   return (
@@ -21,7 +21,7 @@ export default function Home() {
       <Slide />
       <Service />
       <About />
-      <HotProducts />
+      <HotProduct />
       {/* <ProductList
         category="hot"
         title="🔥Sản phẩm Hot"
