@@ -1,5 +1,4 @@
 "use client";
-
 import {
   FaShippingFast,
   FaRegEdit,
@@ -417,7 +416,7 @@ export default function Checkout() {
                     <tr key={item.productId + item.sizeName}>
                       <td>
                         <Image
-                          src={item.imageUrl}
+                          src={`${API_URL}/${item.imageUrl}`}
                           alt={item.name}
                           width={50}
                           height={50}

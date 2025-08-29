@@ -245,7 +245,7 @@ const CategoryPage = () => {
                     <div className={styles.productImage}>
                       {product.imageUrl || product.image ? (
                         <img
-                          src={product.imageUrl || product.image!}
+                          src={`${API_URL}/${product.image}`}
                           alt={product.name}
                           style={{
                             width: "100%",

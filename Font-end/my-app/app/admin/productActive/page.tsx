@@ -9,7 +9,7 @@ import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
 import styles from "../styles/product.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEyeSlash, faPenToSquare, faPlus, faRotate } from "@fortawesome/free-solid-svg-icons";
+import { faAngleLeft, faAngleRight, faEyeSlash, faPenToSquare, faPlus, faRotate } from "@fortawesome/free-solid-svg-icons";
 import { FaSearch } from "react-icons/fa";
 import { PostType } from "@/app/type/type";
 export default function ShowAdmin() {
@@ -212,21 +212,21 @@ export default function ShowAdmin() {
   return (
     <div className={`d-flex ${isDarkMode ? "dark-mode" : "light-mode"}`}>
       <AdminSideBar />
-      <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
+      <Container fluid className={` ${styles.content} ${styles.containerContent}content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
         <AdminNavbar />
         <div className={styles["admin-product-container"]}>
-          <h2>Quản lý sản phẩm</h2>
+          <h2 className="text-center">Quản lý sản phẩm</h2>
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Tổng sản phẩm</span>
               <span className={styles.statValue}>{posts.length}</span>
             </div>
             <div className={styles.statCard}>
-              <span className={styles.statLabel}>Sản phẩm hoạt động</span>
+              <span className={styles.statLabel}>Đang hoạt động</span>
               <span className={styles.statValue}>{filteredProducts.filter((p) => p.status).length}</span>
             </div>
             <div className={styles.statCard}>
-              <span className={styles.statLabel}>Sản phẩm ngưng hoạt động</span>
+              <span className={styles.statLabel}>Ngưng hoạt động</span>
               <span className={styles.statValue}>{filteredProducts.filter((p) => !p.status).length}</span>
             </div>
           </div>
@@ -252,23 +252,21 @@ export default function ShowAdmin() {
                   Ngưng hoạt động
                 </button>
 
-                <Button onClick={() => setShowModal(true)}>
+                <Button onClick={() => setShowModal(true)} className={styles.addProductBtn}>
                   <FontAwesomeIcon icon={faPlus} /> Thêm sản phẩm
                 </Button>
               </div>
               <Form className={styles.fromInput} onSubmit={(e) => e.preventDefault()}>
-                <div className="input-group">
-                  <input
-                    className="form-control search-input"
-                    type="search"
-                    placeholder="Tìm kiếm..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <button className="btn search-button" type="submit">
-                    <FaSearch />
-                  </button>
-                </div>
+                <input
+                  className={`form-control ${styles["search-input"]}`}
+                  type="search"
+                  placeholder="Tìm kiếm..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <button className={styles["search-button"]} type="submit">
+                  <FaSearch />
+                </button>
               </Form>
 
 
@@ -295,7 +293,7 @@ export default function ShowAdmin() {
                   <td>{indexOfFirst + index + 1}</td>
                   <td>{product.name}</td>
                   <td className="text-center">
-                    <Image src={product.image} alt={product.name} width={60} height={60} rounded className={styles["product-img"]} />
+                    <Image src={`${API_URL}/${product.image}`} alt={product.name} width={60} height={60} rounded className={styles["product-img"]} />
                   </td>
                   <td>{renderSizes(product.sizes)}</td>
                   <td>{product.quantity}</td>
@@ -330,17 +328,35 @@ export default function ShowAdmin() {
           </Table>
         </div>
 
-        <div className="d-flex justify-content mt-3 gap-2">
-          <Button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} variant="outline-secondary">
-            Trang trước
+        <div className={`d-flex justify-content-center mt-3 ${styles.pagination}`}>
+          {/* Nút trang trước */}
+          <Button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className={styles.pageBtn}
+          >
+            <FontAwesomeIcon icon={faAngleLeft} />
           </Button>
+
+          {/* Số trang */}
           {Array.from({ length: totalPages }, (_, i) => (
-            <Button key={i} onClick={() => setCurrentPage(i + 1)} variant={currentPage === i + 1 ? "primary" : "outline-secondary"}>
+            <Button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`${styles.pageNumber} ${currentPage === i + 1 ? styles.active : ""
+                }`}
+            >
               {i + 1}
             </Button>
           ))}
-          <Button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} variant="outline-secondary">
-            Trang sau
+
+          {/* Nút trang sau */}
+          <Button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className={styles.pageBtn}
+          >
+            <FontAwesomeIcon icon={faAngleRight} />
           </Button>
         </div>
 

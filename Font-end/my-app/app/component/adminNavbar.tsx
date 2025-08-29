@@ -2,42 +2,23 @@
 import React, { useState } from "react";
 import {
   Container,
-  Row,
-  Col,
   Navbar,
   Form,
   Button,
   Offcanvas,
   Dropdown,
-  ProgressBar,
-  Table,
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faHouse,
-  faBarsProgress,
-  faCartShopping,
-  faTicket,
-  faCircleUser,
-  faChartSimple,
-  faComments,
-  faDollarSign,
-  faRightFromBracket,
-  faGear,
   faBarsStaggered,
   faBell,
-  faDollar,
-  faChevronUp,
-  faChevronDown,
+  faGear,
 } from "@fortawesome/free-solid-svg-icons";
-import { FaSearch, FaUsers } from "react-icons/fa";
 import Link from "next/link";
-import { Doughnut } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import "./admin.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-ChartJS.register(ArcElement, Tooltip, Legend);
+import styles from "./stylesComponent/adminNavbar.module.css";
+
 const useDarkMode = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== "undefined") {
@@ -64,8 +45,8 @@ const useDarkMode = () => {
 
   return { isDarkMode, toggleDarkMode };
 };
+
 export default function AdminNavbar() {
-  const [openProductMenu, setOpenProductMenu] = useState(false);
   const [show, setShow] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const handleClose = () => setShow(false);
@@ -85,7 +66,7 @@ export default function AdminNavbar() {
       const data = await res.json();
       if (res.ok && data.status) {
         setUser(null);
-        router.push("/login"); // chuyển hướng về trang login
+        router.push("/login");
       } else {
         alert("Đăng xuất thất bại!");
       }
@@ -95,48 +76,17 @@ export default function AdminNavbar() {
   };
 
   return (
-    <Navbar className="navbar" style={{ marginRight: "10px" }}>
-      <Container fluid className="container-fluid">
-        <Button variant="light" onClick={toggleSidebar} className="me-3">
+    <Navbar className={styles.navbar}>
+      <Container fluid className={styles.containerFluid}>
+        <Button onClick={toggleSidebar} className={styles.toggleBtn}>
           <FontAwesomeIcon icon={faBarsStaggered} />
         </Button>
-        <div className="hihi">
-          <span className="me-3">
-            <FontAwesomeIcon icon={faBell} style={{ fontSize: 24 }} />
-          </span>
+
+        <div className={styles.rightSection}>
           <span>
-            <Dropdown>
-              <Dropdown.Toggle className="drop-down-avt" id="dropdown-basic">
-                <img
-                  src="/avt.jpg"
-                  className="rounded-circle"
-                  alt="User Avatar"
-                  style={{
-                    width: "45px",
-                    height: "45px",
-                    marginTop: "-18px",
-                    marginRight: "12px",
-                  }}
-                />
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item href="/admin/account">
-                  Trang cá nhân
-                </Dropdown.Item>
-                <Dropdown.Item href="#/action-2">Cài đặt</Dropdown.Item>
-                <Dropdown.Item onClick={handleLogout}>Đăng xuất</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            <FontAwesomeIcon icon={faBell} className={styles.bellIcon} />
           </span>
-          <span>
-            <Button className="btn-setting" onClick={handleShow}>
-              <FontAwesomeIcon
-                icon={faGear}
-                className="setting-icon"
-                style={{ fontSize: 24 }}
-              />
-            </Button>
-          </span>
+
           <Offcanvas show={show} onHide={handleClose} placement="end">
             <Offcanvas.Header closeButton>
               <Offcanvas.Title>Cấu hình trang web</Offcanvas.Title>

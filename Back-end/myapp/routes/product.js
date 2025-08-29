@@ -2,8 +2,35 @@ const express = require("express");
 const router = express.Router();
 const productsController = require("../controller/productController.js");
 const multer = require("multer");
+const path = require("path");
 
-// Cấu hình multer (giữ nguyên)
+// Cấu hình multer để upload ảnh
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../../myapp/public/images")); 
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname)); // giữ lại đuôi file
+  },
+});
+
+// Danh sách loại file cho phép
+const allowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn 5MB
+  fileFilter: function (req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      return cb(new Error("Chỉ chấp nhận file ảnh định dạng: jpg, jpeg, png, gif, webp!"));
+    }
+    cb(null, true);
+  },
+});
+
+module.exports = upload;
 
 // Lấy tất cả sản phẩm
 router.get("/", async (req, res) => {
@@ -43,37 +70,69 @@ router.get("/inactive", async (req, res) => {
   }
 });
 
-router.post("/addProduct", async (req, res) => {
+router.post("/addProduct", upload.single("image"), async (req, res) => {
   try {
+    console.log("👉 [API CALL] /addProduct");
+    console.log("👉 req.body (raw):", req.body);
+    console.log("👉 req.file:", req.file);
+
     const data = req.body;
-    const result = await productsController.addPro(data);
+
+    // Parse JSON fields
+    try {
+      if (typeof data.taste === "string") {
+        data.taste = JSON.parse(data.taste);
+      }
+      if (typeof data.sizes === "string") {
+        data.sizes = JSON.parse(data.sizes);
+      }
+    } catch (err) {
+      console.error("❌ Parse JSON lỗi:", err.message);
+      return res
+        .status(400)
+        .json({ success: false, message: "Dữ liệu sizes hoặc taste không hợp lệ" });
+    }
+
+    console.log("👉 req.body (parsed):", data);
+
+    const imagePath = req.file ? `/images/${req.file.filename}` : "";
+
+    const result = await productsController.addPro(data, imagePath);
+
+    console.log("✅ Product đã lưu:", result);
+
     res.status(201).json({
       success: true,
       result,
-      image: data.image,
+      image: imagePath,
       message: "Thêm sản phẩm thành công",
     });
   } catch (error) {
+    console.error("❌ Lỗi server:", error.stack);
     const statusCode =
       error.message.includes("Thiếu trường") ||
       error.message.includes("Danh mục không tồn tại") ||
-      error.message.includes("Hình ảnh phải là URL")
+      error.message.includes("Chỉ chấp nhận file ảnh")
         ? 400
         : 500;
     res.status(statusCode).json({ success: false, message: error.message });
   }
 });
 
-router.put("/updateProduct/:id", async (req, res) => {
+
+
+router.put("/updateProduct/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
-    if (!data.image) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Thiếu URL hình ảnh" });
+    if (typeof data.taste === "string") {
+      data.taste = JSON.parse(data.taste);
     }
-    const result = await productsController.updateProduct(data, id);
+    if (typeof data.sizes === "string") {
+      data.sizes = JSON.parse(data.sizes);
+    }
+    const imagePath = req.file ? `/images/${req.file.filename}` : data.image;; // Chỉ cập nhật nếu có file mới
+    const result = await productsController.updateProduct(data, id, imagePath);
     res.status(200).json({
       success: true,
       result,

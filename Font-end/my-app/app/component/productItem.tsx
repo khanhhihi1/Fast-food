@@ -104,7 +104,7 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
   return (
     <div className={`${styles.productList} ${styles[layout]}`}>
       <Link href={`/productList/${productId}`}>
-        <Image src={product.image} className={styles.productImg} alt={product.name} fluid />
+        <Image src={`${API_URL}/${product.image}`} className={styles.productImg} alt={product.name} fluid />
       </Link>
 
       <div>

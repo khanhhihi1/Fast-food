@@ -1,8 +1,13 @@
+"use client"
 import { useEffect, useState } from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
 import { toast } from "react-toastify";
+import { PostType } from "../type/type";
+import "./model.css"
+import { Col, Row } from "react-bootstrap";
+import React from "react";
 
 interface iShow {
   showModal: boolean;
@@ -13,7 +18,7 @@ interface iShow {
 function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
-  const [image, setImage] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null); // Thay đổi từ URL sang file
   const [quantity, setQuantity] = useState("");
   const [taste, setTaste] = useState<string[]>([]);
   const [description, setDescription] = useState("");
@@ -22,8 +27,9 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const [discount, setDiscount] = useState("");
   const [variantPrices, setVariantPrices] = useState<{ [key: string]: number }>({});
   const [status, setStatus] = useState(true);
-  const [categoriesList, setCategoriesList] = useState<{ _id: string; name: string }[] | null>(null);
+  const [categoriesList, setCategoriesList] = useState<PostType[] | null>(null); // Sử dụng PostType thay vì type inline
   const [loading, setLoading] = useState(false);
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -48,7 +54,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const handleSubmit = async () => {
     if (!name.trim()) return toast.error("Tên sản phẩm không được để trống!");
     if (!category) return toast.error("Vui lòng chọn danh mục!");
-    if (!image.trim()) return toast.error("Vui lòng nhập URL hình ảnh!");
+    if (!imageFile) return toast.error("Vui lòng chọn file hình ảnh!");
     const qty = parseInt(quantity, 10);
     if (!qty || qty <= 0) return toast.error("Số lượng phải là số nguyên dương!");
     if (taste.length === 0) return toast.error("Vui lòng nhập ít nhất một hương vị!");
@@ -94,29 +100,40 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
       }));
     }
 
-    const data = {
-      name,
-      image,
-      categoryId: category,
-      quantity: qty,
-      taste,
-      description,
-      sizes,
-      status,
-    };
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("categoryId", category);
+    formData.append("quantity", qty.toString());
+    formData.append("taste", JSON.stringify(taste)); // Gửi array dưới dạng string JSON
+    formData.append("description", description);
+    formData.append("sizes", JSON.stringify(sizes)); // Gửi array dưới dạng string JSON
+    formData.append("status", status.toString());
+    if (imageFile) {
+      formData.append("image", imageFile); // Thêm file ảnh
+    }
+    console.log("👉 FormData chuẩn bị gửi:");
+    for (let pair of formData.entries()) {
+      console.log(pair[0], ":", pair[1]);
+    }
 
     try {
+      console.log("👉 Đang fetch đến URL:", `${API_URL}/products/addProduct`);
       const res = await fetch(`${API_URL}/products/addProduct`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: formData, // Sử dụng FormData thay vì JSON
       });
 
       if (!res.ok) {
-        const result = await res.json();
-        throw new Error(result.message || "Lỗi khi thêm sản phẩm");
+        const text = await res.text();  // Đọc text trước để debug
+        console.log("❌ Response text từ server:", text);  // In ra để xem là HTML gì
+        try {
+          const result = JSON.parse(text);  // Thử parse
+          throw new Error(result.message || "Lỗi khi thêm sản phẩm");
+        } catch (parseErr) {
+          throw new Error("Response không phải JSON: " + text.substring(0, 100));  // Log snippet HTML
+        }
       }
-
+      const result = await res.json();  // Nếu ok, parse JSON
       toast.success("Thêm sản phẩm thành công!");
       handleClose();
       window.location.reload();
@@ -128,7 +145,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const handleClose = () => {
     setName("");
     setCategory("");
-    setImage("");
+    setImageFile(null);
     setQuantity("");
     setTaste([]);
     setDescription("");
@@ -141,165 +158,211 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   };
 
   return (
-    <Modal show={showModal} onHide={handleClose} backdrop="static" keyboard={false}>
+    <Modal show={showModal} onHide={handleClose} backdrop="static" keyboard={false} size="xl"
+      centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ color: "black" }}>Thêm sản phẩm mới</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form>
-          <Form.Group>
-            <Form.Label style={{ color: "black" }}>Tên sản phẩm</Form.Label >
-            <Form.Control
-              type="text"
-              placeholder="Nhập tên sản phẩm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Form.Group>
-
-          <Form.Group>
-            <Form.Label style={{ color: "black" }}>Kích cỡ</Form.Label >
-            <Form.Select value={size} onChange={(e) => setSize(e.target.value)}>
-              <option value="Không">Không</option>
-              <option value="Có">Có</option>
-            </Form.Select>
-          </Form.Group>
-
-          {size === "Không" ? (
-            <>
+          <Row className="g-3">
+            <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: "black" }}>Giá gốc</Form.Label >
+                <Form.Label style={{ color: "black" }}>Tên sản phẩm</Form.Label >
                 <Form.Control
-                  type="number"
-                  placeholder="Nhập giá gốc"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  type="text"
+                  placeholder="Nhập tên sản phẩm"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </Form.Group>
+            </Col>
+
+
+            <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: "black" }}>Giá khuyến mãi (nếu có)</Form.Label >
+                <Form.Label style={{ color: "black" }}>Kích cỡ</Form.Label >
+                <Form.Select value={size} onChange={(e) => setSize(e.target.value)}>
+                  <option value="Không">Không</option>
+                  <option value="Có">Có</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+
+            {size === "Không" ? (
+              <>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label style={{ color: "black" }}>Giá gốc</Form.Label >
+                    <Form.Control
+                      type="number"
+                      placeholder="Nhập giá gốc"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label style={{ color: "black" }}>Giá khuyến mãi (nếu có)</Form.Label >
+                    <Form.Control
+                      type="number"
+                      placeholder="Nhập giá khuyến mãi"
+                      value={discount}
+                      onChange={(e) => setDiscount(e.target.value)}
+                    />
+                  </Form.Group>
+                </Col>
+              </>
+            ) : (
+              ["S", "M", "L"].map((sz) => (
+                <React.Fragment key={sz}>
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label style={{ color: "black" }}>Giá gốc - {sz}</Form.Label >
+                      <Form.Control
+                        type="number"
+                        placeholder={`Nhập giá gốc cho kích cỡ ${sz}`}
+                        value={variantPrices[`${sz}_original`] || ""}
+                        onChange={(e) =>
+                          setVariantPrices({
+                            ...variantPrices,
+                            [`${sz}_original`]: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label style={{ color: "black" }}>Giá khuyến mãi - {sz} (nếu có)</Form.Label >
+                      <Form.Control
+                        type="number"
+                        placeholder={`Nhập giá khuyến mãi cho ${sz}`}
+                        value={variantPrices[`${sz}_discount`] || ""}
+                        onChange={(e) =>
+                          setVariantPrices({
+                            ...variantPrices,
+                            [`${sz}_discount`]: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                </React.Fragment>
+              ))
+            )}
+
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ color: "black" }}>Danh mục</Form.Label >
+                <Form.Select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  disabled={loading}
+                >
+                  <option value="">-- Chọn danh mục --</option>
+                  {loading && <option>Đang tải...</option>}
+                  {categoriesList &&
+                    categoriesList.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ color: "black" }}>Số lượng</Form.Label >
                 <Form.Control
                   type="number"
-                  placeholder="Nhập giá khuyến mãi"
-                  value={discount}
-                  onChange={(e) => setDiscount(e.target.value)}
+                  placeholder="Nhập số lượng"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
                 />
               </Form.Group>
-            </>
-          ) : (
-            ["S", "M", "L"].map((sz) => (
-              <div key={sz}>
-                <Form.Group>
-                  <Form.Label style={{ color: "black" }}>Giá gốc - {sz}</Form.Label >
-                  <Form.Control
-                    type="number"
-                    placeholder={`Nhập giá gốc cho kích cỡ ${sz}`}
-                    value={variantPrices[`${sz}_original`] || ""}
-                    onChange={(e) =>
-                      setVariantPrices({
-                        ...variantPrices,
-                        [`${sz}_original`]: Number(e.target.value),
-                      })
+            </Col>
+
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ color: "black" }}>Hương vị</Form.Label >
+                <Form.Control
+                  type="text"
+                  placeholder="Nhập hương vị và nhấn Enter"
+                  onKeyDown={(e) => {
+                    const value = (e.target as HTMLInputElement).value.trim();
+                    if (e.key === "Enter" && value) {
+                      e.preventDefault();
+                      if (!taste.includes(value)) {
+                        setTaste([...taste, value]);
+                      }
+                      (e.target as HTMLInputElement).value = "";
                     }
-                  />
-                </Form.Group>
-                <Form.Group>
-                  <Form.Label style={{ color: "black" }}>Giá khuyến mãi - {sz} (nếu có)</Form.Label >
-                  <Form.Control
-                    type="number"
-                    placeholder={`Nhập giá khuyến mãi cho ${sz}`}
-                    value={variantPrices[`${sz}_discount`] || ""}
-                    onChange={(e) =>
-                      setVariantPrices({
-                        ...variantPrices,
-                        [`${sz}_discount`]: Number(e.target.value),
-                      })
+                  }}
+                />
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: 8 }}>
+                  {taste.map((t, i) => (
+                    <span key={i} style={{ background: "#007bff", color: "white", padding: "5px 10px", borderRadius: 20 }}>
+                      {t}
+                      <button
+                        onClick={() => setTaste(taste.filter((_, idx) => idx !== i))}
+                        style={{ marginLeft: 8, color: "red", background: "none", border: "none" }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ color: "black" }}>Mô tả sản phẩm</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={description}
+                  placeholder="Nhập mô tả sản phẩm"
+
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ color: "black" }}>Hình ảnh</Form.Label >
+                <Form.Control
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      setImageFile(file);
                     }
-                  />
-                </Form.Group>
-              </div>
-            ))
-          )}
+                  }}
+                />
+              </Form.Group>
+            </Col>
 
-          <Form.Group>
-            <Form.Label style={{ color: "black" }}>Danh mục</Form.Label >
-            <Form.Select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              disabled={loading}
-            >
-              <option value="">-- Chọn danh mục --</option>
-              {loading && <option>Đang tải...</option>}
-              {categoriesList &&
-                categoriesList.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </option>
-                ))}
-            </Form.Select>
-          </Form.Group>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ color: "black" }}>Trạng thái</Form.Label >
+                <Form.Select
+                  value={status ? "Đang bán" : "Ngừng bán"}
+                  onChange={(e) => setStatus(e.target.value === "Đang bán")}
+                >
+                  <option value="Đang bán">Đang bán</option>
+                  <option value="Ngừng bán">Ngừng bán</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
 
-          <Form.Group>
-            <Form.Label style={{ color: "black" }}>Số lượng</Form.Label >
-            <Form.Control
-              type="number"
-              placeholder="Nhập số lượng"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            />
-          </Form.Group>
 
-          <Form.Group>
-            <Form.Label style={{ color: "black" }}>Hương vị</Form.Label >
-            <Form.Control
-              type="text"
-              placeholder="Nhập hương vị và nhấn Enter"
-              onKeyDown={(e) => {
-                const value = (e.target as HTMLInputElement).value.trim();
-                if (e.key === "Enter" && value) {
-                  e.preventDefault();
-                  if (!taste.includes(value)) {
-                    setTaste([...taste, value]);
-                  }
-                  (e.target as HTMLInputElement).value = "";
-                }
-              }}
-            />
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: 8 }}>
-              {taste.map((t, i) => (
-                <span key={i} style={{ background: "#007bff", color: "white", padding: "5px 10px", borderRadius: 20 }}>
-                  {t}
-                  <button
-                    onClick={() => setTaste(taste.filter((_, idx) => idx !== i))}
-                    style={{ marginLeft: 8, color: "red", background: "none", border: "none" }}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </Form.Group>
-
-          <Form.Group>
-            <Form.Label style={{ color: "black" }}>URL hình ảnh</Form.Label >
-            <Form.Control
-              type="text"
-              placeholder="Nhập URL hình ảnh"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-            />
-          </Form.Group>
-
-          <Form.Group>
-            <Form.Label style={{ color: "black" }}>Trạng thái</Form.Label >
-            <Form.Select
-              value={status ? "Đang bán" : "Ngừng bán"}
-              onChange={(e) => setStatus(e.target.value === "Đang bán")}
-            >
-              <option value="Đang bán">Đang bán</option>
-              <option value="Ngừng bán">Ngừng bán</option>
-            </Form.Select>
-          </Form.Group>
         </Form>
       </Modal.Body>
       <Modal.Footer>

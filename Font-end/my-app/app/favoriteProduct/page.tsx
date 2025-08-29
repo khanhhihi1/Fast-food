@@ -139,7 +139,7 @@ const FavoriteProduct = () => {
                                     <Card className={styles.productCard}>
                                         <div className={styles.cardImageContainer}>
                                             <Link href={`/productList/${product._id}`}>
-                                                <Card.Img variant="top" src={product.image} className={styles.productImage} /></Link>
+                                                <Card.Img variant="top" src={`${API_URL}/${product.image}`} className={styles.productImage} /></Link>
                                         </div>
                                         <Card.Body>
                                             <Card.Title className={styles.productTitle}>{product.name}</Card.Title>

@@ -138,7 +138,7 @@ const HotProduct = () => {
                   <div className={styles.imageContainer}>
                     <Card.Img
                       variant="top"
-                      src={product.image}
+                      src={`${API_URL}/${product.image}`}
                       alt={product.name}
                       className={styles.productImage}
                     />

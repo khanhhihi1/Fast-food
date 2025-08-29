@@ -115,10 +115,10 @@ export default function VoucherPages() {
     return (
         <div className="d-flex dark-mode">
             <AdminSideBar />
-            <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
+            <Container fluid className={` ${styles.content} content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
                 <AdminNavbar />
                 <div className={styles["admin-product-container"]}>
-                    <h2>🎫 Quản lý Voucher</h2>
+                    <h2 className="text-center">🎫 Quản lý Voucher</h2>
                     <div className={styles.statsGrid}>
                         <div className={styles.statCard}>
                             <span className={styles.statLabel}>Tổng số voucher</span>
@@ -154,7 +154,7 @@ export default function VoucherPages() {
                                 >
                                     Ngưng hoạt động
                                 </button>
-                                <Button style={{ fontWeight: "600" }} onClick={() => setShowAddModal(true)}>
+                                <Button style={{ fontWeight: "600" }} onClick={() => setShowAddModal(true)}className={styles.addProductBtn}>
                                     <FontAwesomeIcon icon={faPlus} /> Thêm Voucher
                                 </Button>
                             </div>
@@ -162,13 +162,13 @@ export default function VoucherPages() {
                             <Form className={styles.fromInput} onSubmit={(e) => e.preventDefault()}>
                                 <div className="input-group">
                                     <input
-                                        className="form-control search-input"
+                                        className={`form-control ${styles["search-input"]}`}
                                         type="search"
                                         placeholder="Tìm kiếm theo mã..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
-                                    <button className="btn search-button" type="submit">
+                                    <button className={styles["search-button"]} type="submit">
                                         <FontAwesomeIcon icon={faSearch} />
                                     </button>
                                 </div>

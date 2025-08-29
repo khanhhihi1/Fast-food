@@ -1,0 +1,114 @@
+/* Thanh navbar chính */
+.navbar {
+    position: fixed;              /* Giữ navbar cố định trên cùng */
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;                 /* Chiều cao navbar */
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.navLink.active,
+.subLink.active {
+  color: rgb(203, 39, 39);
+}
+/* Container fluid */
+.containerFluid {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Nút toggle sidebar */
+.toggleBtn {
+    border: none;
+    color: #444;
+    background: transparent;
+    font-size: 20px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.toggleBtn:hover {
+    color: brown;
+    background-color: #ffffff;
+    border-radius: 8px;
+}
+
+.rightSection {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.bellIcon {
+    font-size: 22px;
+    color: #444;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.bellIcon:hover {
+    color: brown;
+}
+
+/* Avatar */
+.avatarToggle img {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #eaeaea;
+    transition: transform 0.2s ease;
+}
+
+.avatarToggle img:hover {
+    transform: scale(1.05);
+}
+
+/* Nút setting */
+.btnSetting {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 6px;
+    transition: transform 0.2s ease;
+}
+
+.btnSetting:hover {
+    transform: rotate(90deg);
+}
+
+/* Icon setting */
+.settingIcon {
+    font-size: 22px;
+    color: #444;
+}
+
+/* ===== FIX OVERLAP ===== */
+/* Sidebar nằm dưới navbar */
+.sidebar {
+    position: fixed;
+    top: 60px;          /* Đẩy xuống dưới navbar */
+    left: 0;
+    width: 300px;
+    height: calc(100vh - 60px);  /* Chiều cao còn lại trừ navbar */
+    background: #fff;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+    transition: all 0.3s ease;
+    z-index: 900;       /* Thấp hơn navbar */
+}
+
+/* Nội dung chính */
+.mainContent {
+    margin-top: 60px;   /* Đẩy nội dung xuống dưới navbar */
+    margin-left: 300px; /* Chừa chỗ cho sidebar */
+    padding: 20px;
+}

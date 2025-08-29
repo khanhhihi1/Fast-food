@@ -1,25 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Table,
-} from "react-bootstrap";
+import { Container, Row, Col, Table } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCartShopping,
-  faComments,
-  faDollar,
-} from "@fortawesome/free-solid-svg-icons";
+import { faCartShopping, faComments, faDollar } from "@fortawesome/free-solid-svg-icons";
 import { FaUsers } from "react-icons/fa";
-import "./admin.css";
 import AdminSideBar from "../component/adminSideBar";
 import AdminNavbar from "../component/adminNavbar";
 import ProtectedRoute from "../component/ProtectedRoute";
 import Image from "react-bootstrap/Image";
 import { Order } from "../type/oder";
 import { toast } from "react-toastify";
+import styles from "./styles/adminPage.module.css";
 
 // ========== Dark mode hook ==========
 const useDarkMode = () => {
@@ -53,19 +44,10 @@ const useDarkMode = () => {
 // ========== Types ==========
 interface Product {
   _id: string;
-  id?: string;
   category: string;
   name: string;
   image: string;
   quantity: number;
-  taste?: string[];
-  sizes?: {
-    name: string;
-    price: {
-      original: number;
-      discount?: number;
-    };
-  }[];
   description: string;
   view: number;
 }
@@ -92,48 +74,32 @@ interface Comment {
 
 // ========== Main Component ==========
 export default function ShowAdmin() {
-  const [openProductMenu, setOpenProductMenu] = useState(false);
-  const [show, setShow] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [collapsed, setCollapsed] = useState(false);
-  const [loading, setLoading] = useState<boolean>(false);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserType[]>([]);
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
 
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-  const toggleSidebar = () => setCollapsed(!collapsed);
-
   // Fetch Comments
   const fetchComments = async () => {
     try {
-      setLoading(true);
       const res = await fetch(`${API_URL}/comment/all`);
       const data = await res.json();
       if (data.status) {
         setComments(data.result);
-      } else {
-        setError(data.message || "Lỗi khi tải bình luận");
       }
     } catch {
-      setError("Lỗi kết nối đến máy chủ");
-    } finally {
-      setLoading(false);
+      toast.error("Lỗi khi tải bình luận");
     }
   };
 
   // Fetch Users
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${API_URL}/users`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_URL}/users`, { credentials: "include" });
       const data = await res.json();
       if (data?.result) {
         setUsers(data.result);
@@ -148,33 +114,27 @@ export default function ShowAdmin() {
   // Fetch Orders
   const fetchOrders = async () => {
     try {
-      setIsLoading(true);
       const res = await fetch(`${API_URL}/orders/admin/all`, {
         method: "GET",
         credentials: "include",
       });
-
       const data = await res.json();
-      if (!data.status) {
-        throw new Error(data.message || "Không thể tải danh sách đơn hàng");
+      if (data.status) {
+        setOrders(data.result || []);
       }
-
-      setOrders(data.result || []);
-    } catch (error: any) {
-      setError(error.message || "Có lỗi khi tải danh sách đơn hàng");
-      toast.error(error.message || "Có lỗi khi tải danh sách đơn hàng");
-    } finally {
-      setIsLoading(false);
+    } catch {
+      toast.error("Có lỗi khi tải danh sách đơn hàng");
     }
   };
 
   // Fetch Hot Products
   useEffect(() => {
     const controller = new AbortController();
-    const signal = controller.signal;
     async function fetchProducts() {
       try {
-        const res = await fetch(`${API_URL}/products/hot`, { signal });
+        const res = await fetch(`${API_URL}/products/hot`, {
+          signal: controller.signal,
+        });
         const data = await res.json();
 
         const productList = Array.isArray(data)
@@ -221,84 +181,71 @@ export default function ShowAdmin() {
         {/* Main Content */}
         <Container
           fluid
-          className={`content w-100 container-content ${
-            collapsed ? "collapsed-content" : ""
+          className={`${styles.content} w-100 ${styles.containerContent} ${
+            collapsed ? styles.collapsedContent : ""
           }`}
-          style={{ minHeight: "100vh" }}
         >
           <AdminNavbar />
 
           {/* Dashboard Cards */}
-          <div className="dashboard-container">
+          <div className={styles.dashboardContainer}>
             <Row>
               <Col md={3}>
-                <div className="dashboard-card">
-                  <div className="card-header">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <span>Tổng doanh thu</span>
                   </div>
-                  <p className="card-subtext">Tổng quan tháng này</p>
-                  <div className="card-content">
+                  <p className={styles.cardSubtext}>Tổng quan tháng này</p>
+                  <div className={styles.cardContent}>
                     <h3>{totalRevenue.toLocaleString("vi-VN")} VNĐ</h3>
                     <FontAwesomeIcon
                       icon={faDollar}
-                      style={{
-                        color: "rgb(175, 175, 38)",
-                        fontSize: "23px",
-                        marginBottom: "0.5rem",
-                      }}
+                      style={{ color: "rgb(175, 175, 38)", fontSize: 23 }}
                     />
                   </div>
                 </div>
               </Col>
 
               <Col md={3}>
-                <div className="dashboard-card">
-                  <div className="card-header">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <span>Tổng đơn hàng</span>
                   </div>
-                  <p className="card-subtext">Tổng quan tháng này</p>
-                  <div className="card-content">
+                  <p className={styles.cardSubtext}>Tổng quan tháng này</p>
+                  <div className={styles.cardContent}>
                     <h3>{orders.length}</h3>
                     <FontAwesomeIcon
                       icon={faCartShopping}
-                      style={{
-                        color: "rgb(25, 154, 193)",
-                        fontSize: "23px",
-                        marginBottom: "0.5rem",
-                      }}
+                      style={{ color: "rgb(25, 154, 193)", fontSize: 23 }}
                     />
                   </div>
                 </div>
               </Col>
 
               <Col md={3}>
-                <div className="dashboard-card">
-                  <div className="card-header">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <span>Người dùng mới</span>
                   </div>
-                  <p className="card-subtext">Tổng quan tháng này</p>
-                  <div className="card-content">
+                  <p className={styles.cardSubtext}>Tổng quan tháng này</p>
+                  <div className={styles.cardContent}>
                     <h3>{users.length}</h3>
-                    <FaUsers className="card-icon green-icon" />
+                    <FaUsers style={{ color: "#2ecc71", fontSize: 23 }} />
                   </div>
                 </div>
               </Col>
 
               <Col md={3}>
-                <div className="dashboard-card">
-                  <div className="card-header">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <span>Tổng đánh giá</span>
                   </div>
-                  <p className="card-subtext">Tổng quan tháng này</p>
-                  <div className="card-content">
+                  <p className={styles.cardSubtext}>Tổng quan tháng này</p>
+                  <div className={styles.cardContent}>
                     <h3>{comments.length}</h3>
                     <FontAwesomeIcon
                       icon={faComments}
-                      style={{
-                        color: "rgb(193, 25, 168)",
-                        fontSize: "23px",
-                        marginBottom: "0.5rem",
-                      }}
+                      style={{ color: "rgb(193, 25, 168)", fontSize: 23 }}
                     />
                   </div>
                 </div>
@@ -307,49 +254,49 @@ export default function ShowAdmin() {
           </div>
 
           {/* Dashboard Sections */}
-          <div className="dashboard-product">
+          <div className={styles.dashboardProduct}>
             <Row>
               <Col md={7}>
-                <div className="dashboard-card">
+                <div className={styles.dashboardCard}>
                   <h5>Sản phẩm phổ biến</h5>
-                  <div className="table">
-                    <Table className="table">
-                      <thead>
-                        <tr className="text-center">
-                          <th style={{ color: "white" }}>Hình ảnh</th>
-                          <th style={{ color: "white" }}>Tên sản phẩm</th>
-                          <th style={{ color: "white" }}>Lượt view</th>
+                  <Table className={styles.table}>
+                    <thead>
+                      <tr className="text-center">
+                        <th>Hình ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Lượt view</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {hotProducts.map((product) => (
+                        <tr key={product._id} className="text-center">
+                          <td className={styles.imageCell}>
+                            <Image
+                              style={{ width: "100px", height: "100px" }}
+                              src={`${API_URL}/${product.image}`}
+                              alt={product.name}
+                              fluid
+                            />
+                          </td>
+                          <td>{product.name}</td>
+                          <td>{product.view}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {hotProducts.map((product) => (
-                          <tr key={product._id} className="text-center">
-                            <td className="image-cell">
-                              <Image
-                                style={{ width: "100px", height: "100px" }}
-                                src={product.image}
-                                alt={product.name}
-                                fluid
-                              />
-                            </td>
-                            <td>{product.name}</td>
-                            <td>{product.view}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </Table>
                 </div>
               </Col>
 
               <Col md={5}>
-                <div className="dashboard-card">
+                <div className={styles.dashboardCard}>
                   <h5>Hoạt động gần đây</h5>
-                  <ul className="activity-list">
+                  <ul className={styles.activityList}>
                     {activities.map((activity, index) => (
-                      <li key={index} className="activity-item">
-                        <div className={`activity-icon ${activity.icon}`}></div>
-                        <div className="activity-content">
+                      <li key={index} className={styles.activityItem}>
+                        <div
+                          className={`${styles.activityIcon} ${styles[activity.icon]}`}
+                        ></div>
+                        <div className={styles.activityContent}>
                           <p>{activity.text}</p>
                           <span>{activity.time}</span>
                         </div>
