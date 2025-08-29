@@ -20,7 +20,8 @@ const tempOrderRoutes = require("./routes/tempOrder");
 const paymentRouter = require("./routes/payment");
 const favoriteProductRoutes = require("./routes/favoriteProduct");
 const notificationRoutes = require("./routes/notification");
-
+const session = require('express-session');
+const passport = require('./config/passport.js'); 
 const app = express();
 
 // Kết nối MongoDB
@@ -38,7 +39,10 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "hbs");
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
 // app.use(express.json());
 // Áp dụng express.json() cho các tuyến đường cụ thể, trừ webhook
 app.use((req, res, next) => {
@@ -48,6 +52,11 @@ app.use((req, res, next) => {
     express.json()(req, res, next); // Áp dụng express.json() cho các tuyến đường khác
   }
 });
+//google
+app.use(session({ secret: process.env.JWT_SECRET, resave: false, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(logger("dev"));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -83,4 +92,5 @@ app.use((err, req, res, next) => {
 app.use((req, res, next) => {
   res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });
 });
+
 module.exports = app;

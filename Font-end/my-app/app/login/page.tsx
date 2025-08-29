@@ -222,6 +222,7 @@ export default function SignInPage() {
               <Button
                 variant="outline-secondary"
                 className="flex-1 justify-center"
+                onClick={() => window.location.href = `${API_URL}/users/auth/google`} // Redirect đến backend
               >
                 <span className="mr-2">🌐</span> Đăng nhập với Google
               </Button>

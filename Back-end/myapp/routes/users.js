@@ -3,19 +3,56 @@ const router = express.Router();
 const userController = require("../controller/userController.js");
 const authMiddleware = require("../middleware/authMiddleware");
 const isAdminMiddleware = require("../middleware/isAdminMiddleware");
+const jwt = require("jsonwebtoken");
+
+const passport = require('passport'); // 👈 thêm dòng này
 
 // Đăng ký người dùng
-router.post("/register", async (req, res) => {
+router.post("/register/send-otp", async (req, res) => {
   try {
-    const result = await userController.registerUser(req.body);
-    res
-      .status(201)
-      .json({ status: true, result, message: "Đăng ký thành công" });
+    const result = await userController.sendOTPForRegister(req.body);
+    res.status(200).json({ status: true, ...result });
   } catch (error) {
     res.status(400).json({ status: false, message: error.message });
   }
 });
 
+router.post("/register/verify-otp", async (req, res) => {
+  const { email, otp, tempData } = req.body;
+  try {
+    const result = await userController.verifyOTPAndRegister(email, otp, tempData);
+    res.status(201).json({ status: true, result, message: "Đăng ký thành công" });
+  } catch (error) {
+    res.status(400).json({ status: false, message: error.message });
+  }
+});
+//google
+router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/users/login' }), // Sửa failureRedirect nếu cần
+  async (req, res) => {
+    try {
+      console.log('Callback success, req.user:', req.user);
+      // req.user là user từ Passport
+      const  token  = jwt.sign({ id: req.user._id, role: req.user.role }, process.env.JWT_SECRET || "secret_key", { expiresIn: "1d" });
+      // Set cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: false, // true cho production
+        sameSite: "lax",
+        path: "/",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+      // Redirect dựa trên role
+      const redirectUrl = req.user.role === "admin" ? "/admin" : "/";
+      res.redirect(`http://localhost:3000${redirectUrl}`);
+    } catch (error) {
+      console.error('Callback error:', error); // 👈 Thêm log
+      res.redirect('/users/login?error=auth_failed');
+    }
+  }
+);
 // Đăng nhập
 router.post("/login", async (req, res) => {
   try {
@@ -42,7 +79,7 @@ router.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: false,
-    sameSite: "lax",
+    sameSite: "none",
     path: "/",
   });
   res.status(200).json({ status: true, message: "Đăng xuất thành công" });

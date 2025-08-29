@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { Button, Form } from "react-bootstrap";
+import { Button, Form, Modal } from "react-bootstrap";
 import { toast } from "react-toastify";
 
 interface FormData {
@@ -24,6 +24,9 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
   });
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [otp, setOTP] = useState("");
+  const [tempData, setTempData] = useState<any>(null);
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -144,7 +147,6 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Kiểm tra validation
     if (!validateForm()) {
       return;
     }
@@ -158,44 +160,46 @@ export default function SignUpPage() {
     };
 
     try {
-      const response = await fetch(`${API_URL}/users/register`, {
+      const response = await fetch(`${API_URL}/users/register/send-otp`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submitData),
       });
 
-      const contentType = response.headers.get("content-type");
+      const data = await response.json();
 
-      let data: any;
-      if (contentType?.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        console.error("Không phải JSON:", text);
-        toast.error("Phản hồi từ server không hợp lệ!", {
-          toastId: "server-error",
-        });
+      if (!data.status) {
+        toast.error(data.message || "Gửi OTP thất bại!");
         return;
       }
 
-      if (!response.ok || !data.status) {
-        toast.error(data.message || "Đăng ký thất bại!", {
-          toastId: "register-failed",
-        });
-        return;
-      }
-
-      toast.success("🎉 Đăng ký thành công! Chuyển về trang đăng nhập!", {
-        toastId: "register-success",
+      setTempData(data.tempData); // Lưu tempData
+      setShowOTPModal(true); // Hiển thị modal OTP
+      toast.success("Đã gửi OTP đến email của bạn!");
+    } catch (error: any) {
+      toast.error(error.message || "Đã có lỗi xảy ra!");
+    }
+  };
+  const handleVerifyOTP = async () => {
+    try {
+      const response = await fetch(`${API_URL}/users/register/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, otp, tempData }),
       });
+
+      const data = await response.json();
+
+      if (!data.status) {
+        toast.error(data.message || "Xác thực OTP thất bại!");
+        return;
+      }
+
+      setShowOTPModal(false);
+      toast.success("🎉 Đăng ký thành công! Chuyển về trang đăng nhập!");
       router.push("/login");
     } catch (error: any) {
-      console.error("Lỗi đăng ký:", error);
-      toast.error(error.message || "Đã có lỗi xảy ra!", {
-        toastId: "register-error",
-      });
+      toast.error(error.message || "Đã có lỗi xảy ra!");
     }
   };
 
@@ -317,6 +321,30 @@ export default function SignUpPage() {
               </Link>
             </div>
           </Form>
+          <Modal show={showOTPModal} onHide={() => setShowOTPModal(false)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Xác thực OTP</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form.Group controlId="formOTP">
+                <Form.Label>Nhập mã OTP từ email</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Nhập OTP"
+                  value={otp}
+                  onChange={(e) => setOTP(e.target.value)}
+                />
+              </Form.Group>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowOTPModal(false)}>
+                Đóng
+              </Button>
+              <Button variant="primary" onClick={handleVerifyOTP}>
+                Xác thực
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </div>
       </div>
     </div>
