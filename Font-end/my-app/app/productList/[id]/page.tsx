@@ -14,7 +14,11 @@ import Counter from "@/app/count/count";
 import "./productList.css";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart, faHeartBroken, faStar } from "@fortawesome/free-solid-svg-icons";
+import {
+  faHeart,
+  faHeartBroken,
+  faStar,
+} from "@fortawesome/free-solid-svg-icons";
 import styles from "../../styles/HotProduct.module.css";
 import Link from "next/link";
 
@@ -96,7 +100,8 @@ const ProductDetail = () => {
     if (!res.ok) {
       const text = await res.text();
       throw new Error(
-        `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
+        `Lỗi ${res.status}: ${
+          text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
         }`
       );
     }
@@ -131,7 +136,8 @@ const ProductDetail = () => {
       if (!res.ok) {
         const text = await res.text();
         throw new Error(
-          `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
+          `Lỗi ${res.status}: ${
+            text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
           }`
         );
       }
@@ -296,13 +302,18 @@ const ProductDetail = () => {
   if (commentError) return <p>Lỗi khi tải bình luận: {commentError.message}</p>;
   if (!product || !product._id) return <p>Không tìm thấy sản phẩm</p>;
 
-  const filteredRelatedProducts = allProducts?.filter(
-    (p) => {
+  const filteredRelatedProducts =
+    allProducts?.filter((p) => {
       const pCatId = getProductCategoryId(p);
       const cat = categories?.find((c) => c._id === pCatId);
-      return pCatId === categoryId && p._id !== product._id && cat && !cat.isHidden && p.status !== false;
-    }
-  ) || [];
+      return (
+        pCatId === categoryId &&
+        p._id !== product._id &&
+        cat &&
+        !cat.isHidden &&
+        p.status !== false
+      );
+    }) || [];
 
   return (
     <>
@@ -326,8 +337,16 @@ const ProductDetail = () => {
 
         <Container fluid className={styles.productDetail}>
           <Row>
-            <Col xs={6} className="d-flex justify-content-center" style={{ height: "440px" }}>
-              <Image src={product.image} fluid className={styles.productImageS} />
+            <Col
+              xs={6}
+              className="d-flex justify-content-center"
+              style={{ height: "440px" }}
+            >
+              <Image
+                src={product.image}
+                fluid
+                className={styles.productImageS}
+              />
             </Col>
             <Col xs={6}>
               <div className={styles.productInfo}>
@@ -343,10 +362,11 @@ const ProductDetail = () => {
                           type="radio"
                           key={index}
                           id={`size-${index}`}
-                          label={`${size.name} (${size.price.discount
-                            ? size.price.discount.toLocaleString()
-                            : size.price.original.toLocaleString()
-                            }đ)`}
+                          label={`${size.name} (${
+                            size.price.discount
+                              ? size.price.discount.toLocaleString()
+                              : size.price.original.toLocaleString()
+                          }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}
@@ -386,7 +406,9 @@ const ProductDetail = () => {
                   )}
                 </Form>
 
-                <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
+                <p className="m-0" style={{ color: "orange" }}>
+                  Combo bao gồm:
+                </p>
                 <ul className={styles.productDesc}>
                   <li>{product.description || "Không có mô tả"}</li>
                 </ul>
@@ -406,7 +428,10 @@ const ProductDetail = () => {
               <h3>Bình luận về sản phẩm</h3>
               {(comments ?? []).length > 0 ? (
                 (comments ?? []).map((comment) => (
-                  <Card key={comment._id} className={styles.commentCard + " mb-3"}>
+                  <Card
+                    key={comment._id}
+                    className={styles.commentCard + " mb-3"}
+                  >
                     <Card.Body>
                       <div className="d-flex justify-content-between">
                         <div>
@@ -414,8 +439,12 @@ const ProductDetail = () => {
                           <div>{renderStars(comment.rating)}</div>
                         </div>
                         <small>
-                          {new Date(comment.createdAt).toLocaleDateString("vi-VN")}{" "}
-                          {new Date(comment.createdAt).toLocaleTimeString("vi-VN")}
+                          {new Date(comment.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )}{" "}
+                          {new Date(comment.createdAt).toLocaleTimeString(
+                            "vi-VN"
+                          )}
                         </small>
                       </div>
                       <p>{comment.comment}</p>
@@ -428,7 +457,6 @@ const ProductDetail = () => {
             </Col>
           </Row>
         </Container>
-
       </Container>
 
       <Container className="py-5">
@@ -439,10 +467,14 @@ const ProductDetail = () => {
         </h2>
 
         {relatedLoading && <p>Đang tải sản phẩm liên quan...</p>}
-        {relatedError && <p>Lỗi tải sản phẩm liên quan: {relatedError.message}</p>}
-        {!relatedLoading && !relatedError && filteredRelatedProducts.length === 0 && (
-          <p>Không có sản phẩm liên quan.</p>
+        {relatedError && (
+          <p>Lỗi tải sản phẩm liên quan: {relatedError.message}</p>
         )}
+        {!relatedLoading &&
+          !relatedError &&
+          filteredRelatedProducts.length === 0 && (
+            <p>Không có sản phẩm liên quan.</p>
+          )}
 
         <Row>
           {filteredRelatedProducts.map((product) => {
@@ -489,7 +521,9 @@ const ProductDetail = () => {
                           cursor: "pointer",
                         }}
                         onClick={() => toggleFavorite(product._id)}
-                        title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                        title={
+                          isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"
+                        }
                       />
                     </div>
                   </Card.Body>
