@@ -1,30 +1,151 @@
 "use client";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { Button } from "react-bootstrap";
-import Form from "react-bootstrap/Form";
+import { Button, Form } from "react-bootstrap";
+import { toast } from "react-toastify";
+
+interface FormData {
+  fullName: string;
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 export default function SignUpPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [formData, setFormData] = useState<FormData>({
     fullName: "",
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+  const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+  // Hàm xử lý thay đổi input
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Hàm xác thực input
+  const validateForm = (): boolean => {
+    const { fullName, username, email, password, confirmPassword } = formData;
+
+    // Kiểm tra fullName
+    if (!fullName.trim()) {
+      toast.error("Họ và tên không được để trống!", {
+        toastId: "fullName-empty",
+      });
+      return false;
+    }
+    if (!/^[\p{L}\s]+$/u.test(fullName)) {
+      toast.error("Họ và tên chỉ được chứa chữ cái và khoảng trắng!", {
+        toastId: "fullName-format",
+      });
+      return false;
+    }
+
+    // Kiểm tra username
+    if (!username.trim()) {
+      toast.error("Tên đăng nhập không được để trống!", {
+        toastId: "username-empty",
+      });
+      return false;
+    }
+    if (username.length < 6) {
+      toast.error("Tên đăng nhập phải có ít nhất 6 ký tự!", {
+        toastId: "username-length",
+      });
+      return false;
+    }
+    if (/\s/.test(username)) {
+      toast.error("Tên đăng nhập không được chứa khoảng trắng!", {
+        toastId: "username-space",
+      });
+      return false;
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(username)) {
+      toast.error("Tên đăng nhập không được chứa ký tự có dấu!", {
+        toastId: "username-format",
+      });
+      return false;
+    }
+
+    // Kiểm tra email
+    if (!email.trim()) {
+      toast.error("Email không được để trống!", { toastId: "email-empty" });
+      return false;
+    }
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      toast.error(
+        "Email phải có định dạng hợp lệ và không chứa ký tự có dấu (ví dụ: user@example.com)!",
+        {
+          toastId: "email-format",
+        }
+      );
+      return false;
+    }
+
+    // Kiểm tra password
+    if (!password.trim()) {
+      toast.error("Mật khẩu không được để trống!", {
+        toastId: "password-empty",
+      });
+      return false;
+    }
+    if (password.length < 6) {
+      toast.error("Mật khẩu phải có ít nhất 6 ký tự!", {
+        toastId: "password-length",
+      });
+      return false;
+    }
+    if (/\s/.test(password)) {
+      toast.error("Mật khẩu không được chứa khoảng trắng!", {
+        toastId: "password-space",
+      });
+      return false;
+    }
+    if (!/^[a-zA-Z0-9!@#$%^&*()_+-=]+$/.test(password)) {
+      toast.error("Mật khẩu không được chứa ký tự có dấu!", {
+        toastId: "password-format",
+      });
+      return false;
+    }
+
+    // Kiểm tra confirmPassword
+    if (!confirmPassword.trim()) {
+      toast.error("Xác nhận mật khẩu không được để trống!", {
+        toastId: "confirmPassword-empty",
+      });
+      return false;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Mật khẩu và xác nhận mật khẩu không khớp!", {
+        toastId: "confirmPassword-match",
+      });
+      return false;
+    }
+    if (!/^[a-zA-Z0-9!@#$%^&*()_+-=]+$/.test(confirmPassword)) {
+      toast.error("Xác nhận mật khẩu không được chứa ký tự có dấu!", {
+        toastId: "confirmPassword-format",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // Hàm xử lý đăng ký
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Mật khẩu và xác nhận mật khẩu không khớp!");
+    // Kiểm tra validation
+    if (!validateForm()) {
       return;
     }
 
@@ -53,20 +174,28 @@ export default function SignUpPage() {
       } else {
         const text = await response.text();
         console.error("Không phải JSON:", text);
-        throw new Error("Phản hồi không hợp lệ");
-      }
-
-      if (!response.ok) {
-        alert(data.message || "Đăng ký thất bại!");
+        toast.error("Phản hồi từ server không hợp lệ!", {
+          toastId: "server-error",
+        });
         return;
       }
 
-      alert("🎉 Đăng ký thành công! Chuyển về trang đăng nhập!");
-      // Optionally redirect to login
-      window.location.href = "/login";
+      if (!response.ok || !data.status) {
+        toast.error(data.message || "Đăng ký thất bại!", {
+          toastId: "register-failed",
+        });
+        return;
+      }
+
+      toast.success("🎉 Đăng ký thành công! Chuyển về trang đăng nhập!", {
+        toastId: "register-success",
+      });
+      router.push("/login");
     } catch (error: any) {
       console.error("Lỗi đăng ký:", error);
-      alert(error.message || "Đã có lỗi xảy ra!");
+      toast.error(error.message || "Đã có lỗi xảy ra!", {
+        toastId: "register-error",
+      });
     }
   };
 
@@ -113,7 +242,6 @@ export default function SignUpPage() {
                 placeholder="Nhập họ và tên"
                 value={formData.fullName}
                 onChange={handleChange}
-                required
               />
             </Form.Group>
 
@@ -125,19 +253,17 @@ export default function SignUpPage() {
                 placeholder="Nhập tên đăng nhập"
                 value={formData.username}
                 onChange={handleChange}
-                required
               />
             </Form.Group>
 
             <Form.Group controlId="formEmail">
               <Form.Label>Email</Form.Label>
               <Form.Control
-                type="email"
+                type="text"
                 name="email"
                 placeholder="Nhập email"
                 value={formData.email}
                 onChange={handleChange}
-                required
               />
             </Form.Group>
 
@@ -150,7 +276,6 @@ export default function SignUpPage() {
                   placeholder="Nhập mật khẩu"
                   value={formData.password}
                   onChange={handleChange}
-                  required
                 />
                 <button
                   type="button"
@@ -174,7 +299,6 @@ export default function SignUpPage() {
                 placeholder="Xác nhận lại mật khẩu"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                required
               />
             </Form.Group>
 

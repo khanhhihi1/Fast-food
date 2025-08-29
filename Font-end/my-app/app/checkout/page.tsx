@@ -130,9 +130,12 @@ export default function Checkout() {
 
   // Áp dụng voucher
   const applyVoucher = async (voucherParam?: Voucher) => {
-    const voucher = voucherParam || vouchers.find((v) => v.code === selectedCode);
+    const voucher =
+      voucherParam || vouchers.find((v) => v.code === selectedCode);
     if (!voucher) {
-      toast.warning("Vui lòng chọn voucher hợp lệ", { toastId: "voucher-warning" });
+      toast.warning("Vui lòng chọn voucher hợp lệ", {
+        toastId: "voucher-warning",
+      });
       return;
     }
 
@@ -180,7 +183,6 @@ export default function Checkout() {
     }
   };
 
-
   // Hủy voucher
   const handleCancelVoucher = async () => {
     setAppliedVoucher(null);
@@ -208,19 +210,15 @@ export default function Checkout() {
     }
   };
 
-
   // Cập nhật phương thức thanh toán
   const updatePaymentMethod = async () => {
     try {
-      const res = await fetch(
-        `${API_URL}/temp-order/update-payment`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ paymentMethod }),
-        }
-      );
+      const res = await fetch(`${API_URL}/temp-order/update-payment`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ paymentMethod }),
+      });
       if (!res.ok) {
         throw new Error("Không thể cập nhật phương thức thanh toán");
       }
@@ -266,7 +264,7 @@ export default function Checkout() {
         return;
       }
 
-      // Nếu COD → xử lý như cũ
+      // Xử lý COD
       if (paymentMethod === "cod") {
         await fetch(`${API_URL}/cart/clear`, {
           method: "DELETE",
@@ -292,7 +290,7 @@ export default function Checkout() {
         router.push("/cart");
       }
 
-      // Nếu MoMo → redirect sang trang thanh toán MoMo
+      // Xử lý MoMo
       if (paymentMethod === "momo") {
         const momoRes = await fetch(`${API_URL}/payment/momo`, {
           method: "POST",
@@ -316,6 +314,25 @@ export default function Checkout() {
           window.location.href = momoData.payUrl;
         } else {
           toast.error("Không thể tạo thanh toán MoMo");
+        }
+      }
+
+      // Xử lý Stripe
+      if (paymentMethod === "stripe") {
+        const stripeRes = await fetch(`${API_URL}/payment/stripe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ orderId: createdOrder._id }),
+        });
+
+        const stripeData = await stripeRes.json();
+        console.log("Stripe response:", stripeData);
+
+        if (stripeData.status && stripeData.checkoutUrl) {
+          window.location.href = stripeData.checkoutUrl;
+        } else {
+          toast.error("Không thể tạo thanh toán Stripe");
         }
       }
     } catch (error) {
@@ -486,6 +503,14 @@ export default function Checkout() {
                 name="paymentMethod"
                 value="vnpay"
                 checked={paymentMethod === "vnpay"}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              <Form.Check
+                type="radio"
+                label="Stripe (Thẻ tín dụng/ghi nợ)"
+                name="paymentMethod"
+                value="stripe"
+                checked={paymentMethod === "stripe"}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               />
 
