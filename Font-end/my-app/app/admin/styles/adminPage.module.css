@@ -1,0 +1,136 @@
+.content {
+  padding: 20px;
+  background: #f5f6f7;
+  min-height: 100vh;
+  transition: all 0.3s ease;
+}
+
+.containerContent {
+  flex: 1;
+  transition: margin-left 0.3s ease;
+}
+
+.collapsedContent {
+  margin-left: 80px; 
+}
+.dashboardContainer {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.dashboardCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboardCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.cardSubtext {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 12px;
+}
+
+.cardContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardContent h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* ========== Product Table ========== */
+.dashboardProduct {
+  margin-bottom: 30px;
+}
+
+.table {
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+
+
+.table th {
+  color: rgb(39, 36, 36) !important;
+  text-align: center;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.imageCell img {
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* ========== Activity List ========== */
+.activityList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.activityIcon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.activityIcon.blue {
+  background-color: #3498db;
+}
+
+.activityIcon.green {
+  background-color: #2ecc71;
+}
+
+.activityIcon.pink {
+  background-color: #e91e63;
+}
+
+.activityContent p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.activityContent span {
+  font-size: 12px;
+  color: #777;
+}
+.content {
+  margin-left: 250px;
+  margin-top: 60px;  /* tránh bị navbar đè */
+  transition: margin-left 0.3s ease;
+}
+
+.collapsedContent {
+  margin-left: 80px;
+  margin-top: 60px;
+}

@@ -4,7 +4,7 @@
 }
 
 .modal-header {
-    background: #2f363a;
+    background: #e4e8eb;
     color: white;
     border-radius: 12px 12px 0 0;
 }
@@ -61,4 +61,28 @@
 .form-label {
     font-weight: bold;
     color: #2c3e50;
+}
+/* Áp dụng cho tất cả input/select/textarea trong modal */
+.modal-body .form-control,
+.modal-body .form-select {
+  height: 48px;              /* chiều cao đồng nhất */
+  border-radius: 8px;        /* bo góc mềm mại */
+  border: 1px solid #ccc;
+  font-size: 15px;
+  padding: 10px 14px;
+  transition: all 0.3s ease;
+}
+
+/* Hiệu ứng khi focus */
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+  border-color: #3498db;
+  box-shadow: 0px 0px 6px rgba(52, 152, 219, 0.5);
+}
+
+/* Label đồng bộ style */
+.modal-body .form-label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #2c3e50;
 }

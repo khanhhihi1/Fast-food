@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const categoriesModel = require("../model/categoriesModel");
-const productsModel = require("../model/productModel");
+const categoriesModel = require("../model/categoriesModel.js");
+const productsModel = require("../model/productModel.js");
 const notificationController = require("../controller/notificationController");
 
 // Lấy tất cả sản phẩm
@@ -32,24 +32,13 @@ async function getProductsByCategory(categoryId) {
 }
 
 // Thêm mới sản phẩm
-async function addPro(data) {
+async function addPro(data, imagePath) {
   try {
-    const requiredFields = [
-      "name",
-      "sizes",
-      "categoryId",
-      "quantity",
-      "taste",
-      "image",
-    ];
+    const requiredFields = ["name", "sizes", "categoryId", "quantity", "taste"];
     for (const field of requiredFields) {
       if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
-    }
-
-    if (!/^https?:\/\/.+/.test(data.image)) {
-      throw new Error("Hình ảnh phải là URL hợp lệ");
     }
 
     const quantity = Number(data.quantity);
@@ -63,18 +52,20 @@ async function addPro(data) {
     }
 
     const sizes = data.sizes.map((size) => {
-      if (
-        !size.name ||
-        !size.price ||
-        typeof size.price.original !== "number"
-      ) {
+      const original = Number(size.price.original);
+      const discount = size.price.discount
+        ? Number(size.price.discount)
+        : undefined;
+
+      if (isNaN(original) || original <= 0) {
         throw new Error("Thông tin size không hợp lệ");
       }
+
       return {
         name: size.name,
         price: {
-          original: size.price.original,
-          discount: size.price.discount || undefined,
+          original,
+          ...(discount ? { discount } : {}),
         },
       };
     });
@@ -82,7 +73,7 @@ async function addPro(data) {
     const newProduct = new productsModel({
       name: data.name,
       categoryId: category._id,
-      image: data.image,
+      image: imagePath || "",
       quantity,
       taste: data.taste,
       description: data.description || "",
@@ -92,9 +83,10 @@ async function addPro(data) {
       sizes,
     });
 
+    console.log("👉 Product chuẩn bị lưu:", newProduct);
+
     const result = await newProduct.save();
 
-    // Tạo thông báo hệ thống khi thêm sản phẩm mới
     await notificationController.createNotification({
       message: `Sản phẩm mới: ${data.name} vừa được thêm vào danh mục ${category.name}!`,
       type: "system",
@@ -102,11 +94,10 @@ async function addPro(data) {
 
     return result;
   } catch (error) {
-    console.error("Lỗi khi thêm sản phẩm:", error.message);
+    console.error("❌ Lỗi khi thêm sản phẩm:", error.message);
     throw error;
   }
 }
-
 // Lấy chi tiết sản phẩm
 async function getDatailPro(id) {
   try {
@@ -188,7 +179,7 @@ async function showProduct(id) {
 }
 
 // Cập nhật sản phẩm
-async function updateProduct(data, id) {
+async function updateProduct(data, id, imagePath) {
   try {
     const product = await productsModel.findById(id);
     if (!product) {
@@ -201,16 +192,11 @@ async function updateProduct(data, id) {
       "categoryId",
       "quantity",
       "taste",
-      "image",
     ];
     for (const field of requiredFields) {
       if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
-    }
-
-    if (!/^https?:\/\/.+/.test(data.image)) {
-      throw new Error("Hình ảnh phải là URL hợp lệ");
     }
 
     const quantity = Number(data.quantity);
@@ -240,20 +226,25 @@ async function updateProduct(data, id) {
       };
     });
 
+    const updateData = {
+      name: data.name,
+      categoryId: category._id,
+      quantity,
+      taste: data.taste,
+      description: data.description || product.description,
+      status: data.status !== undefined ? data.status : product.status,
+      saleOff: data.saleOff !== undefined ? data.saleOff : product.saleOff,
+      time: data.time || product.time,
+      sizes,
+    };
+
+    if (imagePath) {
+      updateData.image = imagePath; // Cập nhật path ảnh mới nếu có upload
+    }
+
     const result = await productsModel.findByIdAndUpdate(
       id,
-      {
-        name: data.name,
-        categoryId: category._id,
-        image: data.image,
-        quantity,
-        taste: data.taste,
-        description: data.description || product.description,
-        status: data.status !== undefined ? data.status : product.status,
-        saleOff: data.saleOff !== undefined ? data.saleOff : product.saleOff,
-        time: data.time || product.time,
-        sizes,
-      },
+      updateData,
       { new: true }
     );
 

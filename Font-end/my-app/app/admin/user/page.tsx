@@ -109,15 +109,13 @@ export default function UserAdmin() {
       <AdminSideBar />
       <Container
         fluid
-        className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""
+        className={`${styles.content} content w-100 container-content ${collapsed ? "collapsed-content" : ""
           }`}
         style={{ minHeight: "100vh" }}
       >
         <AdminNavbar />
         <div className={styles["admin-product-container"]}>
-          <h2>Quản lý người dùng</h2>
-
-          {/* Thống kê */}
+          <h2 className="text-center">Quản lý người dùng</h2>
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Tổng người dùng</span>
@@ -135,15 +133,10 @@ export default function UserAdmin() {
                 {users.filter((u) => u.role === "staff").length}
               </span>
             </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Tổng khách hàng</span>
-              <span className={styles.statValue}>
-                {users.filter((u) => u.role === "user").length}
-              </span>
-            </div>
+
           </div>
 
-          <div className={styles["adminHeader"] + " mb-4 d-flex"}>
+          <div  className={styles["adminHeader"] + " mb-4 d-flex"}>
             <div className={styles.meNu}>
               <div className={styles.filters}>
                 <button
@@ -171,25 +164,20 @@ export default function UserAdmin() {
               <Form
                 className={styles.fromInput}
                 onSubmit={(e) => e.preventDefault()}
-                style={{ marginLeft: "630px" }}
               >
-                <div className="input-group">
                   <input
-                    className="form-control search-input"
+                    className={`form-control ${styles["search-input"]}`}
                     type="search"
                     placeholder="Tìm kiếm..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  <button className="btn search-button" type="submit">
+                  <button className={styles["search-button"]} type="submit">
                     <FaSearch />
                   </button>
-                </div>
               </Form>
             </div>
           </div>
-
-          {/* Bảng danh sách */}
           <Table striped bordered hover className={styles.table}>
             <thead>
               <tr>

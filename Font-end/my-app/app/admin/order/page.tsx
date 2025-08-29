@@ -27,7 +27,7 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./cart.css";
+import styles from "../styles/order.module.css";
 import { useRouter } from "next/navigation";
 import AdminSideBar from "@/app/component/adminSideBar";
 import useDarkMode from "../hooks/darkmode";
@@ -205,112 +205,128 @@ export default function CartManagementPage() {
   return (
     <div className="d-flex dark-mode">
       <AdminSideBar />
-      <Container fluid className={`content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}>
+      <Container
+        fluid
+        className={` ${styles.content} content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}
+      >
         <AdminNavbar />
-        <div className="cart-admin">
-          <div className="admin-container">
-            <header className="admin-header">
-              <h1>🛒 Quản lý đơn hàng</h1>
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <span className="stat-label">Tổng đơn hàng</span>
-                  <span className="stat-value">{orders.length}</span>
+        <div className={styles.cartAdmin}>
+          <div className={styles.adminContainer}>
+            <header className={styles.adminHeader}>
+              <h1 className="text-center">🛒 Quản lý đơn hàng</h1>
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Tổng đơn hàng: </span>
+                  <span className={styles.statValue}>{orders.length}</span>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-label">Chờ xử lý</span>
-                  <span className="stat-value">{orders.filter(order => order.status === 0 || order.status === 1).length}</span>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Chờ xử lý: </span>
+                  <span className={styles.statValue}>
+                    {orders.filter(order => order.status === 0 || order.status === 1).length}
+                  </span>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-label">Đã hoàn thành</span>
-                  <span className="stat-value">{orders.filter(order => order.status === 4).length}</span>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Đã hoàn thành: </span>
+                  <span className={styles.statValue}>
+                    {orders.filter(order => order.status === 4).length}
+                  </span>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-label">Doanh thu</span>
-                  <span className="stat-value">{totalRevenue.toLocaleString('vi-VN')} VNĐ</span>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Doanh thu: </span>
+                  <span className={styles.statValue}>
+                    {totalRevenue.toLocaleString("vi-VN")} VNĐ
+                  </span>
                 </div>
               </div>
             </header>
 
-            <div className="filters">
+            {/* Bộ lọc */}
+            <div className={styles.filters}>
               <button
-                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-                onClick={() => setFilter('all')}
+                className={`${styles.filterBtn} ${filter === "all" ? styles.active : ""}`}
+                onClick={() => setFilter("all")}
               >
                 Tất cả
               </button>
               <button
-                className={`filter-btn ${filter === 'pending' ? 'active' : ''}`}
-                onClick={() => setFilter('pending')}
+                className={`${styles.filterBtn} ${filter === "pending" ? styles.active : ""}`}
+                onClick={() => setFilter("pending")}
               >
                 Chờ xử lý
               </button>
               <button
-                className={`filter-btn ${filter === 'processing' ? 'active' : ''}`}
-                onClick={() => setFilter('processing')}
+                className={`${styles.filterBtn} ${filter === "processing" ? styles.active : ""}`}
+                onClick={() => setFilter("processing")}
               >
                 Đang xử lý
               </button>
               <button
-                className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-                onClick={() => setFilter('completed')}
+                className={`${styles.filterBtn} ${filter === "completed" ? styles.active : ""}`}
+                onClick={() => setFilter("completed")}
               >
                 Đã hoàn thành
               </button>
               <button
-                className={`filter-btn ${filter === 'cancelled' ? 'active' : ''}`}
-                onClick={() => setFilter('cancelled')}
+                className={`${styles.filterBtn} ${filter === "cancelled" ? styles.active : ""}`}
+                onClick={() => setFilter("cancelled")}
               >
                 Đã hủy
               </button>
             </div>
-            <div className="orders-table-wrapper">
-              <div className="orders-table">
-                <div className="table-header">
-                  <div className="header-cell">Mã đơn</div>
-                  <div className="header-cell">Khách hàng</div>
-                  <div className="header-cell">Trạng thái</div>
-                  <div className="header-cell">Ngày đặt</div>
-                  <div className="header-cell">Thao tác</div>
+
+            {/* Bảng đơn hàng */}
+            <div className={styles.ordersTableWrapper}>
+              <div className={styles.ordersTable}>
+                <div className={styles.tableHeader}>
+                  <div className={styles.tableCell}>Mã đơn</div>
+                  <div className={styles.tableCell}>Khách hàng</div>
+                  <div className={styles.tableCell}>Trạng thái</div>
+                  <div className={styles.tableCell}>Ngày đặt</div>
+                  <div className={styles.tableCell}>Thao tác</div>
                 </div>
 
-                <div className="table-body">
+                <div className={styles.tableBody}>
                   {currentOrders.map((order) => (
-                    <div key={order._id} className="table-row">
-                      <div className="table-cell">#{order._id.slice(-4)}</div>
-                      <div className="table-cell">{order.userId.name}</div>
-                      <div className="table-cell">
+                    <div key={order._id} className={`${styles.tableRow} `}>
+                      <div className={styles.tableCell}>#{order._id.slice(-4)}</div>
+                      <div className={styles.tableCell}>{order.userId.name}</div>
+                      <div className={styles.tableCell}>
                         <span
-                          className="status-badge"
+                          className={styles.statusBadge}
                           style={{ backgroundColor: getStatusColor(order.status) }}
                         >
                           {OrderStatusText[order.status as keyof typeof OrderStatusText]}
                         </span>
                       </div>
-                      <div className="table-cell">
-                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                      <div className={styles.tableCell}>
+                        {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                       </div>
-                      <div className="table-cell">
-
-                        <Button onClick={() => {
-                          setSelectedOrder(order);
-                          setShowModal(true);
-                        }}>
+                      <div className={styles.tableCell}>
+                        <Button
+                          size="sm"
+                          className={styles.detailBtn}
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowModal(true);
+                          }}
+                        >
                           Xem chi tiết
                         </Button>
-
-
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </Container>
-      <OderDetailModal show={showModal} onHide={() => setShowModal(false)} order={selectedOrder} />
-    </div>
 
+      <OderDetailModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        order={selectedOrder}
+      />
+    </div>
   );
 }

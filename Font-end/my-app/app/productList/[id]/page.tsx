@@ -327,7 +327,7 @@ const ProductDetail = () => {
         <Container fluid className={styles.productDetail}>
           <Row>
             <Col xs={6} className="d-flex justify-content-center" style={{ height: "440px" }}>
-              <Image src={product.image} fluid className={styles.productImageS} />
+              <Image src={`${API_URL}/${product.image}`} fluid className={styles.productImageS} />
             </Col>
             <Col xs={6}>
               <div className={styles.productInfo}>
@@ -390,7 +390,24 @@ const ProductDetail = () => {
                 <ul className={styles.productDesc}>
                   <li>{product.description || "Không có mô tả"}</li>
                 </ul>
-
+                <p className={styles.optionTitle}>Số lượng:</p>
+                <div className={styles.buttonPrevious}>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}
+                  >
+                    -
+                  </Button>
+                  <span className="mx-3">{quantity}</span>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => setQuantity((prev) => prev + 1)}
+                  >
+                    +
+                  </Button>
+                </div>
                 <Button
                   className={styles.addToCart}
                   onClick={() => handleAddToCart(product)}
@@ -461,7 +478,7 @@ const ProductDetail = () => {
                     <div className={styles.imageContainer}>
                       <Card.Img
                         variant="top"
-                        src={product.image}
+                        src={`${API_URL}/${product.image}`}
                         alt={product.name}
                         className={styles.productImage}
                       />

@@ -20,7 +20,7 @@ const productSchema = new Schema({
     ref: "categories",
     required: true,
   },
-  image: { type: String, required: true },
+  image: { type: String, default: "", required: true },
   description: { type: String, default: "" },
   descriptionNoAccent: { type: String }, // <-- thêm
   taste: { type: [String], default: [] },

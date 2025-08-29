@@ -75,7 +75,7 @@ function CategoryFormModal(props: iShow) {
         keyboard={false}
       >
         <Modal.Header closeButton className="modal-header">
-          <Modal.Title className="modal-title">Thêm danh mục mới</Modal.Title>
+          <Modal.Title className="modal-title"  style={{ color: "black" }}>Thêm danh mục mới</Modal.Title>
         </Modal.Header>
         <Modal.Body className="modal-body">
           <Form>

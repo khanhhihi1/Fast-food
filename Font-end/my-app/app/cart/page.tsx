@@ -356,7 +356,7 @@ export default function Cart() {
                       <tr key={item.id}>
                         <td>
                           <Image
-                            src={item.imageUrl || "/default-image.png"}
+                            src={`${API_URL}/${item.imageUrl}`}
                             style={{
                               width: "80px",
                               height: "80px",

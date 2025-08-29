@@ -79,6 +79,8 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render("error");
 });
-
-
+// Sau tất cả routes
+app.use((req, res, next) => {
+  res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });
+});
 module.exports = app;

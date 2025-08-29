@@ -1,0 +1,191 @@
+/* cart.module.css */
+
+/* Container chính */
+.cartAdmin {
+    padding: 20px;
+}
+
+.adminContainer {
+    padding: 24px;
+}
+
+/* Header */
+.adminHeader {
+    margin-bottom: 24px;
+}
+
+.adminHeader h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.titleItem {
+    font-size: 23px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+.titleItem1 {
+    margin-top: 16px;
+    font-size: 23px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.content {
+    margin-left: 250px;
+    background: #f5f6f7;
+    min-height: 100vh;
+    margin-top: 60px;
+    transition: margin-left 0.3s ease;
+}
+
+/* Thống kê */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: #fff;
+    padding: 32px;
+    border-radius: 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    /* 👉 label trên, value dưới */
+    align-items: center;
+    justify-content: center;
+}
+
+.statLabel {
+    font-size: 16px;
+    color: #666;
+    font-weight: 600;
+}
+
+.statValue {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 4px;
+    color: #c62830;
+}
+
+/* Bộ lọc */
+.filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filterBtn {
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.filterBtn:hover {
+    background: #e9ecef;
+}
+
+.filterBtn.active {
+    background: #c62830;
+    color: #fff;
+    border-color: #c62830;
+    box-shadow: 0 0 6px rgba(198, 40, 48, 0.4);
+}
+
+/* Bảng đơn hàng */
+.ordersTableWrapper {
+    overflow-x: auto;
+}
+
+.ordersTable {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.tableHeader,
+.tableRow {
+    display: grid;
+    grid-template-columns: 120px 1fr 150px 150px 150px;
+    padding: 12px 16px;
+    align-items: center;
+}
+
+.tableHeader {
+    background: #f1f3f5;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.tableRow {
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.tableRow:hover {
+    background: #fafafa;
+}
+
+.tableCell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Badge trạng thái */
+.statusBadge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.detailBtn {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff !important;
+    /* chữ đen */
+    border: 1px solid #c62830 !important;
+    /* viền đỏ */
+    background: #c62830 !important;
+    border-radius: 6px;
+    padding: 6px 12px;
+    transition: all 0.2s ease;
+}
+
+.detailBtn:hover {
+    background: #a71e24 !important;
+    /* nền đỏ */
+    color: #fff !important;
+    /* chữ trắng */
+    box-shadow: 0 2px 6px rgba(198, 40, 48, 0.4);
+}
+
+.detailBtn:active {
+    background: #641317 !important;
+    /* đỏ đậm hơn khi click */
+    border-color: #641317 !important;
+}
+
+.tableHeader,
+.tableRow {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    /* cột 1 gấp đôi */
+    padding: 12px 16px;
+    align-items: center;
+    text-align: center;
+}

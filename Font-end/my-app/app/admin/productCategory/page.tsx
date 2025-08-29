@@ -117,10 +117,10 @@ export default function ProductCategory() {
   return (
     <div className={`d-flex ${isDarkMode ? "dark-mode" : ""}`}>
       <AdminSideBar />
-      <Container fluid className="content w-100 container-content" style={{ minHeight: "100vh" }}>
+      <Container fluid className={` ${styles.content} content w-100 container-content`}style={{ minHeight: "100vh" }}>
         <AdminNavbar />
         <div className={styles["admin-product-container"]}>
-          <h2>Quản lý danh mục sản phẩm</h2>
+          <h2 className="text-center">Quản lý danh mục sản phẩm</h2>
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Tổng danh mục </span>
@@ -157,7 +157,7 @@ export default function ProductCategory() {
                 >
                   Ngưng hoạt động
                 </button>
-                <Button onClick={() => setShowAddModal(true)}>
+                <Button onClick={() => setShowAddModal(true)}  className={styles.addProductBtn}>
                   <FontAwesomeIcon icon={faPlus} /> Thêm danh mục
                 </Button>
               </div>

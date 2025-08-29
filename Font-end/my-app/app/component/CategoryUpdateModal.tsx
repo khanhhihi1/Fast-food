@@ -77,7 +77,7 @@ function CategoryUpdateModal(props: iShow) {
         keyboard={false}
       >
         <Modal.Header closeButton className="modal-header">
-          <Modal.Title className="modal-title">Cập nhật danh mục</Modal.Title>
+          <Modal.Title className="modal-title" style={{ color: "black" }}>Cập nhật danh mục</Modal.Title>
         </Modal.Header>
         <Modal.Body className="modal-body">
           <Form>

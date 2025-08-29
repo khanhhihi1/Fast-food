@@ -15,59 +15,49 @@ import {
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
-import "./admin.css";
+import { usePathname } from "next/navigation"; // 👈 import hook này
 import { motion, AnimatePresence } from "framer-motion";
+import styles from "./stylesComponent/adminSidebar.module.css";
 
 export default function AdminSideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [openProductMenu, setOpenProductMenu] = useState(false);
+  const pathname = usePathname(); // 👈 lấy URL hiện tại
 
   return (
-    <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-      <h3 className="text-center">
-        <img
-          className="rounded-circle"
-          src="/logo.png"
-          style={{ width: "150px", height: "150px", marginLeft: 50 }}
-          alt="Logo"
-        />
+    <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+      <h3 className={styles.logo}>
+        <img src="/logo.png" alt="Logo" className={styles.logoImg} />
       </h3>
-      <div className="navbar">
-        <div className="nav-item">
+      <div className={styles.navbar}>
+        <div className={styles.navItem}>
           {/* Dashboard */}
-          <div className="nav-link1">
-            <FontAwesomeIcon
-              icon={faHouse}
-              style={{ marginTop: "8px", marginLeft: "5px" }}
-            />
-            <Link href="/admin">Dashboard</Link>
+          <div
+            className={`${styles.navLink} ${
+              pathname === "/admin" ? styles.active : ""
+            }`}
+          >
+            <FontAwesomeIcon icon={faHouse} className={styles.icon} />
+            <Link href="/admin" className={styles.linkText}>
+              Dashboard
+            </Link>
           </div>
 
           {/* Quản lý sản phẩm */}
           <div
-            className="nav-link flex items-center justify-between text-gray-700 hover:text-blue-600 cursor-pointer transition"
+            className={`${styles.navLink} ${styles.dropdown}`}
             onClick={() => setOpenProductMenu(!openProductMenu)}
           >
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon
-                style={{
-                  marginTop: "8px",
-                  marginLeft: "5px",
-                  color: "rgb(135, 136, 140)",
-                }}
-                icon={faBarsProgress}
-              />
-              <span style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}>
-                Quản lý sản phẩm
-              </span>
+            <div className={styles.dropdownLabel}>
+              <FontAwesomeIcon icon={faBarsProgress} className={styles.icon} />
+              <span>Quản lý sản phẩm</span>
             </div>
             <FontAwesomeIcon
-              style={{ color: "rgb(135, 136, 140)" }}
               icon={openProductMenu ? faChevronUp : faChevronDown}
+              className={styles.icon}
             />
           </div>
 
-          {/* Menu con quản lý sản phẩm */}
           <AnimatePresence>
             {openProductMenu && (
               <motion.div
@@ -75,125 +65,92 @@ export default function AdminSideBar() {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="ml-6 overflow-hidden"
+                className={styles.submenu}
               >
-                <div className="submenu space-y-1 mt-2">
-                  <Link href="/admin/productActive" className="nav-link2">
-                    Sản phẩm đang bán
-                  </Link>
-                 
-                  <Link href="/admin/productCategory" className="nav-link2">
-                    Danh mục sản phẩm
-                  </Link>
-                </div>
+                <Link
+                  href="/admin/productActive"
+                  className={`${styles.subLink} ${
+                    pathname === "/admin/productActive" ? styles.active : ""
+                  }`}
+                >
+                  Sản phẩm đang bán
+                </Link>
+                <Link
+                  href="/admin/productCategory"
+                  className={`${styles.subLink} ${
+                    pathname === "/admin/productCategory" ? styles.active : ""
+                  }`}
+                >
+                  Danh mục sản phẩm
+                </Link>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Quản lý đơn hàng */}
-          <div className="nav-link">
-            <FontAwesomeIcon
-              icon={faCartShopping}
-              style={{
-                marginTop: "8px",
-                marginLeft: "5px",
-                color: "rgb(135, 136, 140)",
-              }}
-            />
-            <Link
-              style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="/admin/order"
-            >
+          <div
+            className={`${styles.navLink} ${
+              pathname === "/admin/order" ? styles.active : ""
+            }`}
+          >
+            <FontAwesomeIcon icon={faCartShopping} className={styles.icon} />
+            <Link href="/admin/order" className={styles.linkText}>
               Quản lý đơn hàng
             </Link>
           </div>
 
           {/* Quản lý voucher */}
-          <div className="nav-link">
-            <FontAwesomeIcon
-              icon={faTicket}
-              style={{
-                marginTop: "8px",
-                marginLeft: "5px",
-                color: "rgb(135, 136, 140)",
-              }}
-            />
-            <Link
-              style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="/admin/vouchermanagement"
-            >
+          <div
+            className={`${styles.navLink} ${
+              pathname === "/admin/vouchermanagement" ? styles.active : ""
+            }`}
+          >
+            <FontAwesomeIcon icon={faTicket} className={styles.icon} />
+            <Link href="/admin/vouchermanagement" className={styles.linkText}>
               Quản lý voucher
             </Link>
           </div>
 
           {/* Quản lý người dùng */}
-          <div className="nav-link">
-            <FontAwesomeIcon
-              icon={faCircleUser}
-              style={{
-                marginTop: "8px",
-                marginLeft: "5px",
-                color: "rgb(135, 136, 140)",
-              }}
-            />
-            <Link
-              style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="/admin/user"
-            >
+          <div
+            className={`${styles.navLink} ${
+              pathname === "/admin/user" ? styles.active : ""
+            }`}
+          >
+            <FontAwesomeIcon icon={faCircleUser} className={styles.icon} />
+            <Link href="/admin/user" className={styles.linkText}>
               Quản lý người dùng
             </Link>
           </div>
 
           {/* Thống kê */}
-          <div className="nav-link">
-            <FontAwesomeIcon
-              icon={faChartSimple}
-              style={{
-                marginTop: "8px",
-                marginLeft: "5px",
-                color: "rgb(135, 136, 140)",
-              }}
-            />
-            <Link
-              style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="#"
-            >
+          <div
+            className={`${styles.navLink} ${
+              pathname === "/admin/statistics" ? styles.active : ""
+            }`}
+          >
+            <FontAwesomeIcon icon={faChartSimple} className={styles.icon} />
+            <Link href="/admin/statistics" className={styles.linkText}>
               Thống kê
             </Link>
           </div>
 
           {/* Đánh giá */}
-          <div className="nav-link">
-            <FontAwesomeIcon
-              icon={faComments}
-              style={{
-                marginTop: "8px",
-                marginLeft: "5px",
-                color: "rgb(135, 136, 140)",
-              }}
-            />
-            <Link
-              style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="/admin/commentmanagement"
-            >
+          <div
+            className={`${styles.navLink} ${
+              pathname === "/admin/commentmanagement" ? styles.active : ""
+            }`}
+          >
+            <FontAwesomeIcon icon={faComments} className={styles.icon} />
+            <Link href="/admin/commentmanagement" className={styles.linkText}>
               Đánh giá
             </Link>
           </div>
 
           {/* Đăng xuất */}
-          <div className="nav-link">
-            <FontAwesomeIcon
-              icon={faRightFromBracket}
-              style={{
-                marginTop: "8px",
-                marginLeft: "5px",
-                color: "rgb(135, 136, 140)",
-              }}
-            />
-            <Link
-              style={{ marginLeft: "2px", color: "rgb(135, 136, 140)" }}
-              href="#"
-            >
+          <div className={styles.navLink}>
+            <FontAwesomeIcon icon={faRightFromBracket} className={styles.icon} />
+            <Link href="#" className={styles.linkText}>
               Đăng xuất
             </Link>
           </div>
