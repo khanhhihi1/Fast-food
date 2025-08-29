@@ -1,22 +1,80 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { Button } from "react-bootstrap";
-import Form from "react-bootstrap/Form";
+import { Button, Form } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ username: "", password: "" });
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  // Hàm xử lý thay đổi input
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+  // Hàm xác thực input
+  const validateForm = () => {
+    const { username, password } = formData;
+
+    // Kiểm tra bỏ trống
+    if (!username.trim()) {
+      toast.error("Tên đăng nhập không được để trống!", {
+        toastId: "username-empty",
+      });
+      return false;
+    }
+    if (!password.trim()) {
+      toast.error("Mật khẩu không được để trống!", {
+        toastId: "password-empty",
+      });
+      return false;
+    }
+
+    // Kiểm tra độ dài tối thiểu
+    if (username.length < 4) {
+      toast.error("Tên đăng nhập phải có ít nhất 4 ký tự!", {
+        toastId: "username-length",
+      });
+      return false;
+    }
+    if (password.length < 6) {
+      toast.error("Mật khẩu phải có ít nhất 6 ký tự!", {
+        toastId: "password-length",
+      });
+      return false;
+    }
+
+    // Kiểm tra khoảng trắng
+    if (/\s/.test(username)) {
+      toast.error("Tên đăng nhập không được chứa khoảng trắng!", {
+        toastId: "username-space",
+      });
+      return false;
+    }
+    if (/\s/.test(password)) {
+      toast.error("Mật khẩu không được chứa khoảng trắng!", {
+        toastId: "password-space",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // Hàm xử lý đăng nhập
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Kiểm tra validation
+    if (!validateForm()) {
+      return;
+    }
 
     const body = new URLSearchParams();
     body.append("username", formData.username);
@@ -33,20 +91,27 @@ export default function SignInPage() {
       const data = await res.json();
 
       if (!res.ok || !data.status) {
-        alert(data.message || "Đăng nhập thất bại!");
+        toast.error(data.message || "Đăng nhập thất bại!", {
+          toastId: "login-failed",
+        });
         return;
       }
 
-      alert("Đăng nhập thành công!");
-      // ✅ Điều hướng theo vai trò
+      toast.success("Đăng nhập thành công!", {
+        toastId: "login-success",
+      });
+
+      // Điều hướng theo vai trò
       if (data.result.user.role === "admin") {
         router.push("/admin");
       } else {
         router.push("/");
       }
     } catch (err) {
-      console.error(err);
-      alert("Lỗi khi đăng nhập!");
+      console.error("Lỗi khi đăng nhập:", err);
+      toast.error("Có lỗi xảy ra khi đăng nhập!", {
+        toastId: "login-error",
+      });
     }
   };
 
@@ -55,8 +120,6 @@ export default function SignInPage() {
       {/* Left Panel */}
       <div className="hidden lg:flex lg:w-5/12 authentication-gradient relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#3c67a4] to-[#2d4a7a]" />
-
-        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg
             className="w-full h-full"
@@ -81,13 +144,9 @@ export default function SignInPage() {
             <rect width="100" height="100" fill="url(#grid)" />
           </svg>
         </div>
-
-        {/* Illustration Content */}
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 w-full">
-          {/* Illustration */}
           <div className="mb-8 relative illustration-float">
             <div className="w-80 h-80 relative">
-              {/* Device Frame */}
               <div className="absolute top-8 left-8 w-64 h-48 bg-gray-800 rounded-lg shadow-2xl transform rotate-3">
                 <div className="w-full h-8 bg-gray-700 rounded-t-lg flex items-center justify-center">
                   <div className="w-2 h-2 bg-red-500 rounded-full mr-2" />
@@ -110,8 +169,6 @@ export default function SignInPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Character */}
               <div className="absolute bottom-0 right-8 w-32 h-40">
                 <div className="w-full h-full relative">
                   <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-yellow-400 rounded-full" />
@@ -122,21 +179,18 @@ export default function SignInPage() {
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-12 h-8 bg-gray-700 rounded" />
                 </div>
               </div>
-
-              {/* Plant */}
               <div className="absolute bottom-0 left-0 w-16 h-20">
                 <div className="w-8 h-12 bg-yellow-600 rounded-t-full mx-auto" />
                 <div className="w-12 h-8 bg-gray-800 rounded mx-auto" />
               </div>
             </div>
           </div>
-
           <div className="text-center max-w-md">
             <h2 className="text-2xl font-semibold mb-4">Đăng nhập</h2>
             <p className="text-blue-100 text-sm leading-relaxed opacity-80">
               Chào mừng đến với nền tảng Fast-Food của chúng tôi! Đăng nhập để
               quản lý dự án Fast-Food, cộng tác với chúng tôi và truy cập bảng
-              điều khiển của bạn..
+              điều khiển của bạn.
             </p>
           </div>
         </div>
@@ -200,7 +254,6 @@ export default function SignInPage() {
                 placeholder="Nhập tên đăng nhập"
                 value={formData.username}
                 onChange={handleChange}
-                required
               />
             </div>
 
@@ -219,8 +272,6 @@ export default function SignInPage() {
                   placeholder="Nhập mật khẩu"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pr-10"
-                  required
                 />
                 <button
                   type="button"

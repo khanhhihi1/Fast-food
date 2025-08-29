@@ -59,15 +59,13 @@ interface CommentType {
   rating: number;
   createdAt: string;
 }
+
 interface PaginationProps {
   value: number;
   setValue: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const PaginationComponent: React.FC<PaginationProps> = ({
-  value,
-  setValue,
-}) => {
+const PaginationComponent: React.FC<PaginationProps> = ({ value, setValue }) => {
   return (
     <div>
       <button onClick={() => setValue(value - 1)}>Prev</button>
@@ -75,6 +73,7 @@ const PaginationComponent: React.FC<PaginationProps> = ({
     </div>
   );
 };
+
 const ProductDetail = () => {
   const { id } = useParams();
   const [productId, setProductId] = useState<string | null>(null);
@@ -95,45 +94,30 @@ const ProductDetail = () => {
     const res = await fetch(url, { credentials: "include" });
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(
-        `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
-        }`
-      );
+      throw new Error(`Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text}`);
     }
     const data = await res.json();
     if (!data.result) throw new Error("API không trả về 'result'");
     return data.result;
   };
 
-  const {
-    data: product,
-    error: productError,
-    isLoading: productLoading,
-  } = useSWR<ProductType>(
+  const { data: product, error: productError, isLoading: productLoading } = useSWR<ProductType>(
     productId ? `${API_URL}/products/${productId}` : null,
     fetcher
   );
 
-  const {
-    data: categories,
-    error: categoryError,
-    isLoading: categoryLoading,
-  } = useSWR<CategoryInfo[]>(`${API_URL}/categories`, fetcher);
+  const { data: categories, error: categoryError, isLoading: categoryLoading } = useSWR<CategoryInfo[]>(
+    `${API_URL}/categories`,
+    fetcher
+  );
 
-  const {
-    data: comments,
-    error: commentError,
-    isLoading: commentLoading,
-  } = useSWR<CommentType[]>(
+  const { data: comments, error: commentError, isLoading: commentLoading } = useSWR<CommentType[]>(
     productId ? `${API_URL}/comment/${productId}` : null,
     async (url: string) => {
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(
-          `Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text
-          }`
-        );
+        throw new Error(`Lỗi ${res.status}: ${text.startsWith("<!DOCTYPE") ? "Không tìm thấy endpoint" : text}`);
       }
       const data = await res.json();
       if (!data.result) throw new Error("API không trả về 'result'");
@@ -153,11 +137,10 @@ const ProductDetail = () => {
     }
   }, [product]);
 
-  const {
-    data: allProducts,
-    error: relatedError,
-    isLoading: relatedLoading,
-  } = useSWR<ProductType[]>(`${API_URL}/products`, fetcher);
+  const { data: allProducts, error: relatedError, isLoading: relatedLoading } = useSWR<ProductType[]>(
+    `${API_URL}/products`,
+    fetcher
+  );
 
   useEffect(() => {
     if (product?.sizes && product.sizes.length > 0) {
@@ -186,8 +169,7 @@ const ProductDetail = () => {
   };
 
   const renderPrice = () => {
-    if (!product?.sizes || product.sizes.length === 0)
-      return "Giá không khả dụng";
+    if (!product?.sizes || product.sizes.length === 0) return "Giá không khả dụng";
     const size = product.sizes.find((s) => s.name === selectedSize);
     if (!size) return "Không có size phù hợp";
 
@@ -205,16 +187,14 @@ const ProductDetail = () => {
       </span>
     );
   };
+
   const toggleFavorite = async (productId: string) => {
     try {
-      const response = await fetch(
-        `${API_URL}/favoriteProduct/favorites/${productId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${API_URL}/favoriteProduct/favorites/${productId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
 
       const result = await response.json();
 
@@ -232,16 +212,11 @@ const ProductDetail = () => {
       toast.error("Không kết nối được đến server");
     }
   };
+
   const renderStars = (rating: number) => (
     <span>
       {[...Array(5)].map((_, index) => (
-        <FontAwesomeIcon
-          key={index}
-          icon={faStar}
-          style={{
-            color: index < rating ? "#ffc107" : "#e4e5e9",
-          }}
-        />
+        <FontAwesomeIcon key={index} icon={faStar} style={{ color: index < rating ? "#ffc107" : "#e4e5e9" }} />
       ))}
     </span>
   );
@@ -288,34 +263,24 @@ const ProductDetail = () => {
     }
   };
 
-  if (productLoading || categoryLoading || commentLoading)
-    return <p>Đang tải...</p>;
+  if (productLoading || categoryLoading || commentLoading) return <p>Đang tải...</p>;
   if (productError) return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
-  if (categoryError)
-    return <p>Lỗi khi tải danh mục: {categoryError.message}</p>;
+  if (categoryError) return <p>Lỗi khi tải danh mục: {categoryError.message}</p>;
   if (commentError) return <p>Lỗi khi tải bình luận: {commentError.message}</p>;
   if (!product || !product._id) return <p>Không tìm thấy sản phẩm</p>;
 
-  const filteredRelatedProducts = allProducts?.filter(
-    (p) => {
+  const filteredRelatedProducts =
+    allProducts?.filter((p) => {
       const pCatId = getProductCategoryId(p);
       const cat = categories?.find((c) => c._id === pCatId);
       return pCatId === categoryId && p._id !== product._id && cat && !cat.isHidden && p.status !== false;
-    }
-  ) || [];
+    }) || [];
 
   return (
     <>
       <Container fluid style={{ padding: "0px" }}>
-        <Breadcrumb
-          className="m-0"
-          style={{ backgroundColor: "#ddd", padding: "10px 110px" }}
-        >
-          <Breadcrumb.Item
-            href="/"
-            className="breadCrumbItem"
-            style={{ margin: "0px" }}
-          >
+        <Breadcrumb className="m-0" style={{ backgroundColor: "#ddd", padding: "10px 110px" }}>
+          <Breadcrumb.Item href="/" className="breadCrumbItem" style={{ margin: "0px" }}>
             Trang chủ
           </Breadcrumb.Item>
           <Breadcrumb.Item href="" className="breadCrumbItem">
@@ -343,10 +308,9 @@ const ProductDetail = () => {
                           type="radio"
                           key={index}
                           id={`size-${index}`}
-                          label={`${size.name} (${size.price.discount
-                            ? size.price.discount.toLocaleString()
-                            : size.price.original.toLocaleString()
-                            }đ)`}
+                          label={`${size.name} (${
+                            size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()
+                          }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}
@@ -386,32 +350,23 @@ const ProductDetail = () => {
                   )}
                 </Form>
 
-                <p className="m-0" style={{ color: "orange" }}>Combo bao gồm:</p>
+                <p className="m-0" style={{ color: "orange" }}>
+                  Combo bao gồm:
+                </p>
                 <ul className={styles.productDesc}>
                   <li>{product.description || "Không có mô tả"}</li>
                 </ul>
                 <p className={styles.optionTitle}>Số lượng:</p>
                 <div className={styles.buttonPrevious}>
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}
-                  >
+                  <Button variant="outline-secondary" size="sm" onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}>
                     -
                   </Button>
                   <span className="mx-3">{quantity}</span>
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    onClick={() => setQuantity((prev) => prev + 1)}
-                  >
+                  <Button variant="outline-secondary" size="sm" onClick={() => setQuantity((prev) => prev + 1)}>
                     +
                   </Button>
                 </div>
-                <Button
-                  className={styles.addToCart}
-                  onClick={() => handleAddToCart(product)}
-                >
+                <Button className={styles.addToCart} onClick={() => handleAddToCart(product)}>
                   Thêm vào giỏ
                 </Button>
               </div>
@@ -445,29 +400,20 @@ const ProductDetail = () => {
             </Col>
           </Row>
         </Container>
-
       </Container>
 
       <Container className="py-5">
-        <h2
-          className={`text-center mb-4 ${styles.sectionTitle} ${styles.sectionTitle1}`}
-        >
-          SẢN PHẨM LIÊN QUAN
-        </h2>
+        <h2 className={`text-center mb-4 ${styles.sectionTitle} ${styles.sectionTitle1}`}>SẢN PHẨM LIÊN QUAN</h2>
 
         {relatedLoading && <p>Đang tải sản phẩm liên quan...</p>}
         {relatedError && <p>Lỗi tải sản phẩm liên quan: {relatedError.message}</p>}
-        {!relatedLoading && !relatedError && filteredRelatedProducts.length === 0 && (
-          <p>Không có sản phẩm liên quan.</p>
-        )}
+        {!relatedLoading && !relatedError && filteredRelatedProducts.length === 0 && <p>Không có sản phẩm liên quan.</p>}
 
         <Row>
           {filteredRelatedProducts.map((product) => {
             const hasSizes = product.sizes && product.sizes.length > 0;
             const priceInfo = hasSizes ? product.sizes![0].price : null;
-            const displayPrice = priceInfo
-              ? priceInfo.discount ?? priceInfo.original
-              : "Liên hệ";
+            const displayPrice = priceInfo ? priceInfo.discount ?? priceInfo.original : "Liên hệ";
 
             const isFavorite = favoriteMap[product._id] || false;
 
@@ -486,25 +432,16 @@ const ProductDetail = () => {
                   </Link>
 
                   <Card.Body className={styles.cardBody}>
-                    <Card.Title className={styles.productTitle}>
-                      {product.name}
-                    </Card.Title>
-                    <Card.Text className={styles.productDesc}>
-                      {product.description}
-                    </Card.Text>
+                    <Card.Title className={styles.productTitle}>{product.name}</Card.Title>
+                    <Card.Text className={styles.productDesc}>{product.description}</Card.Text>
                     <div className="d-flex justify-content-between align-items-center mt-3">
                       <span className={styles.productPrice}>
-                        {typeof displayPrice === "number"
-                          ? displayPrice.toLocaleString("vi-VN") + "₫"
-                          : displayPrice}
+                        {typeof displayPrice === "number" ? displayPrice.toLocaleString("vi-VN") + "₫" : displayPrice}
                       </span>
 
                       <FontAwesomeIcon
                         icon={isFavorite ? faHeart : faHeartBroken}
-                        style={{
-                          color: isFavorite ? "red" : "#aaa",
-                          cursor: "pointer",
-                        }}
+                        style={{ color: isFavorite ? "red" : "#aaa", cursor: "pointer" }}
                         onClick={() => toggleFavorite(product._id)}
                         title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
                       />
