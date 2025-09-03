@@ -60,7 +60,7 @@ export default function Service() {
             </div>
             <div>
               <Image
-                src={item.imageUrl}
+               src={`${API_URL}/${item.imageUrl}`}
                 style={{ width: "100px", height: "100px", objectFit: "cover" }}
                 alt={item.name}
               />

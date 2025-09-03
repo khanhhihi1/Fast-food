@@ -49,10 +49,9 @@ const addCate = async (data) => {
     const { name, image } = data;
     const newCate = new CategoriesModel({
       name,
-      imageUrl: image,
+      imageUrl: image || null, // lấy từ router gán khi có file
     });
-    const result = await newCate.save();
-    return result;
+    return await newCate.save();
   } catch (error) {
     console.error("Lỗi khi thêm danh mục:", error.message);
     throw new Error("Không thể thêm danh mục");
@@ -93,17 +92,14 @@ const updateCate = async (id, data) => {
       { name, imageUrl },
       { new: true }
     );
-
-    if (!updatedCate) {
-      throw new Error("Không tìm thấy danh mục để cập nhật");
-    }
-
+    if (!updatedCate) throw new Error("Không tìm thấy danh mục để cập nhật");
     return updatedCate;
   } catch (error) {
     console.error("Lỗi khi cập nhật danh mục:", error.message);
     throw new Error("Không thể cập nhật danh mục");
   }
 };
+
 const restoreCate = async (id) => {
   try {
     const cate = await CategoriesModel.findByIdAndUpdate(
