@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
@@ -13,8 +13,7 @@ interface iShow {
 function CategoryFormModal(props: iShow) {
   const { showModal, setShowModal } = props;
   const [name, setName] = useState<string>("");
-  const [image, setImage] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [image, setImage] = useState<File | null>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleSubmit = async () => {
@@ -22,25 +21,15 @@ function CategoryFormModal(props: iShow) {
       toast.error("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
-    if (!image.match(/^https?:\/\/.+/)) {
-      toast.error(
-        "Hình ảnh phải là URL hợp lệ (bắt đầu bằng http:// hoặc https://)!"
-      );
-      return;
-    }
-    const data = {
-      name,
-      image,
-    };
+
+    const formData = new FormData();
+    formData.append("name", name);
+    if (image) formData.append("image", image);
 
     try {
       const response = await fetch(`${API_URL}/categories/add`, {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: formData, // gửi form-data
       });
 
       const result = await response.json();
@@ -62,7 +51,7 @@ function CategoryFormModal(props: iShow) {
 
   const handleClose = () => {
     setName("");
-    setImage("");
+    setImage(null);
     setShowModal(false);
   };
 
@@ -75,7 +64,9 @@ function CategoryFormModal(props: iShow) {
         keyboard={false}
       >
         <Modal.Header closeButton className="modal-header">
-          <Modal.Title className="modal-title"  style={{ color: "black" }}>Thêm danh mục mới</Modal.Title>
+          <Modal.Title className="modal-title" style={{ color: "black" }}>
+            Thêm danh mục mới
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body className="modal-body">
           <Form>
@@ -85,7 +76,7 @@ function CategoryFormModal(props: iShow) {
               </Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Tên sản phẩm"
+                placeholder="Tên danh mục"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -93,13 +84,14 @@ function CategoryFormModal(props: iShow) {
 
             <Form.Group className="mb-3" controlId="formImage">
               <Form.Label className="mt-3 form-label">
-                URL Hình ảnh danh mục
+                Hình ảnh danh mục
               </Form.Label>
               <Form.Control
-                type="text"
-                placeholder="Nhập URL hình ảnh (http:// hoặc https://)"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
+                type="file"
+                accept="image/*"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setImage(e.target.files ? e.target.files[0] : null)
+                }
               />
             </Form.Group>
           </Form>

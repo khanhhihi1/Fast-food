@@ -200,7 +200,7 @@ export default function ProductCategory() {
                       <td>{index + 1}</td>
                       <td>{cat.name}</td>
                       <td className="text-center">
-                        <img src={cat.imageUrl} alt={cat.name} width="80" />
+                        <img src={`${API_URL}/${cat.imageUrl}`} alt={cat.name} width="80" />
                       </td>
                       <td>
                         <span className={`${styles["status-badge"]} ${!cat.isHidden ? styles.active : styles.inactive}`}>
