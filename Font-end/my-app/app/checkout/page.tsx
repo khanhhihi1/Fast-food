@@ -1,4 +1,5 @@
 "use client";
+
 import {
   FaShippingFast,
   FaRegEdit,
@@ -21,6 +22,24 @@ import {
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 
+// Danh sách quận huyện TP.HCM
+const hcmDistricts: string[] = [
+  "Quận 1",
+  "Quận 3",
+  "Quận 5",
+  "Quận 7",
+  "Quận 8",
+  "Quận 10",
+  "Bình Thạnh",
+  "Gò Vấp",
+  "Tân Bình",
+  "Tân Phú",
+  "Thủ Đức",
+  "Hóc Môn",
+  "Củ Chi",
+  "Bình Chánh",
+];
+
 interface CartItem {
   id: string;
   productId: string;
@@ -39,9 +58,15 @@ interface Voucher {
   discountType: "percentage" | "fixed";
   discountValue: number;
   minOrderValue: number;
-  maxDiscount: number;
+  maxDiscount?: number;
   expiresAt: string;
-  isActive: boolean;
+  isActive?: boolean;
+}
+
+interface ShippingInfo {
+  name: string;
+  phone: string;
+  address: string;
 }
 
 export default function Checkout() {
@@ -52,25 +77,67 @@ export default function Checkout() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [totalAfterDiscount, setTotalAfterDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [shippingInfo, setShippingInfo] = useState<{
-    name: string;
-    phone: string;
-    address: string;
-  } | null>(null);
+
+  // Thông tin giao hàng
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [district, setDistrict] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
 
-  // Tính tổng tiền trước giảm giá
-  const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  // Hàm kiểm tra định dạng số điện thoại
+  const isValidPhoneNumber = (phone: string): boolean => {
+    const phoneRegex = /^0[0-9]{9}$/;
+    return phoneRegex.test(phone);
+  };
+
+  // Hàm xử lý thay đổi số điện thoại
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+      setPhone(value);
+    }
+  };
+
+  // Hàm xóa giỏ hàng và reset trạng thái
+  const clearCart = async () => {
+    try {
+      await fetch(`${API_URL}/cart/clear`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      await fetch(`${API_URL}/temp-order`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+localStorage.removeItem("selectedVoucher");
+      localStorage.removeItem("shippingInfo");
+
+      setCartItems([]);
+      setAppliedVoucher(null);
+      setSelectedCode("");
+      setShippingInfo(null);
+      setDiscountAmount(0);
+      setTotalAfterDiscount(0);
+    } catch (error) {
+      console.error("Lỗi khi xóa giỏ hàng:", error);
+      toast.error("Lỗi khi xóa giỏ hàng", {
+        toastId: "clearCartError",
+      });
+    }
+  };
 
   // Lấy thông tin đơn hàng tạm thời
   const fetchTempOrder = async () => {
@@ -81,10 +148,28 @@ export default function Checkout() {
       const data = await res.json();
       if (!data.status) throw new Error("Không thể tải đơn hàng");
 
-      const { items, total, voucherData, shippingInfo } = data.result;
+      const {
+        items,
+        total,
+        voucherData,
+        shippingInfo: savedShipping,
+      } = data.result;
       setCartItems(items || []);
       setTotalAfterDiscount(total);
-      setShippingInfo(shippingInfo);
+
+      if (savedShipping) {
+        setShippingInfo(savedShipping);
+        setName(savedShipping.name || "");
+        setPhone(savedShipping.phone || "");
+
+        const addressParts =
+          savedShipping.address?.split(",").map((s: string) => s.trim()) || [];
+        if (addressParts.length >= 2) {
+          setDetailAddress(addressParts[0] || "");
+          setDistrict(addressParts[1] || "");
+        }
+      }
+
       if (voucherData) {
         setAppliedVoucher(voucherData);
         setSelectedCode(voucherData.code);
@@ -97,7 +182,6 @@ export default function Checkout() {
       }
     } catch {
       setError("Không thể tải đơn hàng tạm thời. Vui lòng thử lại.");
-      router.push("/cart");
     } finally {
       setIsLoading(false);
     }
@@ -119,22 +203,57 @@ export default function Checkout() {
           return notExpired && active && enoughOrder;
         });
         setVouchers(validVouchers);
-      } else {
-        toast.error(data.message || "Không thể tải danh sách voucher");
       }
     } catch {
-      toast.error("Không thể tải danh sách voucher");
+      // Không hiển thị lỗi cho voucher
+    }
+  };
+
+  // Cập nhật thông tin giao hàng
+  const updateShippingInfo = async () => {
+    const fullAddress = `${detailAddress}, ${district}, TP.HCM`;
+    const shippingData = { name, phone, address: fullAddress };
+
+    try {
+      const res = await fetch(`${API_URL}/temp-order/update-shipping`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(shippingData),
+});
+
+      const data = await res.json();
+      if (data.status) {
+        setShippingInfo(shippingData);
+        localStorage.setItem("shippingInfo", JSON.stringify(shippingData));
+        return true;
+      } else {
+        toast.error(data.message || "Cập nhật địa chỉ giao hàng thất bại", {
+          toastId: "updateShippingError",
+        });
+        return false;
+      }
+    } catch {
+      toast.error("Lỗi khi cập nhật thông tin giao hàng", {
+        toastId: "updateShippingError",
+      });
+      return false;
     }
   };
 
   // Áp dụng voucher
-  const applyVoucher = async (voucherParam?: Voucher) => {
+  const applyVoucher = async (
+    voucherParam?: Voucher,
+    showToast: boolean = true
+  ) => {
     const voucher =
       voucherParam || vouchers.find((v) => v.code === selectedCode);
     if (!voucher) {
-      toast.warning("Vui lòng chọn voucher hợp lệ", {
-        toastId: "voucher-warning",
-      });
+      if (showToast) {
+        toast.warning("Vui lòng chọn voucher hợp lệ", {
+          toastId: "voucher-warning",
+        });
+      }
       return;
     }
 
@@ -145,7 +264,7 @@ export default function Checkout() {
         credentials: "include",
         body: JSON.stringify({
           code: voucher.code,
-          orderTotal: total,
+          orderTotal: totalPrice,
         }),
       });
 
@@ -155,9 +274,12 @@ export default function Checkout() {
         setDiscountAmount(data.result.discountAmount);
         setTotalAfterDiscount(data.result.finalTotal);
 
-        toast.success(`Áp dụng voucher ${voucher.code} thành công!`, {
-          toastId: `apply-${voucher.code}`, // ✅ Toast ID duy nhất cho từng voucher
-        });
+        if (showToast) {
+          toast.success(`Áp dụng voucher ${voucher.code} thành công!`, {
+            toastId: `apply-${voucher.code}`,
+            autoClose: 5000,
+          });
+        }
 
         await fetch(`${API_URL}/temp-order/update-voucher`, {
           method: "PUT",
@@ -170,14 +292,22 @@ export default function Checkout() {
           }),
         });
       } else {
-        toast.warning(data.message || "Voucher không hợp lệ", {
-          toastId: "voucher-invalid",
-        });
+        if (showToast) {
+          toast.warning(data.message || "Voucher không hợp lệ", {
+            toastId: "voucher-invalid",
+            autoClose: 5000,
+          });
+        }
         handleCancelVoucher();
       }
     } catch (error) {
       console.error("Lỗi khi áp dụng voucher:", error);
-      toast.error("Lỗi khi áp dụng voucher", { toastId: "voucher-error" });
+      if (showToast) {
+        toast.error("Lỗi khi áp dụng voucher", {
+          toastId: "voucher-error",
+          autoClose: 5000,
+        });
+      }
       handleCancelVoucher();
     }
   };
@@ -186,7 +316,7 @@ export default function Checkout() {
   const handleCancelVoucher = async () => {
     setAppliedVoucher(null);
     setDiscountAmount(0);
-    setTotalAfterDiscount(total);
+    setTotalAfterDiscount(totalPrice);
     setSelectedCode("");
     localStorage.removeItem("selectedVoucher");
 
@@ -195,17 +325,30 @@ export default function Checkout() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
+body: JSON.stringify({
           voucherCode: null,
           voucherData: null,
-          total,
+          total: totalPrice,
         }),
       });
-      toast.success("Đã hủy voucher", { toastId: "voucher-cancel" });
     } catch {
-      toast.error("Không thể hủy voucher trong đơn hàng tạm thời", {
-        toastId: "voucher-cancel-error",
-      });
+      // Không hiển thị lỗi
+    }
+  };
+
+  // Xử lý voucher change
+  const handleVoucherChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    toast.dismiss();
+    setSelectedCode(code);
+    const found = vouchers.find((v) => v.code === code);
+
+    if (found) {
+      setTimeout(() => {
+        applyVoucher(found, true);
+      }, 200);
+    } else {
+      handleCancelVoucher();
     }
   };
 
@@ -222,22 +365,40 @@ export default function Checkout() {
         throw new Error("Không thể cập nhật phương thức thanh toán");
       }
     } catch {
-      toast.error("Không thể cập nhật phương thức thanh toán");
+      toast.error("Không thể cập nhật phương thức thanh toán", {
+        toastId: "updatePaymentError",
+      });
     }
   };
 
   // Xử lý đặt hàng
   const handleOrder = async () => {
     if (cartItems.length === 0) {
-      toast.warning("Không có sản phẩm nào để đặt hàng");
+      toast.warning("Không có sản phẩm nào để đặt hàng", {
+        toastId: "emptyCartWarning",
+      });
       return;
     }
 
-    if (!shippingInfo) {
-      toast.warning("Vui lòng nhập thông tin giao hàng");
-      router.push("/shippingInfo");
+    // Kiểm tra thông tin giao hàng
+    if (!name || !phone || !district || !detailAddress) {
+      toast.warning("Vui lòng điền đầy đủ thông tin giao hàng", {
+        toastId: "shippingInfoWarning",
+      });
       return;
     }
+
+    // Kiểm tra định dạng số điện thoại
+    if (!isValidPhoneNumber(phone)) {
+      toast.error("Số điện thoại phải bắt đầu bằng 0 và chỉ chứa 10 chữ số", {
+        toastId: "phoneInvalidError",
+      });
+      return;
+    }
+
+    // Cập nhật thông tin giao hàng
+    const shippingUpdated = await updateShippingInfo();
+    if (!shippingUpdated) return;
 
     try {
       await updatePaymentMethod();
@@ -253,39 +414,26 @@ export default function Checkout() {
       console.log("orderRes data:", orderData);
 
       if (!orderRes.ok || !orderData.status) {
-        toast.error(orderData.message || "Đặt hàng thất bại");
+        toast.error(orderData.message || "Đặt hàng thất bại", {
+          toastId: "orderFailureError",
+        });
         return;
       }
 
       const createdOrder = orderData.result.order;
       if (!createdOrder || !createdOrder._id) {
-        toast.error("Dữ liệu đơn hàng không hợp lệ");
+        toast.error("Dữ liệu đơn hàng không hợp lệ", {
+          toastId: "invalidOrderError",
+        });
         return;
       }
 
       // Xử lý COD
       if (paymentMethod === "cod") {
-        await fetch(`${API_URL}/cart/clear`, {
-          method: "DELETE",
-          credentials: "include",
+        await clearCart();
+        toast.success("Đặt hàng thành công!", {
+toastId: "orderSuccess",
         });
-
-        await fetch(`${API_URL}/temp-order`, {
-          method: "DELETE",
-          credentials: "include",
-        });
-
-        localStorage.removeItem("selectedVoucher");
-        localStorage.removeItem("shippingInfo");
-
-        setCartItems([]);
-        setAppliedVoucher(null);
-        setSelectedCode("");
-        setShippingInfo(null);
-        setDiscountAmount(0);
-        setTotalAfterDiscount(0);
-
-        toast.success("Đặt hàng thành công!");
         router.push("/cart");
       }
 
@@ -305,14 +453,39 @@ export default function Checkout() {
         try {
           momoData = JSON.parse(momoText);
         } catch (err) {
-          toast.error("Phản hồi không hợp lệ từ server MoMo");
+          toast.error("Phản hồi không hợp lệ từ server MoMo", {
+            toastId: "momoResponseError",
+          });
           return;
         }
 
         if (momoData.status && momoData.payUrl) {
           window.location.href = momoData.payUrl;
         } else {
-          toast.error("Không thể tạo thanh toán MoMo");
+          toast.error("Không thể tạo thanh toán MoMo", {
+            toastId: "momoPaymentError",
+          });
+        }
+      }
+
+      // Xử lý VNPay
+      if (paymentMethod === "vnpay") {
+        const vnpayRes = await fetch(`${API_URL}/payment/vnpay`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ orderId: createdOrder._id }),
+        });
+
+        const vnpayData = await vnpayRes.json();
+        console.log("VNPay response:", vnpayData);
+
+        if (vnpayData.status && vnpayData.paymentUrl) {
+          window.location.href = vnpayData.paymentUrl;
+        } else {
+          toast.error("Không thể tạo thanh toán VNPay", {
+            toastId: "vnpayPaymentError",
+          });
         }
       }
 
@@ -329,27 +502,42 @@ export default function Checkout() {
         console.log("Stripe response:", stripeData);
 
         if (stripeData.status && stripeData.checkoutUrl) {
+          await clearCart();
+          toast.success("Đang chuyển hướng đến thanh toán Stripe...", {
+            toastId: "stripeRedirectSuccess",
+          });
           window.location.href = stripeData.checkoutUrl;
         } else {
-          toast.error("Không thể tạo thanh toán Stripe");
+          toast.error("Không thể tạo thanh toán Stripe", {
+            toastId: "stripePaymentError",
+          });
         }
       }
     } catch (error) {
       console.error("Lỗi khi xử lý đơn hàng:", error);
-      toast.error("Có lỗi xảy ra khi xử lý đơn hàng");
+      toast.error("Có lỗi xảy ra khi xử lý đơn hàng", {
+        toastId: "orderProcessingError",
+      });
     }
   };
 
-  // Tải dữ liệu khi component mount
+  // Load dữ liệu ban đầu
   useEffect(() => {
     fetchTempOrder();
     fetchVouchers();
 
-    const shipping = localStorage.getItem("shippingInfo");
-    if (shipping) setShippingInfo(JSON.parse(shipping));
-    else {
-      toast.warning("Bạn chưa nhập thông tin giao hàng");
-      router.push("/shippingInfo");
+    const savedShipping = localStorage.getItem("shippingInfo");
+    if (savedShipping) {
+const parsed = JSON.parse(savedShipping);
+      setName(parsed.name || "");
+      setPhone(parsed.phone || "");
+
+      const addressParts =
+        parsed.address?.split(",").map((s: string) => s.trim()) || [];
+      if (addressParts.length >= 2) {
+        setDetailAddress(addressParts[0] || "");
+        setDistrict(addressParts[1] || "");
+      }
     }
   }, []);
 
@@ -358,10 +546,17 @@ export default function Checkout() {
     if (vouchers.length > 0 && selectedCode && !appliedVoucher) {
       const found = vouchers.find((v) => v.code === selectedCode);
       if (found) {
-        applyVoucher(found);
+        applyVoucher(found, false);
       }
     }
   }, [vouchers, selectedCode]);
+
+  // Cập nhật vouchers khi totalPrice thay đổi
+  useEffect(() => {
+    if (!isLoading) {
+      fetchVouchers();
+    }
+  }, [totalPrice, isLoading]);
 
   return (
     <Container className="py-4">
@@ -372,30 +567,9 @@ export default function Checkout() {
       ) : cartItems.length === 0 ? (
         <Alert variant="warning">Giỏ hàng của bạn đang trống.</Alert>
       ) : (
-        <Row className="justify-content-center">
+        <Row>
+          {/* Bên trái - Thông tin thanh toán */}
           <Col md={8}>
-            <Card className="shadow-sm p-4 mb-4">
-              <h5 className="mb-3">
-                <FaShippingFast className="me-2" /> Thông tin giao hàng
-              </h5>
-              <p>
-                <strong>Họ tên:</strong> {shippingInfo?.name}
-              </p>
-              <p>
-                <strong>SĐT:</strong> {shippingInfo?.phone}
-              </p>
-              <p>
-                <strong>Địa chỉ:</strong> {shippingInfo?.address}
-              </p>
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={() => router.push("/shippingInfo")}
-              >
-                <FaRegEdit className="me-1" /> Sửa
-              </Button>
-            </Card>
-
             <Card className="shadow-sm p-4 mb-4">
               <h5 className="mb-3">
                 <FaTags className="me-2" /> Thông tin sản phẩm
@@ -433,42 +607,35 @@ export default function Checkout() {
                   ))}
                 </tbody>
               </Table>
+            </Card>
 
+            {/* Voucher Section */}
+            <Card className="shadow-sm p-4 mb-4">
+              <h5 className="mb-3">Mã giảm giá</h5>
               {appliedVoucher ? (
-                <Alert
-                  variant="success"
-                  className="d-flex justify-content-between align-items-center mt-3"
-                >
+                <Alert variant="success">
                   <span>
-                    Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>{" "}
+Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>
                     <br />
                     Giảm: {discountAmount.toLocaleString()} ₫
                   </span>
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={handleCancelVoucher}
-                  >
-                    <FaTrashAlt className="me-1" /> Hủy
-                  </Button>
                 </Alert>
               ) : (
-                <Form.Group className="mt-3">
+                <Form.Group>
                   <Form.Label>Chọn mã giảm giá</Form.Label>
                   <Form.Select
                     value={selectedCode}
-                    onChange={(e) => {
-                      const code = e.target.value;
-                      setSelectedCode(code);
-                      const found = vouchers.find((v) => v.code === code);
-                      if (found) applyVoucher(found);
-                      else handleCancelVoucher();
-                    }}
+                    onChange={handleVoucherChange}
                   >
                     <option value="">-- Chọn voucher --</option>
                     {vouchers.map((voucher) => (
                       <option key={voucher._id} value={voucher.code}>
-                        {voucher.code} - {voucher.description}
+                        {voucher.code} - {voucher.description} -{" "}
+                        {voucher.discountType === "fixed"
+                          ? `${voucher.discountValue.toLocaleString()} ₫`
+                          : `Giảm tối đa: ${
+                              voucher.maxDiscount?.toLocaleString() || 0
+                            } ₫`}
                       </option>
                     ))}
                   </Form.Select>
@@ -476,6 +643,7 @@ export default function Checkout() {
               )}
             </Card>
 
+            {/* Payment Method */}
             <Card className="shadow-sm p-4">
               <h5 className="mb-3">
                 <FaMoneyCheckAlt className="me-2" /> Phương thức thanh toán
@@ -487,6 +655,7 @@ export default function Checkout() {
                 value="cod"
                 checked={paymentMethod === "cod"}
                 onChange={(e) => setPaymentMethod(e.target.value)}
+                className="mb-2"
               />
               <Form.Check
                 type="radio"
@@ -495,6 +664,7 @@ export default function Checkout() {
                 value="momo"
                 checked={paymentMethod === "momo"}
                 onChange={(e) => setPaymentMethod(e.target.value)}
+                className="mb-2"
               />
               <Form.Check
                 type="radio"
@@ -503,6 +673,7 @@ export default function Checkout() {
                 value="vnpay"
                 checked={paymentMethod === "vnpay"}
                 onChange={(e) => setPaymentMethod(e.target.value)}
+                className="mb-2"
               />
               <Form.Check
                 type="radio"
@@ -512,28 +683,97 @@ export default function Checkout() {
                 checked={paymentMethod === "stripe"}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               />
+            </Card>
+          </Col>
 
-              <hr />
-              <div className="d-flex justify-content-between">
+          {/* Bên phải - Thông tin giao hàng */}
+          <Col md={4}>
+            <Card className="shadow-sm p-4 mb-4">
+              <h5 className="mb-3">
+                <FaShippingFast className="me-2" /> Thông tin giao hàng
+</h5>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Họ tên người nhận</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nhập họ tên"
+                    required
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Số điện thoại</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    placeholder="Nhập số điện thoại (bắt đầu bằng 0)"
+                    required
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Quận/Huyện (TP.HCM)</Form.Label>
+                  <Form.Select
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Chọn Quận/Huyện --</option>
+                    {hcmDistricts.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Địa chỉ chi tiết</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    value={detailAddress}
+                    onChange={(e) => setDetailAddress(e.target.value)}
+                    placeholder="Nhập địa chỉ chi tiết"
+                    required
+                  />
+                </Form.Group>
+              </Form>
+            </Card>
+
+            {/* Tổng đơn hàng */}
+            <Card className="shadow-sm p-4">
+              <h5 className="mb-3">Tổng đơn hàng</h5>
+              <div className="d-flex justify-content-between mb-2">
                 <span>Tạm tính:</span>
-                <strong>{total.toLocaleString()} ₫</strong>
+                <strong>{totalPrice.toLocaleString()} ₫</strong>
               </div>
               {discountAmount > 0 && (
-                <div className="d-flex justify-content-between text-success">
+                <div className="d-flex justify-content-between text-success mb-2">
                   <span>Giảm giá:</span>
                   <strong>-{discountAmount.toLocaleString()} ₫</strong>
                 </div>
               )}
-              <div className="d-flex justify-content-between">
+              <div className="d-flex justify-content-between mb-2">
                 <span>Phí vận chuyển:</span>
                 <span>0 ₫</span>
               </div>
               <hr />
-              <div className="d-flex justify-content-between fs-5">
+              <div className="d-flex justify-content-between fs-5 mb-3">
                 <strong>Tổng cộng:</strong>
-                <strong>{totalAfterDiscount.toLocaleString()} ₫</strong>
+                <strong>
+                  {(totalAfterDiscount > 0
+? totalAfterDiscount
+                    : totalPrice
+                  ).toLocaleString()}{" "}
+                  ₫
+                </strong>
               </div>
-              <Button className="mt-4 w-100" onClick={handleOrder}>
+              <Button className="w-100" size="lg" onClick={handleOrder}>
                 Xác nhận đặt hàng
               </Button>
             </Card>
