@@ -19,6 +19,7 @@
   font-weight: 700;
   margin-bottom: 16px;
 }
+
 .content {
   margin-left: 250px;
   background: #f5f6f7;
@@ -26,6 +27,7 @@
   margin-top: 60px;
   transition: margin-left 0.3s ease;
 }
+
 /* Thống kê */
 .statsGrid {
   display: grid;
@@ -40,7 +42,8 @@
   border-radius: 8px;
   text-align: center;
   display: flex;
-  flex-direction: column; /* 👉 label trên, value dưới */
+  flex-direction: column;
+  /* 👉 label trên, value dưới */
   align-items: center;
   justify-content: center;
 }
@@ -102,7 +105,7 @@
 .tableHeader,
 .tableRow {
   display: grid;
-  grid-template-columns: 120px 1fr 150px 150px 150px;
+  grid-template-columns: repeat(5, 1fr);
   padding: 12px 16px;
   align-items: center;
 }
@@ -128,20 +131,41 @@
   white-space: nowrap;
 }
 
+.statusBadge {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* màu riêng cho thanh toán */
+.paid {
+  font-size: 15px !important;
+  color: #32cd32 !important;
+  /* xanh */
+}
+
+.unpaid {
+  font-size: 14px !important;
+  color: #ff0000 !important;
+  /* đỏ */
+}
+
 /* Badge trạng thái */
 .statusBadge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 5px;
   font-size: 13px;
   font-weight: 600;
   color: #fff;
 }
+
 .detailBtn {
   font-size: 13px;
   font-weight: 600;
-  color: #fff !important; /* chữ đen */
-  border: 1px solid #c62830 !important; /* viền đỏ */
+  color: #fff !important;
+  /* chữ đen */
+  border: 1px solid #c62830 !important;
+  /* viền đỏ */
   background: #c62830 !important;
   border-radius: 6px;
   padding: 6px 12px;
@@ -149,12 +173,15 @@
 }
 
 .detailBtn:hover {
-  background: #a71e24 !important; /* nền đỏ */
-  color: #fff !important; /* chữ trắng */
+  background: #a71e24 !important;
+  /* nền đỏ */
+  color: #fff !important;
+  /* chữ trắng */
   box-shadow: 0 2px 6px rgba(198, 40, 48, 0.4);
 }
 
 .detailBtn:active {
-  background: #641317 !important; /* đỏ đậm hơn khi click */
+  background: #641317 !important;
+  /* đỏ đậm hơn khi click */
   border-color: #641317 !important;
 }

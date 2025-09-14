@@ -18,7 +18,6 @@ const orderItemSchema = new Schema({
   },
   finalPrice: { type: Number, required: true },
 });
-
 const orderSchema = new Schema(
   {
     userId: {
@@ -29,17 +28,23 @@ const orderSchema = new Schema(
     items: [orderItemSchema],
     total: { type: Number, required: true },
     discount: { type: Number, default: 0 },
+
+    // --- Voucher ---
     voucherCode: { type: String },
     voucherData: {
       type: new Schema(
         {
           code: String,
           description: String,
-          discountType: String,
+          discountType: { type: String, enum: ["fixed", "percentage"] },
           discountValue: Number,
           minOrderValue: Number,
           maxDiscount: Number,
-          expiresAt: String,
+          voucherType: { type: String, enum: ["timed", "limited"] },
+          startsAt: Date,
+          expiresAt: Date,
+          usageLimit: Number,
+          currentUsage: Number,
         },
         { _id: false }
       ),
@@ -55,18 +60,21 @@ const orderSchema = new Schema(
     isPaid: { type: Boolean, default: false },
     paymentMethod: {
       type: String,
-      enum: ["momo", "cod", "vnpay", "stripe"], // Thêm "vnpay" nếu bạn hỗ trợ
+      enum: ["momo", "cod", "vnpay", "stripe"],
       default: "cod",
     },
+
+    // --- Status ---
     status: {
       type: Number,
-      enum: [0, 1, 2, 3, 4, 5], // Enum values
-      default: 0, // 0 = Chờ xác nhận
+      enum: [0, 1, 2, 3, 4, 5],
+      default: 0,
     },
+
+    // --- Payment IDs ---
     stripeSessionId: { type: String },
     stripePaymentIntentId: { type: String },
     momoTransId: { type: String },
-    createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
@@ -89,7 +97,8 @@ const OrderStatusText = {
   5: "Hủy đơn hàng",
 };
 
-const Order = mongoose.models.Orders || mongoose.model("Orders", orderSchema);
+const Order =
+  mongoose.models.Orders || mongoose.model("Orders", orderSchema);
 
 module.exports = {
   Order,

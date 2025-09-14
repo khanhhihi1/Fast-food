@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Form, Modal } from "react-bootstrap";
-import { toast } from "react-toastify";
 
 interface FormData {
   fullName: string;
@@ -24,132 +23,72 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState<Partial<FormData>>({});
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [otp, setOTP] = useState("");
   const [tempData, setTempData] = useState<any>(null);
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Hàm xử lý thay đổi input
+  // handle change input
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" }); // clear error khi nhập
   };
 
-  // Hàm xác thực input
+  // validate
   const validateForm = (): boolean => {
     const { fullName, username, email, password, confirmPassword } = formData;
+    const newErrors: Partial<FormData> = {};
 
-    // Kiểm tra fullName
     if (!fullName.trim()) {
-      toast.error("Họ và tên không được để trống!", {
-        toastId: "fullName-empty",
-      });
-      return false;
-    }
-    if (!/^[\p{L}\s]+$/u.test(fullName)) {
-      toast.error("Họ và tên chỉ được chứa chữ cái và khoảng trắng!", {
-        toastId: "fullName-format",
-      });
-      return false;
+      newErrors.fullName = "Họ và tên không được để trống!";
+    } else if (!/^[\p{L}\s]+$/u.test(fullName)) {
+      newErrors.fullName = "Họ và tên chỉ được chứa chữ cái và khoảng trắng!";
     }
 
-    // Kiểm tra username
     if (!username.trim()) {
-      toast.error("Tên đăng nhập không được để trống!", {
-        toastId: "username-empty",
-      });
-      return false;
-    }
-    if (username.length < 6) {
-      toast.error("Tên đăng nhập phải có ít nhất 6 ký tự!", {
-        toastId: "username-length",
-      });
-      return false;
-    }
-    if (/\s/.test(username)) {
-      toast.error("Tên đăng nhập không được chứa khoảng trắng!", {
-        toastId: "username-space",
-      });
-      return false;
-    }
-    if (!/^[a-zA-Z0-9]+$/.test(username)) {
-      toast.error("Tên đăng nhập không được chứa ký tự có dấu!", {
-        toastId: "username-format",
-      });
-      return false;
+      newErrors.username = "Tên đăng nhập không được để trống!";
+    } else if (username.length < 6) {
+      newErrors.username = "Tên đăng nhập phải có ít nhất 6 ký tự!";
+    } else if (/\s/.test(username)) {
+      newErrors.username = "Tên đăng nhập không được chứa khoảng trắng!";
+    } else if (!/^[a-zA-Z0-9]+$/.test(username)) {
+      newErrors.username = "Tên đăng nhập không được chứa ký tự có dấu!";
     }
 
-    // Kiểm tra email
     if (!email.trim()) {
-      toast.error("Email không được để trống!", { toastId: "email-empty" });
-      return false;
-    }
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-      toast.error(
-        "Email phải có định dạng hợp lệ và không chứa ký tự có dấu (ví dụ: user@example.com)!",
-        {
-          toastId: "email-format",
-        }
-      );
-      return false;
+      newErrors.email = "Email không được để trống!";
+    } else if (
+      !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+    ) {
+      newErrors.email =
+        "Email phải có định dạng hợp lệ (ví dụ: user@example.com)!";
     }
 
-    // Kiểm tra password
     if (!password.trim()) {
-      toast.error("Mật khẩu không được để trống!", {
-        toastId: "password-empty",
-      });
-      return false;
-    }
-    if (password.length < 6) {
-      toast.error("Mật khẩu phải có ít nhất 6 ký tự!", {
-        toastId: "password-length",
-      });
-      return false;
-    }
-    if (/\s/.test(password)) {
-      toast.error("Mật khẩu không được chứa khoảng trắng!", {
-        toastId: "password-space",
-      });
-      return false;
-    }
-    if (!/^[a-zA-Z0-9!@#$%^&*()_+-=]+$/.test(password)) {
-      toast.error("Mật khẩu không được chứa ký tự có dấu!", {
-        toastId: "password-format",
-      });
-      return false;
+      newErrors.password = "Mật khẩu không được để trống!";
+    } else if (password.length < 6) {
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự!";
+    } else if (/\s/.test(password)) {
+      newErrors.password = "Mật khẩu không được chứa khoảng trắng!";
     }
 
-    // Kiểm tra confirmPassword
     if (!confirmPassword.trim()) {
-      toast.error("Xác nhận mật khẩu không được để trống!", {
-        toastId: "confirmPassword-empty",
-      });
-      return false;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Mật khẩu và xác nhận mật khẩu không khớp!", {
-        toastId: "confirmPassword-match",
-      });
-      return false;
-    }
-    if (!/^[a-zA-Z0-9!@#$%^&*()_+-=]+$/.test(confirmPassword)) {
-      toast.error("Xác nhận mật khẩu không được chứa ký tự có dấu!", {
-        toastId: "confirmPassword-format",
-      });
-      return false;
+      newErrors.confirmPassword = "Xác nhận mật khẩu không được để trống!";
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu và xác nhận mật khẩu không khớp!";
     }
 
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Hàm xử lý đăng ký
+  // handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     const submitData = {
       name: formData.fullName,
@@ -169,17 +108,17 @@ export default function SignUpPage() {
       const data = await response.json();
 
       if (!data.status) {
-        toast.error(data.message || "Gửi OTP thất bại!");
+        setErrors({ email: data.message || "Gửi OTP thất bại!" });
         return;
       }
 
-      setTempData(data.tempData); // Lưu tempData
-      setShowOTPModal(true); // Hiển thị modal OTP
-      toast.success("Đã gửi OTP đến email của bạn!");
+      setTempData(data.tempData);
+      setShowOTPModal(true);
     } catch (error: any) {
-      toast.error(error.message || "Đã có lỗi xảy ra!");
+      setErrors({ email: error.message || "Đã có lỗi xảy ra!" });
     }
   };
+
   const handleVerifyOTP = async () => {
     try {
       const response = await fetch(`${API_URL}/users/register/verify-otp`, {
@@ -191,15 +130,14 @@ export default function SignUpPage() {
       const data = await response.json();
 
       if (!data.status) {
-        toast.error(data.message || "Xác thực OTP thất bại!");
+        setErrors({ confirmPassword: data.message || "Xác thực OTP thất bại!" });
         return;
       }
 
       setShowOTPModal(false);
-      toast.success("🎉 Đăng ký thành công! Chuyển về trang đăng nhập!");
       router.push("/login");
     } catch (error: any) {
-      toast.error(error.message || "Đã có lỗi xảy ra!");
+      setErrors({ confirmPassword: error.message || "Đã có lỗi xảy ra!" });
     }
   };
 
@@ -208,76 +146,151 @@ export default function SignUpPage() {
       {/* Left Panel */}
       <div className="hidden lg:flex lg:w-5/12 authentication-gradient relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#3c67a4] to-[#2d4a7a]" />
+        <div className="absolute inset-0 opacity-10">
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 100 100"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <pattern
+                id="grid"
+                width="10"
+                height="10"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 10 0 L 0 0 0 10"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="0.5"
+                />
+              </pattern>
+            </defs>
+            <rect width="100" height="100" fill="url(#grid)" />
+          </svg>
+        </div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 w-full">
-          <h2 className="text-3xl font-bold mb-4">Chào mừng!</h2>
-          <p className="text-blue-100 text-sm text-center">
-            Tham gia nền tảng Fast-Food để quản lý dự án, cộng tác và truy cập
-            các tính năng quản trị.
-          </p>
+          <div className="mb-8 relative illustration-float">
+            <div className="w-80 h-80 relative">
+              <div className="absolute top-8 left-8 w-64 h-48 bg-gray-800 rounded-lg shadow-2xl transform rotate-3">
+                <div className="w-full h-8 bg-gray-700 rounded-t-lg flex items-center justify-center">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mr-2" />
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2" />
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                </div>
+                <div className="p-4 bg-white rounded-b-lg h-40">
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 bg-yellow-400 rounded-full mb-2 flex items-center justify-center">
+                      <div className="w-8 h-8 bg-yellow-500 rounded-full" />
+                    </div>
+                    <div className="text-xs text-gray-800 font-semibold mb-2">
+                      RESGISTER
+
+                    </div>
+                    <div className="w-32 h-2 bg-gray-200 rounded mb-1" />
+                    <div className="w-32 h-2 bg-gray-200 rounded mb-3" />
+                    <div className="w-20 h-6 bg-yellow-400 rounded text-xs flex items-center justify-center text-white font-semibold">
+                      RESGISTER
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute bottom-0 right-8 w-32 h-40">
+                <div className="w-full h-full relative">
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-yellow-400 rounded-full" />
+                  <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-12 h-16 bg-yellow-400 rounded-lg" />
+                  <div className="absolute top-8 left-2 w-6 h-2 bg-yellow-400 rounded" />
+                  <div className="absolute top-8 right-2 w-6 h-2 bg-yellow-400 rounded" />
+                  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-16 h-12 bg-gray-800 rounded-b-full" />
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-12 h-8 bg-gray-700 rounded" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 w-16 h-20">
+                <div className="w-8 h-12 bg-yellow-600 rounded-t-full mx-auto" />
+                <div className="w-12 h-8 bg-gray-800 rounded mx-auto" />
+              </div>
+            </div>
+          </div>
+          <div className="text-center max-w-md">
+            <h2 className="text-2xl font-semibold mb-4">Đăng ký</h2>
+            <p className="text-blue-100 text-sm leading-relaxed opacity-80">
+              Chào mừng đến với nền tảng Fast-Food của chúng tôi! Đăng nhập để
+              quản lý dự án Fast-Food, cộng tác với chúng tôi và truy cập bảng
+              điều khiển của bạn.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Right Panel */}
       <div className="w-full lg:w-7/12 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md space-y-6">
-          <div className="mb-8">
-            <img
-              src="https://ext.same-assets.com/2464927738/3409472389.png"
-              alt="Logo"
-              width={136}
-              height={40}
-              className="h-10 w-auto"
-            />
-          </div>
-
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-gray-900">Đăng ký</h1>
-            <p className="text-gray-600">
-              Tham gia ngay để trải nghiệm dịch vụ.
-            </p>
+            <p className="text-gray-600">Tạo tài khoản mới để bắt đầu.</p>
           </div>
 
           <Form onSubmit={handleSubmit} className="space-y-4">
             <Form.Group controlId="formFullName">
-              <Form.Label>Họ và tên</Form.Label>
+              <Form.Label className="fw-medium ">Họ và tên</Form.Label>
               <Form.Control
                 type="text"
                 name="fullName"
                 placeholder="Nhập họ và tên"
                 value={formData.fullName}
                 onChange={handleChange}
+                isInvalid={!!errors.fullName}
+
               />
+              {errors.fullName && (
+                <div className="text-sm text-red-500 mt-1">
+                  {errors.fullName}
+                </div>
+              )}
             </Form.Group>
 
             <Form.Group controlId="formUsername">
-              <Form.Label>Tên đăng nhập</Form.Label>
+              <Form.Label className="fw-medium ">Tên đăng nhập</Form.Label>
               <Form.Control
                 type="text"
                 name="username"
                 placeholder="Nhập tên đăng nhập"
                 value={formData.username}
                 onChange={handleChange}
+                isInvalid={!!errors.username}
+
               />
+              {errors.username && (
+                <div className="text-sm text-red-500 mt-1">
+                  {errors.username}
+                </div>
+              )}
             </Form.Group>
 
             <Form.Group controlId="formEmail">
-              <Form.Label>Email</Form.Label>
+              <Form.Label className="fw-medium ">Email</Form.Label>
               <Form.Control
                 type="text"
-                name="email"
                 placeholder="Nhập email"
+                name="email"
                 value={formData.email}
                 onChange={handleChange}
+                isInvalid={!!errors.email}
               />
+              {errors.email && (
+                <div className="text-sm text-red-500 mt-1">{errors.email}</div>
+              )}
             </Form.Group>
 
             <Form.Group controlId="formPassword">
-              <Form.Label>Mật khẩu</Form.Label>
+              <Form.Label className="fw-medium ">Mật khẩu</Form.Label>
               <div className="relative">
                 <Form.Control
                   type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="Nhập mật khẩu"
+                  isInvalid={!!errors.password}
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -293,41 +306,53 @@ export default function SignUpPage() {
                   )}
                 </button>
               </div>
+              {errors.password && (
+                <div className="text-sm text-red-500 mt-1">
+                  {errors.password}
+                </div>
+              )}
             </Form.Group>
 
             <Form.Group controlId="formConfirmPassword">
-              <Form.Label>Nhập lại mật khẩu</Form.Label>
+              <Form.Label className="fw-medium ">Nhập lại mật khẩu</Form.Label>
               <Form.Control
                 type="password"
                 name="confirmPassword"
-                placeholder="Xác nhận lại mật khẩu"
+                placeholder="Nhập lại mật khẩu"
+                isInvalid={!!errors.confirmPassword}
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
+              {errors.confirmPassword && (
+                <div className="text-sm text-red-500 mt-1">
+                  {errors.confirmPassword}
+                </div>
+              )}
             </Form.Group>
 
             <Button
-              variant="primary"
               type="submit"
-              className="w-full bg-[#3c67a4] hover:bg-[#2d4a7a] border-0"
+              className="w-full bg-red-600 hover:bg-red-700 border-0 text-white"
             >
               Đăng ký
             </Button>
 
             <div className="text-center text-sm text-gray-600 mt-2">
               Bạn đã có tài khoản?{" "}
-              <Link href="/login" className="text-blue-600 hover:underline">
+              <Link href="/login" className="text-red-600 hover:underline">
                 Đăng nhập
               </Link>
             </div>
           </Form>
+
+          {/* OTP Modal */}
           <Modal show={showOTPModal} onHide={() => setShowOTPModal(false)}>
             <Modal.Header closeButton>
               <Modal.Title>Xác thực OTP</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form.Group controlId="formOTP">
-                <Form.Label>Nhập mã OTP từ email</Form.Label>
+                <Form.Label className="fw-medium ">Nhập mã OTP từ email</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="Nhập OTP"
@@ -337,10 +362,17 @@ export default function SignUpPage() {
               </Form.Group>
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowOTPModal(false)}>
+              <Button
+                variant="secondary"
+                onClick={() => setShowOTPModal(false)}
+              >
                 Đóng
               </Button>
-              <Button variant="primary" onClick={handleVerifyOTP}>
+              <Button
+                variant="danger"
+                className="bg-red-600 border-0"
+                onClick={handleVerifyOTP}
+              >
                 Xác thực
               </Button>
             </Modal.Footer>

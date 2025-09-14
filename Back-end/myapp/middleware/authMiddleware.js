@@ -14,9 +14,12 @@ function authMiddleware(req, res, next) {
   }
 
   try {
+    console.log("👉 Toàn bộ cookies client gửi lên:", req.cookies);
+    console.log("👉 Header Authorization:", req.headers.authorization);
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_key");
     console.log("👉 Token decode thành công:", decoded); // log payload
     // Gán thông tin user vào req
+    console.log("Current server time (UTC):", new Date().toUTCString());
     req.userId = decoded.id || decoded._id || decoded.userId;
     req.userRole = decoded.role || "user";
     req.user = decoded;

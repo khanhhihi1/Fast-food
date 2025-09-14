@@ -11,6 +11,7 @@ import Card from "react-bootstrap/Card";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Counter from "@/app/count/count";
+import { Star, StarHalf, Star as StarEmpty } from "lucide-react";
 import "./productList.css";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -213,13 +214,39 @@ const ProductDetail = () => {
     }
   };
 
-  const renderStars = (rating: number) => (
-    <span>
-      {[...Array(5)].map((_, index) => (
-        <FontAwesomeIcon key={index} icon={faStar} style={{ color: index < rating ? "#ffc107" : "#e4e5e9" }} />
-      ))}
-    </span>
-  );
+  const renderStars = (rating: number) => {
+    return (
+      <div style={{ display: "flex" }}>
+        {[1, 2, 3, 4, 5].map((star) => {
+          const fillPercentage = Math.min(Math.max(rating - star + 1, 0), 1) * 100;
+          return (
+            <div key={star} style={{ position: "relative", width: 20, height: 20 }}>
+              {/* ngôi sao nền màu xám */}
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="#ccc">
+                <path d="M12 .587l3.668 7.568L24 9.748l-6 5.845L19.336 24 12 19.897 4.664 24 6 15.593 0 9.748l8.332-1.593z" />
+              </svg>
+              {/* lớp phủ vàng theo % */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: `${fillPercentage}%`,
+                  height: "100%",
+                  overflow: "hidden",
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="#FFD700">
+                  <path d="M12 .587l3.668 7.568L24 9.748l-6 5.845L19.336 24 12 19.897 4.664 24 6 15.593 0 9.748l8.332-1.593z" />
+                </svg>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
 
   const handleAddToCart = async (product: ProductType) => {
     if (!selectedSize || !product?._id) {
@@ -278,16 +305,17 @@ const ProductDetail = () => {
 
   return (
     <>
-      <Container fluid style={{ padding: "0px" }}>
-        <Breadcrumb className="m-0" style={{ backgroundColor: "#ddd", padding: "10px 110px" }}>
-          <Breadcrumb.Item href="/" className="breadCrumbItem" style={{ margin: "0px" }}>
-            Trang chủ
-          </Breadcrumb.Item>
-          <Breadcrumb.Item href="" className="breadCrumbItem">
-            {getCategoryName()}
-          </Breadcrumb.Item>
-          <Breadcrumb.Item active>{product.name}</Breadcrumb.Item>
-        </Breadcrumb>
+      <Breadcrumb className="m-0" style={{ backgroundColor: "#ddd", padding: "10px 110px" }}>
+        <Breadcrumb.Item href="/" className="breadCrumbItem" style={{ margin: "0px" }}>
+          Trang chủ
+        </Breadcrumb.Item>
+        <Breadcrumb.Item href="" className="breadCrumbItem">
+          {getCategoryName()}
+        </Breadcrumb.Item>
+        <Breadcrumb.Item active>{product.name}</Breadcrumb.Item>
+      </Breadcrumb>
+
+      <Container style={{ padding: "0px" }}>
 
         <Container fluid className={styles.productDetail}>
           <Row>
@@ -297,6 +325,22 @@ const ProductDetail = () => {
             <Col xs={6}>
               <div className={styles.productInfo}>
                 <h1 className={styles.productName}>{product.name}</h1>
+                {comments && comments.length > 0 ? (
+                  <div className="d-flex align-items-center mt-2">
+                    {renderStars(
+                      comments.reduce((acc, c) => acc + c.rating, 0) / comments.length
+                    )}
+
+                    <span style={{ marginLeft: "8px", color: "#555" }}>
+                      {(
+                        comments.reduce((acc, c) => acc + c.rating, 0) / comments.length
+                      ).toFixed(1)}{" "}
+                      / 5 ({comments.length} đánh giá)
+                    </span>
+                  </div>
+                ) : (
+                  <p style={{ color: "#786868ff" }}>Chưa có đánh giá</p>
+                )}
                 <span className={styles.productPriceS}>{renderPrice()}</span>
 
                 {product.sizes && product.sizes.length > 0 && (
@@ -308,9 +352,8 @@ const ProductDetail = () => {
                           type="radio"
                           key={index}
                           id={`size-${index}`}
-                          label={`${size.name} (${
-                            size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()
-                          }đ)`}
+                          label={`${size.name} (${size.price.discount ? size.price.discount.toLocaleString() : size.price.original.toLocaleString()
+                            }đ)`}
                           name="size"
                           checked={selectedSize === size.name}
                           onChange={() => setSelectedSize(size.name)}
@@ -349,6 +392,7 @@ const ProductDetail = () => {
                     <p>Không có lựa chọn vị</p>
                   )}
                 </Form>
+                <p className={styles.optionTitle}>Còn: {product.quantity} món</p>
 
                 <p className="m-0" style={{ color: "orange" }}>
                   Combo bao gồm:
@@ -358,17 +402,37 @@ const ProductDetail = () => {
                 </ul>
                 <p className={styles.optionTitle}>Số lượng:</p>
                 <div className={styles.buttonPrevious}>
-                  <Button variant="outline-secondary" size="sm" onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}
+                    disabled={product.quantity === 0}
+                  >
                     -
                   </Button>
                   <span className="mx-3">{quantity}</span>
-                  <Button variant="outline-secondary" size="sm" onClick={() => setQuantity((prev) => prev + 1)}>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => setQuantity((prev) => Math.min(prev + 1, product.quantity))}
+                    disabled={product.quantity === 0}
+                  >
                     +
                   </Button>
                 </div>
-                <Button className={styles.addToCart} onClick={() => handleAddToCart(product)}>
-                  Thêm vào giỏ
-                </Button>
+
+                {product.quantity > 0 ? (
+                  <Button
+                    className={styles.addToCart}
+                    onClick={() => handleAddToCart(product)}
+                  >
+                    Thêm vào giỏ hàng
+                  </Button>
+                ) : (
+                  <Button className={styles.addToCart} disabled>
+                    HẾT HÀNG
+                  </Button>
+                )}
               </div>
             </Col>
           </Row>
@@ -416,6 +480,7 @@ const ProductDetail = () => {
             const displayPrice = priceInfo ? priceInfo.discount ?? priceInfo.original : "Liên hệ";
 
             const isFavorite = favoriteMap[product._id] || false;
+            const isOutOfStock = product.quantity === 0;
 
             return (
               <Col key={product._id} md={3} sm={6} className="mb-4">
@@ -426,8 +491,9 @@ const ProductDetail = () => {
                         variant="top"
                         src={`${API_URL}/${product.image}`}
                         alt={product.name}
-                        className={styles.productImage}
+                        className={`${styles.productImage} ${isOutOfStock ? styles.outOfStockImage : ""}`}
                       />
+                      {isOutOfStock && <div className={styles.outOfStockBadge}>HẾT HÀNG</div>}
                     </div>
                   </Link>
 
@@ -436,15 +502,19 @@ const ProductDetail = () => {
                     <Card.Text className={styles.productDesc}>{product.description}</Card.Text>
                     <div className="d-flex justify-content-between align-items-center mt-3">
                       <span className={styles.productPrice}>
-                        {typeof displayPrice === "number" ? displayPrice.toLocaleString("vi-VN") + "₫" : displayPrice}
+                        {typeof displayPrice === "number"
+                          ? displayPrice.toLocaleString("vi-VN") + "₫"
+                          : displayPrice}
                       </span>
 
-                      <FontAwesomeIcon
-                        icon={isFavorite ? faHeart : faHeartBroken}
-                        style={{ color: isFavorite ? "red" : "#aaa", cursor: "pointer" }}
-                        onClick={() => toggleFavorite(product._id)}
-                        title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
-                      />
+                      {!isOutOfStock && (
+                        <FontAwesomeIcon
+                          icon={isFavorite ? faHeart : faHeartBroken}
+                          style={{ color: isFavorite ? "red" : "#aaa", cursor: "pointer" }}
+                          onClick={() => toggleFavorite(product._id)}
+                          title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                        />
+                      )}
                     </div>
                   </Card.Body>
                 </Card>

@@ -15,6 +15,7 @@ import VoucherFormModal from "@/app/component/createVoucherModal";
 import VoucherUpdateModal from "@/app/component/updateVoucherModal";
 import styles from "../styles/product.module.css";
 import { Voucher } from "@/app/type/voucher";
+
 export default function VoucherPages() {
     const [collapsed, setCollapsed] = useState(false);
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -115,7 +116,11 @@ export default function VoucherPages() {
     return (
         <div className="d-flex dark-mode">
             <AdminSideBar />
-            <Container fluid className={` ${styles.content} content w-100 container-content ${collapsed ? "collapsed-content" : ""}`} style={{ minHeight: "100vh" }}>
+            <Container
+                fluid
+                className={`${styles.content} content w-100 container-content ${collapsed ? "collapsed-content" : ""}`}
+                style={{ minHeight: "100vh" }}
+            >
                 <AdminNavbar />
                 <div className={styles["admin-product-container"]}>
                     <h2 className="text-center">🎫 Quản lý Voucher</h2>
@@ -154,7 +159,11 @@ export default function VoucherPages() {
                                 >
                                     Ngưng hoạt động
                                 </button>
-                                <Button style={{ fontWeight: "600" }} onClick={() => setShowAddModal(true)}className={styles.addProductBtn}>
+                                <Button
+                                    style={{ fontWeight: "600" }}
+                                    onClick={() => setShowAddModal(true)}
+                                    className={styles.addProductBtn}
+                                >
                                     <FontAwesomeIcon icon={faPlus} /> Thêm Voucher
                                 </Button>
                             </div>
@@ -182,33 +191,37 @@ export default function VoucherPages() {
                                 <th>Giảm giá</th>
                                 <th>Giá trị đơn hàng tối thiểu</th>
                                 <th>Giảm giá tối đa</th>
-                                <th>Mô tả</th>
-                                <th>Hết hạn</th>
+                                <th>Ngày bắt đầu</th>
+                                <th>Ngày kết thúc</th>
                                 <th>Trạng thái</th>
+                                <th>Đã dùng / Tổng</th>
                                 <th>Chức năng</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredVouchers.map((voucher) => (
                                 <tr key={voucher._id} className="text-center">
-                                    <td><span >{voucher.code}</span></td>
+                                    <td><span>{voucher.code}</span></td>
                                     <td>
-                                        💰{" "}
                                         {voucher.discountType === "percentage"
                                             ? `${voucher.discountValue}%`
                                             : `${voucher.discountValue.toLocaleString()}₫`}
                                     </td>
                                     <td>{voucher.minOrderValue.toLocaleString()}đ</td>
                                     <td>{voucher.maxDiscount.toLocaleString()}đ</td>
-                                    <td>{voucher.description}</td>
+                                    <td>{new Date(voucher.startsAt).toLocaleDateString()}</td>
                                     <td>{formatDate(voucher.expiresAt)}</td>
                                     <td>
                                         <span
-                                            className={`${styles["status-badge"]} ${voucher.isActive ? styles.active : styles.inactive
-                                                }`}
+                                            className={`${styles["status-badge"]} ${voucher.isActive ? styles.active : styles.inactive}`}
                                         >
                                             {voucher.isActive ? "Đang hoạt động" : "Không hoạt động"}
                                         </span>
+                                    </td>
+                                    <td>
+                                        {voucher.usageLimit
+                                            ? `${voucher.currentUsage || 0} / ${voucher.usageLimit}`
+                                            : ``}
                                     </td>
                                     <td>
                                         <Button
@@ -251,7 +264,6 @@ export default function VoucherPages() {
                             <p>Không tìm thấy voucher phù hợp.</p>
                         </div>
                     )}
-
                 </div>
             </Container>
 

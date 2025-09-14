@@ -5,76 +5,47 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Form } from "react-bootstrap";
-import { toast } from "react-toastify";
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ username: "", password: "" });
+  const [errors, setErrors] = useState<{ username?: string; password?: string; general?: string }>({});
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Hàm xử lý thay đổi input
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" }); // clear lỗi khi nhập lại
   };
 
-  // Hàm xác thực input
   const validateForm = () => {
     const { username, password } = formData;
+    const newErrors: typeof errors = {};
 
-    // Kiểm tra bỏ trống
     if (!username.trim()) {
-      toast.error("Tên đăng nhập không được để trống!", {
-        toastId: "username-empty",
-      });
-      return false;
+      newErrors.username = "Tên đăng nhập không được để trống!";
+    } else if (username.length < 4) {
+      newErrors.username = "Tên đăng nhập phải có ít nhất 4 ký tự!";
+    } else if (/\s/.test(username)) {
+      newErrors.username = "Tên đăng nhập không được chứa khoảng trắng!";
     }
+
     if (!password.trim()) {
-      toast.error("Mật khẩu không được để trống!", {
-        toastId: "password-empty",
-      });
-      return false;
+      newErrors.password = "Mật khẩu không được để trống!";
+    } else if (password.length < 6) {
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự!";
+    } else if (/\s/.test(password)) {
+      newErrors.password = "Mật khẩu không được chứa khoảng trắng!";
     }
 
-    // Kiểm tra độ dài tối thiểu
-    if (username.length < 4) {
-      toast.error("Tên đăng nhập phải có ít nhất 4 ký tự!", {
-        toastId: "username-length",
-      });
-      return false;
-    }
-    if (password.length < 6) {
-      toast.error("Mật khẩu phải có ít nhất 6 ký tự!", {
-        toastId: "password-length",
-      });
-      return false;
-    }
-
-    // Kiểm tra khoảng trắng
-    if (/\s/.test(username)) {
-      toast.error("Tên đăng nhập không được chứa khoảng trắng!", {
-        toastId: "username-space",
-      });
-      return false;
-    }
-    if (/\s/.test(password)) {
-      toast.error("Mật khẩu không được chứa khoảng trắng!", {
-        toastId: "password-space",
-      });
-      return false;
-    }
-
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Hàm xử lý đăng nhập
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Kiểm tra validation
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     const body = new URLSearchParams();
     body.append("username", formData.username);
@@ -91,15 +62,9 @@ export default function SignInPage() {
       const data = await res.json();
 
       if (!res.ok || !data.status) {
-        toast.error(data.message || "Đăng nhập thất bại!", {
-          toastId: "login-failed",
-        });
+        setErrors({ general: data.message || "Đăng nhập thất bại!" });
         return;
       }
-
-      toast.success("Đăng nhập thành công!", {
-        toastId: "login-success",
-      });
 
       // Điều hướng theo vai trò
       if (data.result.user.role === "admin") {
@@ -109,11 +74,10 @@ export default function SignInPage() {
       }
     } catch (err) {
       console.error("Lỗi khi đăng nhập:", err);
-      toast.error("Có lỗi xảy ra khi đăng nhập!", {
-        toastId: "login-error",
-      });
+      setErrors({ general: "Có lỗi xảy ra khi đăng nhập!" });
     }
   };
+
 
   return (
     <div className="min-h-screen flex">
@@ -197,7 +161,7 @@ export default function SignInPage() {
       </div>
 
       {/* Right Panel */}
-      <div className="w-full lg:w-7/12 flex items-center justify-center p-8 bg-white">
+       <div className="w-full lg:w-7/12 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md space-y-6">
           {/* Logo */}
           <div className="mb-8">
@@ -222,7 +186,7 @@ export default function SignInPage() {
               <Button
                 variant="outline-secondary"
                 className="flex-1 justify-center"
-                onClick={() => window.location.href = `${API_URL}/users/auth/google`} // Redirect đến backend
+                onClick={() => (window.location.href = `${API_URL}/users/auth/google`)}
               >
                 <span className="mr-2">🌐</span> Đăng nhập với Google
               </Button>
@@ -242,10 +206,7 @@ export default function SignInPage() {
           {/* Sign In Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
                 Tên đăng nhập
               </label>
               <Form.Control
@@ -255,14 +216,13 @@ export default function SignInPage() {
                 placeholder="Nhập tên đăng nhập"
                 value={formData.username}
                 onChange={handleChange}
+                isInvalid={!!errors.username}
               />
+              {errors.username && <p className="text-red-600 text-xs mt-1">{errors.username}</p>}
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Mật khẩu
               </label>
               <div className="relative">
@@ -273,6 +233,7 @@ export default function SignInPage() {
                   placeholder="Nhập mật khẩu"
                   value={formData.password}
                   onChange={handleChange}
+                  isInvalid={!!errors.password}
                 />
                 <button
                   type="button"
@@ -286,18 +247,21 @@ export default function SignInPage() {
                   )}
                 </button>
               </div>
+              {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password}</p>}
             </div>
+
+            {errors.general && <p className="text-red-600 text-sm">{errors.general}</p>}
 
             <Button
               type="submit"
-              className="w-full bg-[#3c67a4] hover:bg-[#2d4a7a] border-0 text-white"
+              className="w-full bg-[#e31837] hover:bg-[#b10a0a] border-0 text-white"
             >
               Đăng nhập
             </Button>
 
             <div className="text-center text-sm text-gray-600 mt-2">
               Bạn chưa có tài khoản?{" "}
-              <Link href="/register" className="text-blue-600 hover:underline">
+              <Link href="/register" className="text-red-600 hover:underline">
                 Đăng ký
               </Link>
             </div>
