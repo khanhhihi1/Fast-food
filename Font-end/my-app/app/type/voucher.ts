@@ -7,5 +7,11 @@ export interface Voucher {
     minOrderValue: number;
     maxDiscount: number;
     expiresAt: string;
+    startsAt: string;
     isActive: boolean;
+    voucherType: "timed" | "limited";
+    usageLimit: number;
+    usageCount: number;
+    currentUsage:number;
+
 }

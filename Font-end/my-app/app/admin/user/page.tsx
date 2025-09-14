@@ -25,7 +25,6 @@ export default function UserAdmin() {
   const [collapsed, setCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
-  const { isDarkMode } = useDarkMode();
 
   // Thêm filter và search
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
@@ -33,21 +32,28 @@ export default function UserAdmin() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchUsers = async () => {
-    try {
-      const res = await fetch(`${API_URL}/users`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data?.result) {
-        setUsers(data.result);
-      } else if (Array.isArray(data)) {
-        setUsers(data);
-      }
-    } catch (e) {
-      toast.error("Lỗi tải danh sách người dùng");
+  try {
+    const res = await fetch(`${API_URL}/users`, {
+      credentials: "include",
+    });
+    console.log('Response status:', res.status);
+    if (!res.ok) {
+      const errData = await res.json();
+      console.log('Error data:', errData);
+      throw new Error(errData.message);
     }
-  };
-
+    const data = await res.json();
+    console.log('API data:', data);
+    if (data?.result) {
+      setUsers(data.result);
+    } else if (Array.isArray(data)) {
+      setUsers(data);
+    }
+  } catch (e) {
+    console.error('Fetch error:', e);
+    toast.error("Lỗi tải danh sách người dùng: " );
+  }
+};
   const updateUserField = async (
     id: string,
     field: string,

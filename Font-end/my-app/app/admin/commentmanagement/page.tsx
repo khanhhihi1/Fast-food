@@ -129,7 +129,7 @@ export default function CartManagementPage() {
                 className={`${styles.filterBtn} ${activeTab === "order" ? styles.active : ""}`}
                 onClick={() => setActiveTab("order")}
               >
-                Bình luận Đơn hàng
+                Đánh giá đơn hàng
               </button>
               <button
                 className={`${styles.filterBtn} ${activeTab === "product" ? styles.active : ""}`}

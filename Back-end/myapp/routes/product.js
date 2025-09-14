@@ -209,5 +209,31 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
+router.post("/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ success: false, message: "Thiếu message" });
+    }
 
+    const data = await productsController.chatWithAI(message);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    console.error("Lỗi chat:", error);
+    res.status(500).json({ success: false, message: "Lỗi server hoặc API OpenAI" });
+  }
+});
+router.post("/buyMultiple", async (req, res) => {
+  try {
+    const { items } = req.body; // items: [{productId, quantity}, ...]
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: "Danh sách items không hợp lệ" });
+    }
+
+    await productsController.buyMultiple(items);
+    res.status(200).json({ success: true, message: "Trừ số lượng thành công" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
 module.exports = router;

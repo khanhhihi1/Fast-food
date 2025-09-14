@@ -15,6 +15,7 @@ import DiscountPage from "./discount/discount";
 import Slide from "./component/main/slide";
 import HotProduct from "./component/hotProduct";
 import Blog from "./blog/blog";
+import ChatWidget from "./chat/chat";
 export default function Home() {
   return (
     <>
@@ -22,6 +23,7 @@ export default function Home() {
       <Service />
       <About />
       <HotProduct />
+      <ChatWidget />
       {/* <ProductList
         category="hot"
         title="🔥Sản phẩm Hot"

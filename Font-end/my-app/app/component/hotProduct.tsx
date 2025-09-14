@@ -60,7 +60,6 @@ const HotProduct = () => {
     return () => controller.abort();
   }, []);
 
-  // fetch danh sách yêu thích
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
@@ -130,6 +129,7 @@ const HotProduct = () => {
             : "Liên hệ";
 
           const isFavorite = favoriteMap[product._id] || false;
+          const isOutOfStock = product.quantity === 0;
 
           return (
             <Col key={product._id} md={3} sm={6} className="mb-4">
@@ -140,9 +140,14 @@ const HotProduct = () => {
                       variant="top"
                       src={`${API_URL}/${product.image}`}
                       alt={product.name}
-                      className={styles.productImage}
+                      className={`${styles.productImage} ${
+                        isOutOfStock ? styles.outOfStockImage : ""
+                      }`}
                     />
                     <div className={styles.hotBadge}>HOT</div>
+                    {isOutOfStock && (
+                      <div className={styles.outOfStockBadge}>HẾT HÀNG</div>
+                    )}
                   </div>
                 </Link>
 
@@ -160,15 +165,19 @@ const HotProduct = () => {
                         : displayPrice}
                     </span>
 
-                    <FontAwesomeIcon
-                      icon={isFavorite ? faHeart : faHeartBroken}
-                      style={{
-                        color: isFavorite ? "red" : "#aaa",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => toggleFavorite(product._id)}
-                      title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
-                    />
+                    {!isOutOfStock && (
+                      <FontAwesomeIcon
+                        icon={isFavorite ? faHeart : faHeartBroken}
+                        style={{
+                          color: isFavorite ? "red" : "#aaa",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => toggleFavorite(product._id)}
+                        title={
+                          isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"
+                        }
+                      />
+                    )}
                   </div>
                 </Card.Body>
               </Card>

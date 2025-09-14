@@ -17,6 +17,10 @@ import { useEffect, useState, useCallback } from "react";
 import ProtectedRoute from "../component/ProtectedRoute";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { Voucher } from "@/app/type/voucher";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import styles from "../styles/cart.module.css";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface Product {
   _id: string;
@@ -62,18 +66,7 @@ interface CartItem {
   }[];
   availableTastes?: string[];
   maxQuantity?: number;
-}
-
-interface Voucher {
-  _id: string;
-  code: string;
-  description: string;
-  discountType: "fixed" | "percentage";
-  discountValue: number;
-  minOrderValue: number;
-  maxDiscount?: number;
-  expiresAt: string;
-  isActive?: boolean;
+  maxAvailable?: number;
 }
 
 export default function Cart() {
@@ -183,8 +176,26 @@ export default function Cart() {
     }
   };
 
+  /** ================== CALCULATE TOTAL QUANTITY FOR PRODUCT ================== */
+  const getTotalQuantityForProduct = (productId: string, excludeItemId?: string) => {
+    return cartItems.reduce((total, item) => {
+      if (item.productId === productId && item.id !== excludeItemId) {
+        return total + item.quantity;
+      }
+      return total;
+    }, 0);
+  };
+
   /** ================== UPDATE CART ================== */
   const updateItemLocallyAndSync = async (updatedItem: CartItem) => {
+    const totalOtherQty = getTotalQuantityForProduct(updatedItem.productId, updatedItem.id);
+    const maxAvailable = (updatedItem.maxQuantity || 0) - totalOtherQty;
+
+    if (updatedItem.quantity > maxAvailable) {
+      toast.error(`Số lượng tối đa có thể đặt là ${maxAvailable}`);
+      return;
+    }
+
     setCartItems((prev) =>
       prev.map((p) => (p.id === updatedItem.id ? updatedItem : p))
     );
@@ -210,32 +221,29 @@ export default function Cart() {
       if (!res.ok) throw new Error("Không thể cập nhật sản phẩm");
     } catch {
       toast.error("Không thể cập nhật sản phẩm");
+      // Rollback local state if needed
+      fetchCart();
     }
   };
 
-  /** ================== THÊM BIẾN THỂ MỚI ================== */
-  const handleAddVariant = (baseItem: CartItem) => {
-    // Tạo một bản sao của sản phẩm với số lượng mặc định là 1
-    const newVariant = {
-      ...baseItem,
-      id: `temp-${Date.now()}`,
-      quantity: 1,
-    };
-
-    // Hiển thị modal để chọn biến thể mới
+  /** ================== EDIT ITEM ================== */
+  const handleEditItem = (item: CartItem) => {
+    const totalOtherQty = getTotalQuantityForProduct(item.productId, item.id);
+    const maxAvailable = (item.maxQuantity || 0) - totalOtherQty;
+    setEditingItem({ ...item, maxAvailable });
     setVariantModalShow(true);
-    setEditingItem(newVariant);
   };
 
-  /** ================== LƯU BIẾN THỂ MỚI ================== */
-  const handleSaveVariant = async (newVariant: CartItem) => {
+  /** ================== SAVE EDITED ITEM ================== */
+  const handleSaveEdit = async (updatedItem: CartItem) => {
     try {
-      // Kiểm tra xem biến thể đã tồn tại chưa (kiểm tra lại để chắc chắn)
+      // Kiểm tra xem biến thể mới có trùng với item khác không (không tính chính nó)
       const exists = cartItems.some(
         (ci) =>
-          ci.productId === newVariant.productId &&
-          ci.sizeName === newVariant.sizeName &&
-          (ci.taste?.[0] || "Không") === (newVariant.taste?.[0] || "Không")
+          ci.id !== updatedItem.id &&
+          ci.productId === updatedItem.productId &&
+          ci.sizeName === updatedItem.sizeName &&
+          (ci.taste?.[0] || "Không") === (updatedItem.taste?.[0] || "Không")
       );
 
       if (exists) {
@@ -243,9 +251,18 @@ export default function Cart() {
         return;
       }
 
+      // Kiểm tra số lượng
+      const totalOtherQty = getTotalQuantityForProduct(updatedItem.productId, updatedItem.id);
+      const maxAvailable = (updatedItem.maxQuantity || 0) - totalOtherQty;
+
+      if (updatedItem.quantity > maxAvailable) {
+        toast.error(`Số lượng tối đa có thể đặt là ${maxAvailable}`);
+        return;
+      }
+
       // Lấy thông tin giá đúng từ availableSizes
-      const selectedSize = newVariant.availableSizes?.find(
-        (s) => s.name === newVariant.sizeName
+      const selectedSize = updatedItem.availableSizes?.find(
+        (s) => s.name === updatedItem.sizeName
       );
 
       if (!selectedSize) {
@@ -253,20 +270,16 @@ export default function Cart() {
         return;
       }
 
-      // Chuẩn bị dữ liệu gửi đến API - định dạng đúng như server mong đợi
+      // Chuẩn bị dữ liệu gửi đến API
       const requestBody = {
-        productId: newVariant.productId,
-        quantity: newVariant.quantity,
-        sizeName: newVariant.sizeName,
-        taste: newVariant.taste || [],
-        price: selectedSize.price, // Đảm bảo đây là object {original, discount}
+        quantity: updatedItem.quantity,
+        sizeName: updatedItem.sizeName,
+        taste: updatedItem.taste || [],
+        price: selectedSize.price,
       };
 
-      console.log("Gửi dữ liệu đến server:", requestBody);
-
-      // Gọi API để thêm vào giỏ hàng
-      const res = await fetch(`${API_URL}/cart/add`, {
-        method: "POST",
+      const res = await fetch(`${API_URL}/cart/update/${updatedItem.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(requestBody),
@@ -274,20 +287,19 @@ export default function Cart() {
 
       const data = await res.json();
 
-      console.log("Phản hồi từ server:", data);
-
       if (data.status) {
         // Cập nhật lại giỏ hàng
         await fetchCart();
-        toast.success("Đã thêm biến thể mới vào giỏ hàng");
+        toast.success("Đã cập nhật sản phẩm");
       } else {
-        throw new Error(data.message || "Không thể thêm biến thể");
+        throw new Error(data.message || "Không thể cập nhật sản phẩm");
       }
     } catch (error: any) {
       console.error("Chi tiết lỗi:", error);
-      toast.error(`Không thể thêm biến thể mới: ${error.message}`);
+      toast.error(`Không thể cập nhật sản phẩm: ${error.message}`);
     }
   };
+
   /** ================== APPLY VOUCHER ================== */
   const applyVoucher = useCallback(
     async (voucherToApply?: Voucher, showToast: boolean = true) => {
@@ -352,7 +364,27 @@ export default function Cart() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/temp-order`, {
+      // Trước tiên, gọi API để kiểm tra và trừ số lượng hàng tồn kho cho tất cả sản phẩm
+      const buyRes = await fetch(`${API_URL}/products/buyMultiple`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          items: cartItems.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const buyData = await buyRes.json();
+
+      if (!buyData.success) {
+        throw new Error(buyData.message || "Không đủ hàng tồn kho cho một số sản phẩm");
+      }
+
+      // Nếu trừ thành công, tạo temp-order
+      const tempOrderRes = await fetch(`${API_URL}/temp-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -364,14 +396,15 @@ export default function Cart() {
         }),
       });
 
-      const data = await res.json();
-      if (data.status) {
+      const tempOrderData = await tempOrderRes.json();
+      if (tempOrderData.status) {
         router.push("/checkout");
       } else {
-        toast.error(data.message || "Không thể tạo đơn hàng tạm thời");
+        throw new Error(tempOrderData.message || "Không thể tạo đơn hàng tạm thời");
       }
-    } catch {
-      toast.error("Lỗi khi tạo đơn hàng tạm thời");
+    } catch (error: any) {
+      toast.error(error.message || "Lỗi khi xử lý đơn hàng");
+      // Lưu ý: Vì backend xử lý all-or-nothing, không cần rollback ở đây
     }
   };
 
@@ -393,7 +426,7 @@ export default function Cart() {
     const [selectedTaste, setSelectedTaste] = useState(
       item.taste?.[0] || "Không"
     );
-    const [quantity, setQuantity] = useState(1);
+    const [quantity, setQuantity] = useState(item.quantity);
 
     const selectedSizeObj = item.availableSizes?.find(
       (s) => s.name === selectedSize
@@ -404,17 +437,8 @@ export default function Cart() {
       item.price;
 
     const handleSave = () => {
-      // Kiểm tra xem biến thể đã tồn tại chưa
-      const exists = cartItems.some(
-        (ci) =>
-          ci.productId === item.productId &&
-          ci.sizeName === selectedSize &&
-          (ci.taste?.[0] || "Không") ===
-          (selectedTaste === "Không" ? "Không" : selectedTaste)
-      );
-
-      if (exists) {
-        toast.error("Biến thể này đã có trong giỏ hàng");
+      if (quantity > (item.maxAvailable || 0)) {
+        toast.error(`Số lượng tối đa có thể đặt là ${item.maxAvailable}`);
         return;
       }
 
@@ -433,7 +457,7 @@ export default function Cart() {
     return (
       <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Thêm biến thể mới</Modal.Title>
+          <Modal.Title>Điều chỉnh sản phẩm</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form.Group className="mb-3">
@@ -472,16 +496,46 @@ export default function Cart() {
 
           <Form.Group className="mb-3">
             <Form.Label>Số lượng</Form.Label>
-            <Form.Control
-              type="number"
-              min={1}
-              max={item.maxQuantity}
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-            />
-            {item.maxQuantity && (
+            <div className={styles.quantityWrapper}>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              >
+                -
+              </Button>
+              <Form.Control
+                type="number"
+                value={quantity}
+                min={1}
+                max={item.maxAvailable}
+                className={styles.quantityInput}
+                onChange={(e) => {
+                  const newQty = parseInt(e.target.value) || 1;
+                  if (newQty <= (item.maxAvailable || Infinity)) {
+                    setQuantity(newQty);
+                  } else {
+                    toast.error(`Số lượng tối đa có thể đặt là ${item.maxAvailable}`);
+                  }
+                }}
+              />
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => {
+                  if (quantity < (item.maxAvailable || Infinity)) {
+                    setQuantity(quantity + 1);
+                  } else {
+                    toast.error(`Số lượng tối đa có thể đặt là ${item.maxAvailable}`);
+                  }
+                }}
+              >
+                +
+              </Button>
+            </div>
+            {item.maxAvailable !== undefined && (
               <Form.Text className="text-muted">
-                Số lượng tối đa: {item.maxQuantity}
+                Số lượng tối đa: {item.maxAvailable}
               </Form.Text>
             )}
           </Form.Group>
@@ -495,7 +549,7 @@ export default function Cart() {
             Hủy
           </Button>
           <Button variant="primary" onClick={handleSave}>
-            Thêm vào giỏ
+            Cập nhật
           </Button>
         </Modal.Footer>
       </Modal>
@@ -536,193 +590,68 @@ export default function Cart() {
           <Row className="justify-content-center">
             {/* ================== Bảng giỏ hàng ================== */}
             <Col md={8}>
-              <Card className="shadow p-4">
-                <Table responsive hover>
-                  <thead>
-                    <tr>
-                      <th>Hình ảnh</th>
-                      <th>Tên</th>
-                      <th>Giá</th>
-                      <th>Số lượng</th>
-                      <th>Kích cỡ</th>
-                      <th>Hương vị</th>
-                      <th>Thành tiền</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cartItems.map((item) => (
-                      <tr key={item.id}>
-                        <td>
-                          <Image
-                            src={`${API_URL}/${item.imageUrl}`}
-                            style={{
-                              width: "80px",
-                              height: "80px",
-                              objectFit: "cover",
-                            }}
-                            alt={item.name}
-                          />
-                        </td>
-                        <td>{item.name}</td>
-                        <td>{item.price.toLocaleString()} ₫</td>
-                        <td>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            min={1}
-                            onChange={(e) => {
-                              let newQty = parseInt(e.target.value) || 1;
+              <div className={styles.cartContainer}>
+                {cartItems.map((item) => (
+                  <div key={item.id} className={styles.cartItem}>
+                    <Image
+                      src={`${API_URL}/${item.imageUrl}`}
+                      alt={item.name}
+                      className={styles.cartImage}
+                    />
 
-                              // Tính tổng số lượng các biến thể của cùng 1 productId
-                              const totalForProduct = cartItems.reduce(
-                                (sum, ci) => {
-                                  if (
-                                    ci.productId === item.productId &&
-                                    ci.id !== item.id
-                                  ) {
-                                    return sum + ci.quantity;
-                                  }
-                                  return sum;
-                                },
-                                newQty
-                              ); // cộng luôn số lượng mới của biến thể hiện tại
+                    <div className={styles.itemInfo}>
+                      <div className={styles.itemTitle}>{item.name}</div>
+                      <div className={styles.itemVariant}>
+                        {item.sizeName ? `Cỡ ${item.sizeName}` : ""}
+                        {item.taste?.[0] ? ` - ${item.taste[0]}` : ""}
+                      </div>
+                      <div className={styles.itemPrice}>{item.price.toLocaleString()} ₫</div>
 
-                              if (
-                                item.maxQuantity &&
-                                totalForProduct > item.maxQuantity
-                              ) {
-                                toast.warning(
-                                  `Sản phẩm ${item.name} hiện đang chỉ còn ${item.maxQuantity} sản phẩm`
-                                );
-                                newQty = Math.max(
-                                  1,
-                                  item.maxQuantity -
-                                  cartItems
-                                    .filter(
-                                      (ci) =>
-                                        ci.productId === item.productId &&
-                                        ci.id !== item.id
-                                    )
-                                    .reduce((sum, ci) => sum + ci.quantity, 0)
-                                );
-                              }
+                      <div className={styles.quantityWrapper}>
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          onClick={() => {
+                            const newQty = Math.max(1, item.quantity - 1);
+                            updateItemLocallyAndSync({ ...item, quantity: newQty });
+                          }}
+                        >
+                          -
+                        </Button>
+                        <Form.Control
+                          type="number"
+                          value={item.quantity}
+                          min={1}
+                          className={styles.quantityInput}
+                          onChange={(e) => {
+                            let newQty = parseInt(e.target.value) || 1;
+                            updateItemLocallyAndSync({ ...item, quantity: newQty });
+                          }}
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          onClick={() => {
+                            const newQty = item.quantity + 1;
+                            updateItemLocallyAndSync({ ...item, quantity: newQty });
+                          }}
+                        >
+                          +
+                        </Button>
+                      </div>
 
-                              const updated = { ...item, quantity: newQty };
-                              updateItemLocallyAndSync(updated);
-                            }}
-                            style={{ width: "60px" }}
-                          />
-                        </td>
-                        <td>
-                          <Form.Select
-                            value={item.sizeName}
-                            onChange={(e) => {
-                              const newSize = e.target.value;
-
-                              // Check trùng biến thể
-                              const exists = cartItems.some(
-                                (ci) =>
-                                  ci.id !== item.id &&
-                                  ci.productId === item.productId &&
-                                  ci.sizeName === newSize &&
-                                  (ci.taste?.[0] || "Không") ===
-                                  (item.taste?.[0] || "Không")
-                              );
-
-                              if (exists) {
-                                toast.error(
-                                  "Sản phẩm này đã có trong giỏ hàng"
-                                );
-                                return;
-                              }
-
-                              const selectedSize = item.availableSizes?.find(
-                                (s) => s.name === newSize
-                              );
-                              const updated = {
-                                ...item,
-                                sizeName: newSize,
-                                price:
-                                  selectedSize?.price.discount ??
-                                  selectedSize?.price.original ??
-                                  item.price,
-                                fullPrice:
-                                  selectedSize?.price ?? item.fullPrice,
-                              };
-                              updateItemLocallyAndSync(updated);
-                            }}
-                          >
-                            {item.availableSizes?.map((size) => (
-                              <option key={size.name} value={size.name}>
-                                {size.name}
-                              </option>
-                            ))}
-                          </Form.Select>
-                        </td>
-                        <td>
-                          {item.availableTastes && (
-                            <Form.Select
-                              value={item.taste?.[0] || "Không"}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                const newTaste = val === "Không" ? [] : [val];
-
-                                // Check trùng biến thể
-                                const exists = cartItems.some(
-                                  (ci) =>
-                                    ci.id !== item.id &&
-                                    ci.productId === item.productId &&
-                                    ci.sizeName === item.sizeName &&
-                                    (ci.taste?.[0] || "Không") ===
-                                    (val || "Không")
-                                );
-
-                                if (exists) {
-                                  toast.error(
-                                    "Sản phẩm này đã có trong giỏ hàng"
-                                  );
-                                  return;
-                                }
-
-                                const updated = { ...item, taste: newTaste };
-                                updateItemLocallyAndSync(updated);
-                              }}
-                            >
-                              <option value="Không">Không</option>
-                              {item.availableTastes.map((taste) => (
-                                <option key={taste} value={taste}>
-                                  {taste}
-                                </option>
-                              ))}
-                            </Form.Select>
-                          )}
-                        </td>
-                        <td>
-                          {(item.price * item.quantity).toLocaleString()} ₫
-                        </td>
-                        <td>
-                          <Button
-                            variant="success"
-                            size="sm"
-                            className="me-2 mb-2"
-                            onClick={() => handleAddVariant(item)}
-                          >
-                            Thêm biến thể
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleRemove(item.id)}
-                          >
-                            Xóa
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </Card>
+                      <div className={styles.actionLinks}>
+                        <span className={styles.deleteIcon} onClick={() => handleRemove(item.id)}>
+                          <FontAwesomeIcon icon={faTrash} />
+                        </span>
+                        <span className={styles.choose} onClick={() => handleEditItem(item)}>
+                          Điều Chỉnh
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Col>
 
             {/* ================== Tổng đơn hàng ================== */}
@@ -730,35 +659,82 @@ export default function Cart() {
               <Card className="shadow p-4">
                 <h4>Tổng đơn hàng</h4>
                 <Form.Group className="mb-3">
-                  <Form.Label>Chọn voucher</Form.Label>
-                  <Form.Select
-                    value={selectedVoucher?.code || ""}
-                    onChange={(e) => {
-                      const code = e.target.value;
-                      const found = vouchers.find((v) => v.code === code);
+                  <Form.Label className="fw-bold">Chọn voucher</Form.Label>
+                  <div className={styles.voucherList}>
+                    {vouchers.length === 0 && (
+                      <p className="text-muted">Không có voucher khả dụng</p>
+                    )}
+                    {vouchers.map((voucher) => {
+                      const isExpired = voucher.expiresAt
+                        ? new Date(voucher.expiresAt) <= new Date()
+                        : false;
+                      const isUsedUp =
+                        voucher.usageLimit !== undefined &&
+                        voucher.currentUsage !== undefined &&
+                        voucher.currentUsage >= voucher.usageLimit;
 
-                      setSelectedVoucher(found || null);
+                      const disabled = isExpired || isUsedUp;
+                      const isSelected = selectedVoucher?.code === voucher.code;
 
-                      if (found) {
-                        localStorage.setItem(
-                          "selectedVoucher",
-                          JSON.stringify(found)
-                        );
-                        applyVoucher(found);
-                      } else {
-                        localStorage.removeItem("selectedVoucher");
-                        setDiscount(0);
-                        setFinalTotal(0);
-                      }
-                    }}
-                  >
-                    <option value="">-- Chọn voucher --</option>
-                    {vouchers.map((voucher) => (
-                      <option key={voucher._id} value={voucher.code}>
-                        {voucher.code} - {voucher.description}
-                      </option>
-                    ))}
-                  </Form.Select>
+                      return (
+                        <Card
+                          key={voucher._id}
+                          className={`mb-2 ${styles.voucherCard} ${isSelected ? "selected" : ""
+                            } ${disabled ? "disabled" : ""}`}
+                          onClick={() => {
+                            if (!disabled) {
+                              if (isSelected) {
+                                setSelectedVoucher(null);
+                                localStorage.removeItem("selectedVoucher");
+                                setDiscount(0);
+                                setFinalTotal(0);
+                              } else {
+                                setSelectedVoucher(voucher);
+                                localStorage.setItem("selectedVoucher", JSON.stringify(voucher));
+                                applyVoucher(voucher);
+                              }
+                            }
+                          }}
+                        >
+                          <Card.Body className="d-flex justify-content-between align-items-center">
+                            <div>
+                              <h6 className="mb-1">{voucher.code}</h6>
+                              <p className="mb-1 text-muted small">{voucher.description}</p>
+                              {voucher.expiresAt && (
+                                <small className="text-danger">
+                                  HSD:{" "}
+                                  {new Date(voucher.expiresAt).toLocaleDateString("vi-VN")}
+                                </small>
+                              )}
+                              {voucher.usageLimit && (
+                                <small className="d-block">
+                                  Đã dùng: {voucher.currentUsage || 0}/{voucher.usageLimit}
+                                </small>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              className={styles.voucherButton}
+                              variant={
+                                disabled
+                                  ? "secondary"
+                                  : isSelected
+                                    ? "success"
+                                    : "outline-dark"
+                              }
+                              disabled={disabled}
+                            >
+                              {disabled
+                                ? "Hết hạn"
+                                : isSelected
+                                  ? "Bỏ chọn"
+                                  : "Chọn"}
+                            </Button>
+                          </Card.Body>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </Form.Group>
 
                 <p>
@@ -787,13 +763,13 @@ export default function Cart() {
           </Row>
         )}
 
-        {/* Modal thêm biến thể */}
+        {/* Modal điều chỉnh sản phẩm */}
         {editingItem && (
           <VariantModal
             show={variantModalShow}
             handleClose={() => setVariantModalShow(false)}
             item={editingItem}
-            onSave={handleSaveVariant}
+            onSave={handleSaveEdit}
           />
         )}
       </Container>

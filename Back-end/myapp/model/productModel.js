@@ -1,6 +1,7 @@
-const mongoose = require("mongoose");
+// File: models/productModel.js
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const MONGO_URI = "mongodb://localhost:27017/Fried_King";
+
 const sizeSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -14,40 +15,40 @@ const sizeSchema = new Schema(
 
 const productSchema = new Schema({
   name: { type: String, required: true },
-  nameNoAccent: { type: String }, // <-- thêm
+  nameNoAccent: { type: String },
   categoryId: {
     type: Schema.Types.ObjectId,
-    ref: "categories",
+    ref: 'categories',
     required: true,
   },
-  image: { type: String, default: "", required: true },
-  description: { type: String, default: "" },
-  descriptionNoAccent: { type: String }, // <-- thêm
+  image: { type: String, default: '' },
+  description: { type: String, default: '' },
+  descriptionNoAccent: { type: String },
   taste: { type: [String], default: [] },
-  tasteNoAccent: { type: [String], default: [] }, // <-- thêm
+  tasteNoAccent: { type: [String], default: [] },
   status: { type: Boolean, default: true },
   quantity: { type: Number, required: true },
   view: { type: Number, default: 0 },
-  time: { type: String, default: "30-45min" },
+  time: { type: String, default: '30-45min' },
   saleOff: { type: Boolean, default: false },
   sizes: { type: [sizeSchema], required: true },
 });
 
-// Trước khi lưu: Tự động tạo các trường NoAccent
-productSchema.pre("save", function (next) {
+// Pre-save hook to normalize Vietnamese text for search optimization
+productSchema.pre('save', function (next) {
   this.nameNoAccent = normalizeVietnamese(this.name);
   this.descriptionNoAccent = normalizeVietnamese(this.description);
   this.tasteNoAccent = this.taste.map(normalizeVietnamese);
   next();
 });
 
+// Utility function for normalization
 function normalizeVietnamese(str) {
+  if (!str) return '';
   return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 }
 
-
-module.exports =
-  mongoose.models.products || mongoose.model("products", productSchema);
+module.exports = mongoose.models.products || mongoose.model('products', productSchema);

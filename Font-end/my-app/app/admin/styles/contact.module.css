@@ -1,0 +1,58 @@
+.content {
+  background: #f5f6f7;
+  min-height: 100vh;
+  margin-top: 60px; /* tránh bị navbar đè */
+  transition: margin-left 0.3s ease;
+  overflow-x: hidden; /* chặn tràn ngang */
+  padding-left: 250px; /* chừa khoảng sidebar */
+}
+
+.messageIn {
+  background-color: #ffffff;
+  border-radius: 0 18px 18px 18px;
+}
+
+.messageOut {
+  background-color: #007bff;
+  color: white;
+  border-radius: 18px 0 18px 18px;
+}
+
+.onlineDot {
+  width: 10px;
+  height: 10px;
+  background-color: #28a745;
+  border-radius: 50%;
+}
+
+.offlineDot {
+  width: 10px;
+  height: 10px;
+  background-color: #6c757d;
+  border-radius: 50%;
+}
+
+.userItem:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+  cursor: pointer;
+}
+
+.selectedUser {
+  background-color: rgba(0, 123, 255, 0.15);
+  border-left: 3px solid #007bff;
+}
+.unrepliedDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: red; /* Chưa trả lời */
+  margin-left: 8px;
+}
+
+.repliedDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: gray; /* Đã trả lời */
+  margin-left: 8px;
+}

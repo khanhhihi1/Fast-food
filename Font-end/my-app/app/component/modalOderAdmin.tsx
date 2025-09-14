@@ -44,7 +44,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
   useEffect(() => {
     if (show && initialOrder) {
-      console.log("Dữ liệu order từ props ban đầu:", initialOrder); 
+      console.log("Dữ liệu order từ props ban đầu:", initialOrder);
       fetchOrderDetails(initialOrder._id);
     }
   }, [show, initialOrder]);
@@ -67,7 +67,8 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       }
 
       console.log("Dữ liệu order từ backend:", data.order);
-      setCurrentOrder(data.order);    } catch (error: any) {
+      setCurrentOrder(data.order);
+    } catch (error: any) {
       console.error("Lỗi fetch order:", error);
       toast.error(error.message || "Có lỗi khi tải chi tiết đơn hàng");
     }
@@ -111,14 +112,35 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   };
 
   const subtotal = currentOrder.items.reduce(
-    (sum, item) => sum + item.price.original * item.quantity,
+    (sum, item) => sum + item.finalPrice * item.quantity,
     0
   );
-  const discount = currentOrder.discount || 0;
-  const voucherDiscount = currentOrder.voucherData?.discountValue || 0;
+
+  const discount = currentOrder.discount || 0; // giảm giá trực tiếp từ order
+
+  let voucherDiscount = 0;
+  if (currentOrder.voucherCode && currentOrder.voucherData) {
+    if (currentOrder.voucherData.discountType === "percentage") {
+      voucherDiscount = Math.min(
+        (subtotal * currentOrder.voucherData.discountValue) / 100,
+        currentOrder.voucherData.maxDiscount || Infinity
+      );
+    } else if (currentOrder.voucherData.discountType === "fixed") {
+      voucherDiscount = currentOrder.voucherData.discountValue;
+    }
+  }
+
   const shippingFee = currentOrder.shippingFee || 0;
   const tax = currentOrder.tax || 0;
-  const totalAmount = subtotal - discount - voucherDiscount + shippingFee + tax;
+
+  const totalAmount =
+    subtotal - discount - voucherDiscount + shippingFee + tax;
+
+  const voucherDisplay = currentOrder.voucherData
+    ? currentOrder.voucherData.discountType === "percentage"
+      ? `${currentOrder.voucherData.discountValue}%`
+      : `${currentOrder.voucherData.discountValue.toLocaleString()}đ`
+    : "";
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
@@ -210,23 +232,23 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             {currentOrder.items.map((item, index) => (
               <tr key={`${item.productId}-${index}`}>
                 <td className="text-center">
-                  <Image 
-                    src={item.image} 
-                    alt={item.name} 
-                    width={60} 
-                    rounded 
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    width={60}
+                    rounded
                     onError={(e) => {
                       console.error(`Lỗi load image: ${item.image}`);
                       e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Image';
-                    }} 
+                    }}
                   />
                 </td>
-                <td style={{color:"black"}}>{item.name}</td>
-                <td style={{color:"black"}}>{item.sizeName || "Không xác định"}</td>
-                <td style={{color:"black"}}>{item.taste.join(", ") || "Không có"}</td>
-                <td style={{color:"black"}}>{item.price.original.toLocaleString()}đ</td>
-                <td style={{color:"black"}}>{item.quantity}</td>
-                <td style={{color:"black"}}>{(item.finalPrice * item.quantity).toLocaleString()}đ</td>
+                <td style={{ color: "black" }}>{item.name}</td>
+                <td style={{ color: "black" }}>{item.sizeName || "Không xác định"}</td>
+                <td style={{ color: "black" }}>{item.taste.join(", ") || "Không có"}</td>
+                <td style={{ color: "black" }}>{item.price.original.toLocaleString()}đ</td>
+                <td style={{ color: "black" }}>{item.quantity}</td>
+                <td style={{ color: "black" }}>{(item.finalPrice * item.quantity).toLocaleString()}đ</td>
               </tr>
             ))}
           </tbody>
@@ -248,29 +270,39 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   <span>Tạm tính:</span>
                   <span>{subtotal.toLocaleString()}đ</span>
                 </div>
-                <div className="d-flex justify-content-between">
-                  <span>Giảm giá:</span>
-                  <span>-{discount.toLocaleString()}đ</span>
-                </div>
-                {currentOrder.voucherCode && currentOrder.voucherData?.discountValue && (
+
+                {discount > 0 && (
                   <div className="d-flex justify-content-between">
-                    <span>Voucher ({currentOrder.voucherCode}):</span>
+                    <span>Giảm giá:</span>
+                    <span>-{discount.toLocaleString()}đ</span>
+                  </div>
+                )}
+
+                {voucherDiscount > 0 && (
+                  <div className="d-flex justify-content-between">
+                    <span>
+                      Voucher ({currentOrder.voucherCode} - {voucherDisplay}):
+                    </span>
                     <span>-{voucherDiscount.toLocaleString()}đ</span>
                   </div>
                 )}
+
                 <div className="d-flex justify-content-between">
                   <span>Phí vận chuyển:</span>
                   <span>{shippingFee.toLocaleString()}đ</span>
                 </div>
+
                 <div className="d-flex justify-content-between">
                   <span>Thuế:</span>
                   <span>{tax.toLocaleString()}đ</span>
                 </div>
+
                 <hr />
                 <div className="d-flex justify-content-between fw-bold">
                   <span>Tổng cộng:</span>
                   <span>{totalAmount.toLocaleString()}đ</span>
                 </div>
+
               </Card.Body>
             </Card>
           </Col>

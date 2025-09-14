@@ -1,0 +1,264 @@
+/* Cart.module.css */
+
+/* Card giỏ hàng */
+.cartCard {
+    border-radius: 12px;
+    padding: 1.5rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Button thêm biến thể */
+.addVariantBtn {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    transition: all 0.3s ease;
+}
+
+.addVariantBtn:hover {
+    background-color: #0056b3 !important;
+    border-color: #0056b3 !important;
+}
+
+/* Button xóa */
+.removeBtn {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.removeBtn:hover {
+    background-color: #a71d2a;
+    border-color: #a71d2a;
+    color: #fff;
+}
+
+/* Voucher list */
+.voucherList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Voucher card */
+.voucherCard {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.voucherCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.selected {
+    border-color: #198754;
+    background-color: #e6f4ea;
+}
+
+.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Responsive Table */
+.tableResponsive {
+    overflow-x: auto;
+}
+
+/* Image giỏ hàng */
+.cartImage {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+/* Tổng đơn hàng */
+.orderSummary {
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Voucher button */
+.voucherButton {
+    min-width: 80px;
+    transition: all 0.2s;
+}
+
+.voucherButton:disabled {
+    cursor: not-allowed;
+}
+
+/* Input số lượng */
+.quantityInput {
+    width: 60px;
+    text-align: center;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    padding: 0.25rem;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+
+    .cartCard,
+    .orderSummary {
+        padding: 1rem;
+    }
+
+    .voucherList {
+        gap: 0.5rem;
+    }
+
+    .voucherButton {
+        min-width: 70px;
+        font-size: 0.8rem;
+    }
+
+    .cartImage {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+.cartContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.cartItem {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    gap: 1rem;
+    position: relative;
+}
+
+.cartImage {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.itemInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.itemTitle {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.itemVariant {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.itemPrice {
+    font-weight: 500;
+    color: #c10a28;
+    margin-top: 0.25rem;
+}
+
+.quantityWrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.quantityInput {
+    width: 60px;
+    text-align: center;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.actionLinks {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.actionLinks span {
+    cursor: pointer;
+    color: #0d6efd;
+}
+
+.promoButton {
+    background-color: #c10a28;
+    color: #fff;
+    border-radius: 0 12px 12px 0;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.promoButton:hover {
+    background-color: #a50a1f;
+}
+
+.choose {
+    font-weight: 600;
+    color: #dc3545 !important;
+}
+
+.promoIcon {
+    background-color: #fff;
+    color: #c10a28;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 12px 12px 0;
+}
+
+.actionLinks {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.deleteIcon {
+    color: #dc3545 !important;
+    /* đỏ Bootstrap */
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.deleteIcon:hover {
+    color: #a71d2a;
+    /* đỏ đậm hơn khi hover */
+}
+
+.choose {
+    color: #0d6efd;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.choose:hover {
+    color: #084298;
+}

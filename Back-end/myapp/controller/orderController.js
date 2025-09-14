@@ -1,14 +1,16 @@
+// Updated orderController.js (backend controller with changes for isPaid logic)
 const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
 const { Order, OrderStatus } = require("../model/orderModel.js");
 const TempOrder = require("../model/tempOrderModel.js");
 const Voucher = require("../model/voucherModel.js");
+
 module.exports = {
   createOrderFromCart,
   createOrderFromTempOrder,
   getUserOrders,
   getAllOrders,
-  getOrderById, 
+  getOrderById,
   updateOrderStatus,
   cancelOrder,
   getOrderStatus,
@@ -24,7 +26,7 @@ async function getOrderById(req) {
       path: "items.productId",
       select: "name image",
     });
-
+    
   if (!order) {
     throw new Error("Không tìm thấy đơn hàng");
   }
@@ -38,11 +40,9 @@ async function getOrderById(req) {
     return {
       ...item,
       image,
-      name: item.productId ? item.productId.name : item.name, 
+      name: item.productId ? item.productId.name : item.name,
     };
   });
-
-  // voucherData là embedded, nên đã có sẵn discountValue
 
   return {
     status: true,
@@ -117,7 +117,8 @@ async function createOrderFromCart(req) {
     shippingFee,
     tax,
     paymentMethod,
-    status: OrderStatus.PENDING,
+    isPaid: paymentMethod === "cod" ? false : true, // Set isPaid based on method
+    status: paymentMethod === "cod" ? OrderStatus.PENDING : OrderStatus.PENDING, // Adjust as needed, assuming Stripe moves to PENDING after payment
   });
 
   await newOrder.save();
@@ -190,25 +191,70 @@ async function getAllOrders(req) {
   return orders;
 }
 
+// Function khôi phục quantity khi hủy đơn hàng
+async function restoreQuantity(order) {
+  try {
+    // Group items by productId and sum quantity
+    const productSums = {};
+    for (const item of order.items) {
+      const pid = item.productId.toString();
+      if (!productSums[pid]) productSums[pid] = 0;
+      productSums[pid] += item.quantity;
+    }
+
+    // Restore quantity for each product
+    for (const pid in productSums) {
+      const product = await Product.findById(pid);
+      if (!product) {
+        console.warn(`Sản phẩm ID ${pid} không tồn tại khi khôi phục quantity`);
+        continue;
+      }
+      product.quantity += productSums[pid];
+      await product.save();
+    }
+
+    console.log(`Đã khôi phục quantity cho đơn hàng ${order._id}`);
+  } catch (error) {
+    console.error("Lỗi khi khôi phục quantity:", error);
+    throw error; // Re-throw để handle ở caller
+  }
+}
+
 // Cập nhật trạng thái đơn hàng (admin)
 async function updateOrderStatus(req) {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status: newStatus } = req.body;
 
-  if (!Object.values(OrderStatus).includes(status)) {
+  if (!Object.values(OrderStatus).includes(newStatus)) {
     throw new Error("Trạng thái không hợp lệ");
   }
 
-  let updated = await Order.findByIdAndUpdate(id, { status }, { new: true })
+  let order = await Order.findById(id);
+  if (!order) {
+    throw new Error("Không tìm thấy đơn hàng");
+  }
+
+  const oldStatus = order.status;
+
+  // Nếu chuyển sang COMPLETED (4) và là COD, set isPaid = true
+  if (newStatus === OrderStatus.COMPLETED && order.paymentMethod === "cod") {
+    order.isPaid = true;
+  }
+
+  // Nếu chuyển sang CANCELLED và chưa cancelled trước đó, khôi phục quantity
+  if (newStatus === OrderStatus.CANCELLED && oldStatus !== OrderStatus.CANCELLED) {
+    await restoreQuantity(order);
+  }
+
+  order.status = newStatus;
+  await order.save();
+
+  let updated = await Order.findById(id)
     .populate("userId", "name email")
     .populate({
       path: "items.productId",
       select: "name image",
     });
-
-  if (!updated) {
-    throw new Error("Không tìm thấy đơn hàng");
-  }
 
   // Format với prepend URL
   updated = updated.toObject();
@@ -297,15 +343,23 @@ async function createOrderFromTempOrder(req) {
     paymentMethod,
     shippingFee,
     tax,
-    isPaid: paymentMethod === "cod" ? false : undefined,
+    isPaid: paymentMethod === "cod" ? false : true, // Set isPaid: false for COD, true for Stripe/other
     status:
       paymentMethod === "cod"
         ? OrderStatus.PENDING
-        : OrderStatus.WAITING_PAYMENT,
+        : OrderStatus.PENDING, // Adjust if Stripe should start at CONFIRMED
     createdAt: new Date(),
   });
 
   await newOrder.save();
+  if (voucherCode) {
+    const voucher = await Voucher.findOne({ code: voucherCode });
+    if (voucher) {
+      voucher.currentUsage = (voucher.currentUsage || 0) + 1;
+      await voucher.save();
+    }
+  }
+
   await TempOrder.deleteMany({ userId });
 
   return {
@@ -327,12 +381,21 @@ async function cancelOrder(req) {
   if (order.userId.toString() !== userId) {
     throw new Error("Không có quyền hủy đơn hàng này");
   }
-
+  if (order.voucherCode) {
+    const voucher = await Voucher.findOne({ code: order.voucherCode });
+    if (voucher && voucher.currentUsage > 0) {
+      voucher.currentUsage -= 1;
+      await voucher.save();
+    }
+  }
   if (
     ![OrderStatus.PENDING, OrderStatus.WAITING_PAYMENT].includes(order.status)
   ) {
     throw new Error("Không thể hủy đơn hàng ở trạng thái hiện tại");
   }
+
+  // Khôi phục quantity trước khi cập nhật status
+  await restoreQuantity(order);
 
   order.status = OrderStatus.CANCELLED;
   await order.save();

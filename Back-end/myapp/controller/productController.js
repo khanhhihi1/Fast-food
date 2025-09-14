@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 const categoriesModel = require("../model/categoriesModel.js");
 const productsModel = require("../model/productModel.js");
 const notificationController = require("../controller/notificationController");
-
+const OpenAI = require('openai');
+require('dotenv').config();
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 // Lấy tất cả sản phẩm
 async function getAllPro() {
   try {
@@ -284,7 +288,56 @@ async function getInactiveProducts() {
     throw new Error("Không thể lấy danh sách sản phẩm ngưng bán");
   }
 }
+const chatWithAI = async (message) => {
+  // Bước 1: Gọi AI để phân tích từ khóa
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Bạn là AI hỗ trợ mua sắm. Phân tích tin nhắn người dùng để extract từ khóa tìm kiếm sản phẩm (ví dụ: 'tôi muốn ăn gà cay' → 'gà cay'). Trả về chỉ từ khóa, không thêm gì khác.",
+      },
+      { role: "user", content: message },
+    ],
+    max_tokens: 50,
+    temperature: 0.5,
+  });
 
+  const query = completion.choices[0].message.content.trim();
+
+  // Bước 2: Tìm sản phẩm trong MongoDB
+  const products = await Product.find(
+    { $text: { $search: query } },
+    { score: { $meta: "textScore" } }
+  )
+    .sort({ score: { $meta: "textScore" } })
+    .limit(5);
+
+  // Bước 3: Gọi AI để trả lời tự nhiên
+  const responsePrompt =
+    products.length > 0
+      ? `Người dùng hỏi: "${message}". Kết quả: ${products
+          .map((p) => `${p.name} - ${p.sizes[0].price.original} VND`)
+          .join(", ")}. Hãy trả lời tự nhiên bằng tiếng Việt.`
+      : `Người dùng hỏi: "${message}". Không tìm thấy sản phẩm. Trả lời lịch sự bằng tiếng Việt và gợi ý thử từ khóa khác.`;
+
+  const responseCompletion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "Bạn là AI chat box thân thiện, trả lời ngắn gọn." },
+      { role: "user", content: responsePrompt },
+    ],
+    max_tokens: 150,
+  });
+
+  const aiMessage = responseCompletion.choices[0].message.content;
+
+  return {
+    message: aiMessage,
+    products: products.length > 0 ? products : null,
+  };
+};
 // Sản phẩm hot
 async function getHotProducts() {
   try {
@@ -345,7 +398,48 @@ async function searchProducts(req) {
     throw new Error("Không thể tìm kiếm sản phẩm");
   }
 }
+async function buyMultiple(items) {
+  try {
+    // Nhóm theo productId và tính tổng quantity
+    const productSums = {};
+    for (const item of items) {
+      const pid = item.productId.toString();
+      if (!productSums[pid]) productSums[pid] = { sum: 0, name: '' };
+      productSums[pid].sum += item.quantity;
+    }
 
+    // Kiểm tra tất cả trước khi trừ (phase 1: check)
+    for (const pid in productSums) {
+      const product = await productsModel.findById(pid);
+      if (!product) {
+        throw new Error(`Sản phẩm ID ${pid} không tồn tại`);
+      }
+      productSums[pid].name = product.name; // Lưu tên để thông báo lỗi
+      if (product.quantity < productSums[pid].sum) {
+        throw new Error(`Không đủ hàng cho sản phẩm ${product.name} (còn ${product.quantity})`);
+      }
+    }
+
+    // Nếu tất cả OK, trừ số lượng (phase 2: subtract)
+    for (const pid in productSums) {
+      const product = await productsModel.findById(pid);
+      product.quantity -= productSums[pid].sum;
+      await product.save();
+
+      if (product.quantity === 0) {
+        await notificationController.createNotification({
+          message: `Sản phẩm ${product.name} đã hết hàng!`,
+          type: "system",
+        });
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Lỗi khi trừ số lượng multiple:", error);
+    throw error;
+  }
+}
 module.exports = {
   getAllPro,
   getDatailPro,
@@ -359,4 +453,6 @@ module.exports = {
   getDiscountProduct,
   searchProducts,
   getProductsByCategory,
+  chatWithAI,
+  buyMultiple,
 };

@@ -105,6 +105,7 @@ export default function CartManagementPage() {
   const router = useRouter();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
@@ -145,11 +146,8 @@ export default function CartManagementPage() {
         throw new Error(data.message || "Không thể cập nhật trạng thái");
       }
 
-      setOrders((prev) =>
-        prev.map((order) =>
-          order._id === orderId ? { ...order, status } : order
-        )
-      );
+      // Fetch lại toàn bộ orders để cập nhật isPaid nếu cần (ví dụ khi complete COD)
+      await fetchOrders();
       toast.success("Cập nhật trạng thái thành công!");
     } catch (error: any) {
       toast.error(error.message || "Có lỗi khi cập nhật trạng thái");
@@ -199,7 +197,22 @@ export default function CartManagementPage() {
     }
   });
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  // Doanh thu thực nhận: Tiềm năng từ COD chưa paid và chưa hủy
+  const actualRevenue = filteredOrders.reduce((sum, order) => {
+    if (order.paymentMethod === 'cod' && !order.isPaid && order.status !== 5) {
+      return sum + order.total;
+    }
+    return sum;
+  }, 0);
+
+  // Doanh thu hiện tại: Tổng từ các order đã paid (Stripe ngay lập tức + COD khi complete)
+  const currentRevenue = filteredOrders.reduce((sum, order) => {
+    if (order.isPaid) {
+      return sum + order.total;
+    }
+    return sum;
+  }, 0);
+
   const currentOrders = filteredOrders.slice(indexOfFirst, indexOfLast);
 
   return (
@@ -220,21 +233,15 @@ export default function CartManagementPage() {
                   <span className={styles.statValue}>{orders.length}</span>
                 </div>
                 <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Chờ xử lý: </span>
+                  <span className={styles.statLabel}>Doanh thu thực nhận: </span>
                   <span className={styles.statValue}>
-                    {orders.filter(order => order.status === 0 || order.status === 1).length}
+                    {actualRevenue.toLocaleString("vi-VN")} VNĐ
                   </span>
                 </div>
                 <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Đã hoàn thành: </span>
+                  <span className={styles.statLabel}>Doanh thu hiện tại: </span>
                   <span className={styles.statValue}>
-                    {orders.filter(order => order.status === 4).length}
-                  </span>
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Doanh thu: </span>
-                  <span className={styles.statValue}>
-                    {totalRevenue.toLocaleString("vi-VN")} VNĐ
+                    {currentRevenue.toLocaleString("vi-VN")} VNĐ
                   </span>
                 </div>
               </div>
@@ -278,18 +285,28 @@ export default function CartManagementPage() {
             <div className={styles.ordersTableWrapper}>
               <div className={styles.ordersTable}>
                 <div className={styles.tableHeader}>
-                  <div className={styles.tableCell}>Mã đơn</div>
                   <div className={styles.tableCell}>Khách hàng</div>
-                  <div className={styles.tableCell}>Trạng thái</div>
                   <div className={styles.tableCell}>Ngày đặt</div>
+                  <div className={styles.tableCell}>Trạng thái thanh toán</div>
+                  <div className={styles.tableCell}>Trạng thái </div>
                   <div className={styles.tableCell}>Thao tác</div>
                 </div>
 
                 <div className={styles.tableBody}>
                   {currentOrders.map((order) => (
                     <div key={order._id} className={`${styles.tableRow} `}>
-                      <div className={styles.tableCell}>#{order._id.slice(-4)}</div>
-                      <div className={styles.tableCell}>{order.userId.name}</div>
+                      <div className={styles.tableCell}>{order.userId?.name}</div>
+                      <div className={styles.tableCell}>
+                        {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                      </div>
+                      <div className={styles.tableCell}>
+                        <span
+                          className={`${styles.statusBadge} ${order.isPaid ? styles.paid : styles.unpaid
+                            }`}
+                        >
+                          {order.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
+                        </span>
+                      </div>
                       <div className={styles.tableCell}>
                         <span
                           className={styles.statusBadge}
@@ -298,9 +315,7 @@ export default function CartManagementPage() {
                           {OrderStatusText[order.status as keyof typeof OrderStatusText]}
                         </span>
                       </div>
-                      <div className={styles.tableCell}>
-                        {new Date(order.createdAt).toLocaleDateString("vi-VN")}
-                      </div>
+
                       <div className={styles.tableCell}>
                         <Button
                           size="sm"

@@ -7,6 +7,7 @@ router.get("/:code", voucherController.getVoucherByCode);
 router.post("/add", voucherController.createVoucher);
 router.post("/apply", voucherController.applyVoucher); 
 router.patch("/:id/restore", voucherController.restoreVoucher);
-router.put("/update/:id", voucherController.updateVoucher);           // cập nhật
+router.put("/update/:id", voucherController.updateVoucher);
+router.post("/refund/:code", voucherController.refundVoucher);
 router.patch("/:id/hide", voucherController.hideVoucher);
 module.exports = router;

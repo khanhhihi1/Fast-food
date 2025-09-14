@@ -23,6 +23,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import debounce from "lodash/debounce";
 import styles from "../styles/header.module.css";
+import { toast } from "react-toastify";
 
 interface Product {
   id: string;
@@ -49,6 +50,7 @@ export default function Header() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const renderPrice = (sizes?: Product["sizes"]) => {
     if (!sizes || sizes.length === 0) return "Không rõ";
@@ -106,7 +108,7 @@ export default function Header() {
       const data = await res.json();
       if (res.ok && data.status) {
         setUser(null);
-        router.push("/login");
+        toast.success("Đăng xuất thành công")
       } else {
         alert("Đăng xuất thất bại!");
       }
@@ -269,7 +271,7 @@ export default function Header() {
                         onClick={() => setShowSearch(false)}
                       >
                         <Image
-                          src={product.image || "/no-image.png"}
+                          src={`${API_URL}/${product.image}`}
                           alt={product.name}
                           style={{
                             width: "50px",

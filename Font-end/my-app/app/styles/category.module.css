@@ -1,0 +1,116 @@
+.priceRangeSlider {
+  width: 100%;
+  height: 8px;
+  border-radius: 5px;
+  background: #f97316;
+  outline: none;
+}
+
+.priceRangeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ea580c;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+.priceRangeSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background-color: #c2410c;
+}
+
+.priceDeal {
+  color: #e31837;
+}
+.priceDeal span {
+  color: #b10a0a;
+  font-weight: 500;
+}
+
+/* Hover mượt cho category */
+.categoryItem {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+.categoryItem:hover {
+  transform: translateX(5px);
+}
+
+/* Hover mượt cho product card */
+.productCard {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.productCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+.priceBadge {
+  background-color: #fdecec !important; /* nền đỏ nhạt */
+  color: #e31837 !important;           /* chữ đỏ */
+  font-weight: 700;
+  font-size: 0.85rem;                  /* to hơn một chút */
+  padding: 0.35em 0.65em;
+  border-radius: 0.5rem;
+}
+.categoryName{
+  font-size: 26px ;
+  font-weight: 700;
+  margin:  0 auto;
+  margin-bottom: 20px;
+}
+.paginationBtn {
+  background-color: #fff !important;     /* nền trắng mặc định */
+  color: #e31837 !important;             /* chữ đỏ */
+  border: 1px solid #e31837 !important;  /* viền đỏ */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  transition: all 0.3s ease;
+}
+
+.paginationBtn:hover:not(:disabled) {
+  background-color: #ffe5e5 !important;  /* hover nhạt đỏ */
+  transform: scale(1.05);
+}
+
+.paginationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Nút trang hiện tại */
+.paginationActive {
+  background-color: #e31837 !important;  /* nền đỏ tràn */
+  color: #fff !important;                /* chữ trắng */
+  border-color: #e31837 !important;
+  font-weight: 500;
+}
+.activeCategory {
+  color: #e31837 !important; /* đỏ thương hiệu */
+  font-weight: 600;
+}
+.outOfStock {
+  filter: grayscale(100%) brightness(0.7); /* làm ảnh xám tối */
+  pointer-events: none; /* ngăn người dùng click */
+}
+
+.outOfStockText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+
+

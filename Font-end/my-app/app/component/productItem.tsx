@@ -24,6 +24,7 @@ interface Product {
   time?: string;
   description?: string | string[];
   taste?: string[] | Record<string, number>;
+  quantity: number; // Thêm field quantity để kiểm tra số lượng
 }
 
 interface ProductItemsProps {
@@ -31,7 +32,11 @@ interface ProductItemsProps {
   layout?: "vertical" | "horizontal" | "default";
 }
 
-const renderPrice = (sizes?: Product["sizes"]) => {
+const renderPrice = (sizes?: Product["sizes"], quantity: number = 0) => {
+  if (quantity === 0) {
+    return <span style={{ color: "red", fontWeight: "bold" }}>Hết hàng</span>;
+  }
+
   if (!sizes || sizes.length === 0) return "Không rõ";
 
   const firstSize = sizes[0];
@@ -79,6 +84,7 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
 
     fetchFavorites();
   }, [productId]);
+
   const toggleFavorite = async () => {
     try {
       const response = await fetch(`${API_URL}/favoriteProduct/favorites/${productId}`, {
@@ -102,17 +108,28 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
   };
 
   return (
-    <div className={`${styles.productList} ${styles[layout]}`}>
-      <Link href={`/productList/${productId}`}>
-        <Image src={`${API_URL}/${product.image}`} className={styles.productImg} alt={product.name} fluid />
+    <div
+      className={`${styles.productList} ${styles[layout]} ${product.quantity === 0 ? styles.outOfStock : ""
+        }`}
+    >
+      <Link
+        href={`/productList/${productId}`}
+        className={product.quantity === 0 ? styles.disabledLink : ""}
+      >
+        <Image
+          src={`${API_URL}/${product.image}`}
+          className={styles.productImg}
+          alt={product.name}
+          fluid
+        />
       </Link>
 
       <div>
         <p className={styles.productName}>{product.name}</p>
         <div className={styles.productBot}>
-          <p className={styles.productPrice}>{renderPrice(product.sizes)}</p>
-
-          {/* Nút yêu thích */}
+          <p className={styles.productPrice}>
+            {renderPrice(product.sizes, product.quantity)}
+          </p>
           <FontAwesomeIcon
             icon={isFavorite ? faHeart : faHeartBroken}
             style={{ color: isFavorite ? "red" : "#aaa", cursor: "pointer" }}
@@ -122,5 +139,6 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
         </div>
       </div>
     </div>
+
   );
 }
