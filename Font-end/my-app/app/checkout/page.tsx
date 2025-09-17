@@ -122,7 +122,7 @@ export default function Checkout() {
         method: "DELETE",
         credentials: "include",
       });
-localStorage.removeItem("selectedVoucher");
+      localStorage.removeItem("selectedVoucher");
       localStorage.removeItem("shippingInfo");
 
       setCartItems([]);
@@ -220,7 +220,7 @@ localStorage.removeItem("selectedVoucher");
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(shippingData),
-});
+      });
 
       const data = await res.json();
       if (data.status) {
@@ -325,7 +325,7 @@ localStorage.removeItem("selectedVoucher");
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-body: JSON.stringify({
+        body: JSON.stringify({
           voucherCode: null,
           voucherData: null,
           total: totalPrice,
@@ -432,7 +432,7 @@ body: JSON.stringify({
       if (paymentMethod === "cod") {
         await clearCart();
         toast.success("Đặt hàng thành công!", {
-toastId: "orderSuccess",
+          toastId: "orderSuccess",
         });
         router.push("/cart");
       }
@@ -528,7 +528,7 @@ toastId: "orderSuccess",
 
     const savedShipping = localStorage.getItem("shippingInfo");
     if (savedShipping) {
-const parsed = JSON.parse(savedShipping);
+      const parsed = JSON.parse(savedShipping);
       setName(parsed.name || "");
       setPhone(parsed.phone || "");
 
@@ -615,7 +615,7 @@ const parsed = JSON.parse(savedShipping);
               {appliedVoucher ? (
                 <Alert variant="success">
                   <span>
-Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>
+                    Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>
                     <br />
                     Giảm: {discountAmount.toLocaleString()} ₫
                   </span>
@@ -691,7 +691,7 @@ Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>
             <Card className="shadow-sm p-4 mb-4">
               <h5 className="mb-3">
                 <FaShippingFast className="me-2" /> Thông tin giao hàng
-</h5>
+              </h5>
               <Form>
                 <Form.Group className="mb-3">
                   <Form.Label>Họ tên người nhận</Form.Label>
@@ -767,7 +767,7 @@ Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>
                 <strong>Tổng cộng:</strong>
                 <strong>
                   {(totalAfterDiscount > 0
-? totalAfterDiscount
+                    ? totalAfterDiscount
                     : totalPrice
                   ).toLocaleString()}{" "}
                   ₫

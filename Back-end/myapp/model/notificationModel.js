@@ -1,12 +1,22 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const notificationSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: "User", default: null }, // null cho thông báo hệ thống
+const notificationSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: false,
+  },
+  title: { type: String, required: true },
   message: { type: String, required: true },
-  type: { type: String, enum: ["user", "system"], required: true },
-  createdAt: { type: Date, default: Date.now },
+  type: {
+    type: String,
+    enum: ["order", "system", "promotion"],
+    default: "system",
+  },
+  link: { type: String }, // link điều hướng, ví dụ: /orders/123
   isRead: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("Notification", notificationSchema);
