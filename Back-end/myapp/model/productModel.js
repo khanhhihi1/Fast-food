@@ -32,6 +32,13 @@ const productSchema = new Schema({
   time: { type: String, default: '30-45min' },
   saleOff: { type: Boolean, default: false },
   sizes: { type: [sizeSchema], required: true },
+  isDaily: { type: Boolean, default: false }, // true: sản phẩm theo ngày, false: tồn kho
+  dailyInitialQuantity: { type: Number, default: 0 }, // Giá trị ban đầu reset hàng ngày (chỉ áp dụng nếu isDaily=true)
+  lastResetDate: { type: Date }, // Theo dõi ngày reset cuối cùng để kiểm tra
+  leftoverHistory: [{ // Lịch sử dư thừa (cho stats), optional
+    date: { type: Date },
+    leftoverQuantity: { type: Number }
+  }]
 });
 
 // Pre-save hook to normalize Vietnamese text for search optimization

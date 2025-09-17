@@ -116,9 +116,16 @@ const getDashboardStats = async (req, res) => {
           orderCount: { $ifNull: [{ $size: { $ifNull: ["$salesData.orderCount", []] } }, 0] },
           totalRevenue: { $ifNull: [{ $arrayElemAt: ["$salesData.totalRevenue", 0] }, 0] },
           totalSold: { $ifNull: [{ $arrayElemAt: ["$salesData.totalSold", 0] }, 0] },
+          totalLeftover: { // Thêm metric dư thừa cho daily
+            $cond: {
+              if: { $eq: ["$isDaily", true] },
+              then: { $sum: "$leftoverHistory.leftoverQuantity" }, // Tổng dư thừa lịch sử
+              else: 0
+            }
+          }
         },
       },
-      { $sort: { orderCount: 1 } },
+      { $sort: { orderCount: 1, totalLeftover: -1 } },
       { $skip: (slowPage - 1) * slowLimit },
       { $limit: parseInt(slowLimit) },
     ]);
@@ -210,7 +217,7 @@ const getDashboardStats = async (req, res) => {
       })),
     });
   } catch (err) {
-    console.error('Error in getDashboardStats:', err); 
+    console.error('Error in getDashboardStats:', err);
     res.status(500).json({ message: err.message });
   }
 };

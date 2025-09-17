@@ -15,4 +15,6 @@ export interface PostType {
     };
   }[];
   status?: boolean;
+  isDaily?: boolean; // Mới: Loại sản phẩm daily
+  dailyInitialQuantity?: number; // Mới: Số lượng ban đầu cho daily
 }

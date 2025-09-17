@@ -7,7 +7,7 @@ const path = require("path");
 // Cấu hình multer để upload ảnh
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../../myapp/public/images")); 
+    cb(null, path.join(__dirname, "../../myapp/public/images"));
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -111,8 +111,8 @@ router.post("/addProduct", upload.single("image"), async (req, res) => {
     console.error("❌ Lỗi server:", error.stack);
     const statusCode =
       error.message.includes("Thiếu trường") ||
-      error.message.includes("Danh mục không tồn tại") ||
-      error.message.includes("Chỉ chấp nhận file ảnh")
+        error.message.includes("Danh mục không tồn tại") ||
+        error.message.includes("Chỉ chấp nhận file ảnh")
         ? 400
         : 500;
     res.status(statusCode).json({ success: false, message: error.message });
@@ -199,7 +199,26 @@ router.get("/discount", async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
+router.post("/restock/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body; // quantity: số lượng muốn nhập/restock
 
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ success: false, message: "Số lượng nhập phải lớn hơn 0" });
+    }
+
+    const product = await productsController.restockProduct(id, quantity);
+
+    res.status(200).json({
+      success: true,
+      result: product,
+      message: "Nhập liệu thành công"
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -236,4 +255,5 @@ router.post("/buyMultiple", async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 });
+
 module.exports = router;

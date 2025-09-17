@@ -1,12 +1,10 @@
-"use client"
+"use client";
+
 import { useEffect, useState } from "react";
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
-import Form from "react-bootstrap/Form";
+import { Button, Modal, Form, Col, Row } from "react-bootstrap";
 import { toast } from "react-toastify";
 import { PostType } from "../type/type";
-import "./model.css"
-import { Col, Row } from "react-bootstrap";
+import "./model.css";
 import React from "react";
 
 interface iShow {
@@ -18,7 +16,7 @@ interface iShow {
 function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null); // Thay đổi từ URL sang file
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [quantity, setQuantity] = useState("");
   const [taste, setTaste] = useState<string[]>([]);
   const [description, setDescription] = useState("");
@@ -27,8 +25,12 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
   const [discount, setDiscount] = useState("");
   const [variantPrices, setVariantPrices] = useState<{ [key: string]: number }>({});
   const [status, setStatus] = useState(true);
-  const [categoriesList, setCategoriesList] = useState<PostType[] | null>(null); // Sử dụng PostType thay vì type inline
+  const [categoriesList, setCategoriesList] = useState<PostType[] | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // loại sản phẩm
+  const [productType, setProductType] = useState<"stock" | "daily">("stock");
+  const [dailyInitialQuantity, setDailyInitialQuantity] = useState(0);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -55,8 +57,13 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
     if (!name.trim()) return toast.error("Tên sản phẩm không được để trống!");
     if (!category) return toast.error("Vui lòng chọn danh mục!");
     if (!imageFile) return toast.error("Vui lòng chọn file hình ảnh!");
-    const qty = parseInt(quantity, 10);
-    if (!qty || qty <= 0) return toast.error("Số lượng phải là số nguyên dương!");
+    if (productType === "stock") {
+      const qty = parseInt(quantity, 10);
+      if (!qty || qty <= 0) return toast.error("Số lượng phải là số nguyên dương!");
+    }
+    if (productType === "daily" && (!dailyInitialQuantity || dailyInitialQuantity <= 0)) {
+      return toast.error("Số lượng ban đầu phải lớn hơn 0!");
+    }
     if (taste.length === 0) return toast.error("Vui lòng nhập ít nhất một hương vị!");
 
     let sizes = [];
@@ -93,7 +100,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
         price: {
           original: variantPrices[`${sz}_original`],
           ...(variantPrices[`${sz}_discount`] &&
-            variantPrices[`${sz}_discount`] < variantPrices[`${sz}_original`]
+          variantPrices[`${sz}_discount`] < variantPrices[`${sz}_original`]
             ? { discount: variantPrices[`${sz}_discount`] }
             : {}),
         },
@@ -103,37 +110,37 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("categoryId", category);
-    formData.append("quantity", qty.toString());
-    formData.append("taste", JSON.stringify(taste)); // Gửi array dưới dạng string JSON
+    if (productType === "stock") {
+      formData.append("quantity", quantity);
+      formData.append("isDaily", "false");
+    } else {
+      formData.append("dailyInitialQuantity", dailyInitialQuantity.toString());
+      formData.append("isDaily", "true");
+    }
+    formData.append("taste", JSON.stringify(taste));
     formData.append("description", description);
-    formData.append("sizes", JSON.stringify(sizes)); // Gửi array dưới dạng string JSON
+    formData.append("sizes", JSON.stringify(sizes));
     formData.append("status", status.toString());
     if (imageFile) {
-      formData.append("image", imageFile); // Thêm file ảnh
-    }
-    console.log("👉 FormData chuẩn bị gửi:");
-    for (let pair of formData.entries()) {
-      console.log(pair[0], ":", pair[1]);
+      formData.append("image", imageFile);
     }
 
     try {
-      console.log("👉 Đang fetch đến URL:", `${API_URL}/products/addProduct`);
       const res = await fetch(`${API_URL}/products/addProduct`, {
         method: "POST",
-        body: formData, // Sử dụng FormData thay vì JSON
+        body: formData,
       });
 
       if (!res.ok) {
-        const text = await res.text();  // Đọc text trước để debug
-        console.log("❌ Response text từ server:", text);  // In ra để xem là HTML gì
+        const text = await res.text();
         try {
-          const result = JSON.parse(text);  // Thử parse
+          const result = JSON.parse(text);
           throw new Error(result.message || "Lỗi khi thêm sản phẩm");
         } catch (parseErr) {
-          throw new Error("Response không phải JSON: " + text.substring(0, 100));  // Log snippet HTML
+          throw new Error("Response không phải JSON: " + text.substring(0, 100));
         }
       }
-      const result = await res.json();  // Nếu ok, parse JSON
+      await res.json();
       toast.success("Thêm sản phẩm thành công!");
       handleClose();
       window.location.reload();
@@ -154,12 +161,13 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
     setVariantPrices({});
     setSize("Không");
     setStatus(true);
+    setProductType("stock");
+    setDailyInitialQuantity(0);
     setShowModal(false);
   };
 
   return (
-    <Modal show={showModal} onHide={handleClose} backdrop="static" keyboard={false} size="xl"
-      centered>
+    <Modal show={showModal} onHide={handleClose} backdrop="static" keyboard={false} size="xl" centered>
       <Modal.Header closeButton>
         <Modal.Title style={{ color: "black" }}>Thêm sản phẩm mới</Modal.Title>
       </Modal.Header>
@@ -168,7 +176,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
           <Row className="g-3">
             <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: "black" }}>Tên sản phẩm</Form.Label >
+                <Form.Label style={{ color: "black" }}>Tên sản phẩm</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="Nhập tên sản phẩm"
@@ -178,10 +186,9 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
               </Form.Group>
             </Col>
 
-
             <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: "black" }}>Kích cỡ</Form.Label >
+                <Form.Label style={{ color: "black" }}>Kích cỡ</Form.Label>
                 <Form.Select value={size} onChange={(e) => setSize(e.target.value)}>
                   <option value="Không">Không</option>
                   <option value="Có">Có</option>
@@ -193,7 +200,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
               <>
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label style={{ color: "black" }}>Giá gốc</Form.Label >
+                    <Form.Label style={{ color: "black" }}>Giá gốc</Form.Label>
                     <Form.Control
                       type="number"
                       placeholder="Nhập giá gốc"
@@ -205,7 +212,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
 
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label style={{ color: "black" }}>Giá khuyến mãi (nếu có)</Form.Label >
+                    <Form.Label style={{ color: "black" }}>Giá khuyến mãi (nếu có)</Form.Label>
                     <Form.Control
                       type="number"
                       placeholder="Nhập giá khuyến mãi"
@@ -220,7 +227,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
                 <React.Fragment key={sz}>
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label style={{ color: "black" }}>Giá gốc - {sz}</Form.Label >
+                      <Form.Label style={{ color: "black" }}>Giá gốc - {sz}</Form.Label>
                       <Form.Control
                         type="number"
                         placeholder={`Nhập giá gốc cho kích cỡ ${sz}`}
@@ -237,7 +244,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
 
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label style={{ color: "black" }}>Giá khuyến mãi - {sz} (nếu có)</Form.Label >
+                      <Form.Label style={{ color: "black" }}>Giá khuyến mãi - {sz} (nếu có)</Form.Label>
                       <Form.Control
                         type="number"
                         placeholder={`Nhập giá khuyến mãi cho ${sz}`}
@@ -257,7 +264,45 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
 
             <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: "black" }}>Danh mục</Form.Label >
+                <Form.Label>Loại sản phẩm</Form.Label>
+                <Form.Select
+                  value={productType}
+                  onChange={(e) => setProductType(e.target.value as "stock" | "daily")}
+                >
+                  <option value="stock">Sản phẩm tồn kho</option>
+                  <option value="daily">Sản phẩm theo ngày</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+
+            {productType === "daily" ? (
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Số lượng ban đầu (daily)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={dailyInitialQuantity}
+                    onChange={(e) => setDailyInitialQuantity(Number(e.target.value))}
+                  />
+                </Form.Group>
+              </Col>
+            ) : (
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label style={{ color: "black" }}>Số lượng</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="Nhập số lượng"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
+            )}
+
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label style={{ color: "black" }}>Danh mục</Form.Label>
                 <Form.Select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
@@ -277,19 +322,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
 
             <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: "black" }}>Số lượng</Form.Label >
-                <Form.Control
-                  type="number"
-                  placeholder="Nhập số lượng"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                />
-              </Form.Group>
-            </Col>
-
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label style={{ color: "black" }}>Hương vị</Form.Label >
+                <Form.Label style={{ color: "black" }}>Hương vị</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="Nhập hương vị và nhấn Enter"
@@ -306,7 +339,15 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
                 />
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: 8 }}>
                   {taste.map((t, i) => (
-                    <span key={i} style={{ background: "#007bff", color: "white", padding: "5px 10px", borderRadius: 20 }}>
+                    <span
+                      key={i}
+                      style={{
+                        background: "#007bff",
+                        color: "white",
+                        padding: "5px 10px",
+                        borderRadius: 20,
+                      }}
+                    >
                       {t}
                       <button
                         onClick={() => setTaste(taste.filter((_, idx) => idx !== i))}
@@ -319,6 +360,7 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
                 </div>
               </Form.Group>
             </Col>
+
             <Col md={6}>
               <Form.Group>
                 <Form.Label style={{ color: "black" }}>Mô tả sản phẩm</Form.Label>
@@ -327,14 +369,14 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
                   rows={3}
                   value={description}
                   placeholder="Nhập mô tả sản phẩm"
-
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </Form.Group>
             </Col>
+
             <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: "black" }}>Hình ảnh</Form.Label >
+                <Form.Label style={{ color: "black" }}>Hình ảnh</Form.Label>
                 <Form.Control
                   type="file"
                   accept="image/*"
@@ -348,21 +390,8 @@ function ModalsAdmin({ showModal, setShowModal, fetchPosts }: iShow) {
               </Form.Group>
             </Col>
 
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label style={{ color: "black" }}>Trạng thái</Form.Label >
-                <Form.Select
-                  value={status ? "Đang bán" : "Ngừng bán"}
-                  onChange={(e) => setStatus(e.target.value === "Đang bán")}
-                >
-                  <option value="Đang bán">Đang bán</option>
-                  <option value="Ngừng bán">Ngừng bán</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            
           </Row>
-
-
         </Form>
       </Modal.Body>
       <Modal.Footer>

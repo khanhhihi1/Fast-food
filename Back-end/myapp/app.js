@@ -7,7 +7,7 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
-
+const cron = require('node-cron');
 const indexRouter = require("./routes/index");
 const productRouter = require("./routes/product");
 const usersRouter = require("./routes/users");
@@ -23,6 +23,7 @@ const notificationRoutes = require("./routes/notification");
 const contactRoutes = require("./routes/contact");
 const statisticsRoutes = require("./routes/statistics");
 
+const productsController = require('./controller/productController');
 
 const session = require("express-session");
 const passport = require("./config/passport.js");
@@ -106,5 +107,8 @@ app.use((err, req, res, next) => {
 app.use((req, res, next) => {
   res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });
 });
-
+cron.schedule('0 0 * * *', async () => {
+  console.log('Running daily reset...');
+  await productsController.resetAllDailyProducts();
+});
 module.exports = app;
