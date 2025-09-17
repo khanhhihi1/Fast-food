@@ -310,8 +310,8 @@ const chatWithAI = async (message) => {
   const responsePrompt =
     products.length > 0
       ? `Người dùng hỏi: "${message}". Kết quả: ${products
-          .map((p) => `${p.name} - ${p.sizes[0].price.original} VND`)
-          .join(", ")}. Hãy trả lời tự nhiên bằng tiếng Việt.`
+        .map((p) => `${p.name} - ${p.sizes[0].price.original} VND`)
+        .join(", ")}. Hãy trả lời tự nhiên bằng tiếng Việt.`
       : `Người dùng hỏi: "${message}". Không tìm thấy sản phẩm. Trả lời lịch sự bằng tiếng Việt và gợi ý thử từ khóa khác.`;
 
   const responseCompletion = await openai.chat.completions.create({
@@ -336,7 +336,11 @@ const chatWithAI = async (message) => {
 // Sản phẩm hot
 async function getHotProducts() {
   try {
-    const result = await productsModel.find({}).sort({ view: -1 }).limit(4);
+    const result = await productsModel
+      .find({ quantity: { $gt: 0 } }) // chỉ lấy sản phẩm còn hàng
+      .sort({ view: -1 })             // sắp xếp theo view giảm dần
+      .limit(4);                      // giới hạn 4 sản phẩm
+
     return result;
   } catch (error) {
     console.log(error);
@@ -347,17 +351,26 @@ async function getHotProducts() {
 // Sản phẩm giảm giá
 async function getDiscountProduct() {
   try {
-    const productsWithDiscount = await productsModel
-      .find({
-        status: true,
-        saleOff: true,
-        sizes: {
-          $elemMatch: {
-            "price.discount": { $exists: true },
-          },
-        },
-      })
-      .limit(5);
+    const productsWithDiscount = await productsModel.aggregate([
+      {
+        $match: {
+          status: true,
+          saleOff: true,
+          quantity: { $gt: 0 }, // chỉ lấy sản phẩm còn hàng
+          "sizes.price.discount": { $exists: true, $ne: null }
+        }
+      },
+      // Lấy ra mức giảm giá lớn nhất trong các size
+      {
+        $addFields: {
+          maxDiscount: { $max: "$sizes.price.discount" }
+        }
+      },
+      // Sắp xếp theo giảm giá cao nhất
+      { $sort: { maxDiscount: -1 } },
+      // Giới hạn 5 sản phẩm
+      { $limit: 5 }
+    ]);
 
     return productsWithDiscount;
   } catch (error) {

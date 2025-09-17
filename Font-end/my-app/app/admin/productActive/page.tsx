@@ -293,7 +293,7 @@ export default function ShowAdmin() {
                   <td>{indexOfFirst + index + 1}</td>
                   <td>{product.name}</td>
                   <td className="text-center">
-                    <Image src={`${API_URL}/${product.image}`} alt={product.name} width={60} height={60} rounded className={styles["product-img"]} />
+                    <Image  src={`${API_URL}/${product.image}`} alt={product.name} width={60} height={60} rounded className={`$styles["product-img"] `} />
                   </td>
                   <td>{renderSizes(product.sizes)}</td>
                   <td>{product.quantity}</td>

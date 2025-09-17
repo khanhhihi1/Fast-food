@@ -434,7 +434,7 @@ export default function Checkout() {
         toast.success("Đặt hàng thành công!", {
           toastId: "orderSuccess",
         });
-        router.push("/cart");
+       router.push("/cart?success=true");
       }
 
       // Xử lý MoMo

@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faHeartBroken } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import Link from "next/link";
-
+import { useCart } from "../context/CartContext";
 interface Product {
   _id: string;
   id?: string;
@@ -29,6 +29,8 @@ interface Product {
 const HotProduct = () => {
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
+  const { refreshFavorite } = useCart();
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -43,10 +45,10 @@ const HotProduct = () => {
         const productList = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-          ? data.result
-          : Array.isArray(data.data)
-          ? data.data
-          : [];
+            ? data.result
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
 
         setHotProducts(productList);
       } catch (error: any) {
@@ -102,6 +104,7 @@ const HotProduct = () => {
           ...prev,
           [productId]: !prev[productId],
         }));
+         await refreshFavorite(); // ✅ update ngay
         toast.success(result.message || "Cập nhật yêu thích thành công");
       } else {
         toast.error(result.message || "Lỗi cập nhật yêu thích");
@@ -121,51 +124,46 @@ const HotProduct = () => {
       </h2>
 
       <Row>
-        {hotProducts.map((product) => {
-          const hasSizes = product.sizes && product.sizes.length > 0;
-          const priceInfo = hasSizes ? product.sizes![0].price : null;
-          const displayPrice = priceInfo
-            ? priceInfo.discount ?? priceInfo.original
-            : "Liên hệ";
+        {hotProducts
+          .filter((product) => product.quantity > 0)
+          .map((product) => {
+            const hasSizes = product.sizes && product.sizes.length > 0;
+            const priceInfo = hasSizes ? product.sizes![0].price : null;
+            const displayPrice = priceInfo
+              ? priceInfo.discount ?? priceInfo.original
+              : "Liên hệ";
 
-          const isFavorite = favoriteMap[product._id] || false;
-          const isOutOfStock = product.quantity === 0;
+            const isFavorite = favoriteMap[product._id] || false;
 
-          return (
-            <Col key={product._id} md={3} sm={6} className="mb-4">
-              <Card className={`h-100 ${styles.productCard}`}>
-                <Link href={`/productList/${product._id}`}>
-                  <div className={styles.imageContainer}>
-                    <Card.Img
-                      variant="top"
-                      src={`${API_URL}/${product.image}`}
-                      alt={product.name}
-                      className={`${styles.productImage} ${
-                        isOutOfStock ? styles.outOfStockImage : ""
-                      }`}
-                    />
-                    <div className={styles.hotBadge}>HOT</div>
-                    {isOutOfStock && (
-                      <div className={styles.outOfStockBadge}>HẾT HÀNG</div>
-                    )}
-                  </div>
-                </Link>
+            return (
+              <Col key={product._id} md={3} sm={6} className="mb-4">
+                <Card className={`h-100 ${styles.productCard}`}>
+                  <Link href={`/productList/${product._id}`}>
+                    <div className={styles.imageContainer}>
+                      <Card.Img
+                        variant="top"
+                        src={`${API_URL}/${product.image}`}
+                        alt={product.name}
+                        className={styles.productImage}
+                      />
+                      <div className={styles.hotBadge}>HOT</div>
+                    </div>
+                  </Link>
 
-                <Card.Body className={styles.cardBody}>
-                  <Card.Title className={styles.productTitle}>
-                    {product.name}
-                  </Card.Title>
-                  <Card.Text className={styles.productDesc}>
-                    {product.description}
-                  </Card.Text>
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-                    <span className={styles.productPrice}>
-                      {typeof displayPrice === "number"
-                        ? displayPrice.toLocaleString("vi-VN") + "₫"
-                        : displayPrice}
-                    </span>
+                  <Card.Body className={styles.cardBody}>
+                    <Card.Title className={styles.productTitle}>
+                      {product.name}
+                    </Card.Title>
+                    <Card.Text className={styles.productDesc}>
+                      {product.description}
+                    </Card.Text>
+                    <div className="d-flex justify-content-between align-items-center mt-3">
+                      <span className={styles.productPrice}>
+                        {typeof displayPrice === "number"
+                          ? displayPrice.toLocaleString("vi-VN") + "₫"
+                          : displayPrice}
+                      </span>
 
-                    {!isOutOfStock && (
                       <FontAwesomeIcon
                         icon={isFavorite ? faHeart : faHeartBroken}
                         style={{
@@ -173,18 +171,16 @@ const HotProduct = () => {
                           cursor: "pointer",
                         }}
                         onClick={() => toggleFavorite(product._id)}
-                        title={
-                          isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"
-                        }
+                        title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
                       />
-                    )}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          );
-        })}
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            );
+          })}
       </Row>
+
     </Container>
   );
 };

@@ -262,3 +262,94 @@
 .choose:hover {
     color: #084298;
 }
+.modalRow {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.imageCol {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.variantModalImage {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.formCol {
+  padding-left: 0.5rem;
+}
+
+.itemName {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.sizeOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sizeOption {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #eef0f2;
+  cursor: pointer;
+}
+
+.sizeOption:hover {
+  background: #fbfbfb;
+}
+
+.selected {
+  border-color: #222;
+  background: #f8f9fa;
+}
+
+.tasteOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tasteOption {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #f1f1f1;
+  cursor: pointer;
+}
+
+.quantityRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.qtyControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quantityInput {
+  width: 70px;
+  text-align: center;
+}
+
+.priceSummary {
+  font-size: 1rem;
+}
+
+.maxNote {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: #6c757d;
+}

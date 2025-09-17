@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useState, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
   Container,
@@ -13,14 +14,14 @@ import {
   Form,
   Modal,
 } from "react-bootstrap";
-import { useEffect, useState, useCallback } from "react";
 import ProtectedRoute from "../component/ProtectedRoute";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Voucher } from "@/app/type/voucher";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import styles from "../styles/cart.module.css";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
 
 interface Product {
   _id: string;
@@ -69,6 +70,175 @@ interface CartItem {
   maxAvailable?: number;
 }
 
+/**
+ * VariantModal: moved outside main component to avoid export-inside-function and typing issues.
+ * Uses styles for its CSS (make sure styles/cartModal.module.css exists).
+ */
+interface VariantModalProps {
+  show: boolean;
+  handleClose: () => void;
+  item: CartItem;
+  onSave: (item: CartItem) => void;
+  apiUrl?: string;
+}
+
+const VariantModal: React.FC<VariantModalProps> = ({
+  show,
+  handleClose,
+  item,
+  onSave,
+  apiUrl = "",
+}) => {
+  const [selectedSize, setSelectedSize] = useState<string>(item.sizeName || "");
+  const [selectedTaste, setSelectedTaste] = useState<string>(item.taste?.[0] || "Không");
+  const [quantity, setQuantity] = useState<number>(item.quantity || 1);
+
+  useEffect(() => {
+    setSelectedSize(item.sizeName || (item.availableSizes?.[0]?.name ?? ""));
+    setSelectedTaste(item.taste?.[0] || "Không");
+    setQuantity(item.quantity || 1);
+  }, [item]);
+
+  const selectedSizeObj = item.availableSizes?.find((s) => s.name === selectedSize);
+
+  const price =
+    selectedSizeObj?.price.discount ?? selectedSizeObj?.price.original ?? item.price;
+
+  const handleIncrease = () => {
+  // Không check giới hạn ở đây để người dùng có thể tăng/giảm thoải mái
+  setQuantity((q) => q + 1);
+};
+  const handleDecrease = () => setQuantity((q) => Math.max(1, q - 1));
+
+  const handleSave = () => {
+    const priceInfo = selectedSizeObj?.price || item.fullPrice || { original: item.price };
+
+    onSave({
+      ...item,
+      sizeName: selectedSize,
+      taste: selectedTaste === "Không" ? [] : [selectedTaste],
+      quantity,
+      price: price,
+      fullPrice: priceInfo,
+    });
+
+    handleClose();
+  };
+
+  return (
+    <Modal show={show} onHide={handleClose} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>Điều chỉnh sản phẩm</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Row className={styles.modalRow}>
+          <Col xs={4} className={styles.imageCol}>
+            <Image
+              src={apiUrl ? `${apiUrl}/${item.imageUrl}` : item.imageUrl}
+              alt={item.name}
+              fluid
+              rounded
+              className={styles.variantModalImage}
+            />
+          </Col>
+
+          <Col xs={8} className={styles.formCol}>
+            <div className={styles.itemName}>{item.name}</div>
+
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-bold">Kích cỡ</Form.Label>
+
+              <div className={styles.sizeOptions}>
+                {item.availableSizes?.map((size) => {
+                  const label = size.price.discount
+                    ? `${size.name} — ${size.price.discount.toLocaleString()} ₫ (Giảm từ ${size.price.original.toLocaleString()} ₫)`
+                    : `${size.name} — ${size.price.original.toLocaleString()} ₫`;
+
+                  const isChecked = selectedSize === size.name;
+
+                  return (
+                    <div
+                      key={size.name}
+                      className={`${styles.sizeOption} ${isChecked ? styles.selected : ""}`}
+                      onClick={() => setSelectedSize(size.name)}
+                      role="button"
+                    >
+                      <Form.Check
+                        type="radio"
+                        id={`size-${item.id}-${size.name}`}
+                        name={`size-${item.id}`}
+                        checked={isChecked}
+                        onChange={() => setSelectedSize(size.name)}
+                        label={label}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </Form.Group>
+
+            {item.availableTastes && item.availableTastes.length > 0 && (
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">Hương vị</Form.Label>
+                <div className={styles.tasteOptions}>
+                  <div
+                    className={`${styles.tasteOption} ${selectedTaste === "Không" ? styles.selected : ""}`}
+                    onClick={() => setSelectedTaste("Không")}
+                  >
+                    <Form.Check
+                      type="radio"
+                      id={`taste-${item.id}-none`}
+                      name={`taste-${item.id}`}
+                      checked={selectedTaste === "Không"}
+                      onChange={() => setSelectedTaste("Không")}
+                      label={`Không`}
+                    />
+                  </div>
+
+                  {item.availableTastes.map((taste) => (
+                    <div
+                      key={taste}
+                      className={`${styles.tasteOption} ${selectedTaste === taste ? styles.selected : ""}`}
+                      onClick={() => setSelectedTaste(taste)}
+                    >
+                      <Form.Check
+                        type="radio"
+                        id={`taste-${item.id}-${taste}`}
+                        name={`taste-${item.id}`}
+                        checked={selectedTaste === taste}
+                        onChange={() => setSelectedTaste(taste)}
+                        label={taste}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Form.Group>
+            )}
+
+            <div className={styles.quantityRow}>
+
+
+              <div className={styles.priceSummary}>
+                Thành tiền: <strong>{(price * quantity).toLocaleString()} ₫</strong>
+              </div>
+            </div>
+
+          </Col>
+        </Row>
+      </Modal.Body>
+
+      <Modal.Footer>
+        <Button variant="secondary" onClick={handleClose}>
+          Hủy
+        </Button>
+        <Button variant="primary" onClick={handleSave}>
+          Cập nhật
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
+
 export default function Cart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +250,8 @@ export default function Cart() {
   const [variantModalShow, setVariantModalShow] = useState(false);
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
   const router = useRouter();
-
+  const searchParams = useSearchParams(); // lấy query
+  const orderSuccess = searchParams.get("success"); // check ?success=true
   const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
   const totalPrice = cartItems.reduce(
@@ -339,6 +510,8 @@ export default function Cart() {
 
   /** ================== REMOVE ITEM ================== */
   const handleRemove = async (id: string) => {
+    if (!confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
+
     try {
       const res = await fetch(`${API_URL}/cart/remove/${id}`, {
         method: "DELETE",
@@ -408,162 +581,16 @@ export default function Cart() {
     }
   };
 
-  /** ================== MODAL CHỌN BIẾN THỂ ================== */
-  interface VariantModalProps {
-    show: boolean;
-    handleClose: () => void;
-    item: CartItem;
-    onSave: (item: CartItem) => void;
-  }
-
-  const VariantModal = ({
-    show,
-    handleClose,
-    item,
-    onSave,
-  }: VariantModalProps) => {
-    const [selectedSize, setSelectedSize] = useState(item.sizeName);
-    const [selectedTaste, setSelectedTaste] = useState(
-      item.taste?.[0] || "Không"
-    );
-    const [quantity, setQuantity] = useState(item.quantity);
-
-    const selectedSizeObj = item.availableSizes?.find(
-      (s) => s.name === selectedSize
-    );
-    const price =
-      selectedSizeObj?.price.discount ??
-      selectedSizeObj?.price.original ??
-      item.price;
-
-    const handleSave = () => {
-      if (quantity > (item.maxAvailable || 0)) {
-        toast.error(`Số lượng tối đa có thể đặt là ${item.maxAvailable}`);
-        return;
-      }
-
-      onSave({
-        ...item,
-        sizeName: selectedSize,
-        taste: selectedTaste === "Không" ? [] : [selectedTaste],
-        price,
-        quantity,
-        fullPrice: selectedSizeObj?.price || item.fullPrice,
-      });
-
-      handleClose();
-    };
-
-    return (
-      <Modal show={show} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>Điều chỉnh sản phẩm</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Kích cỡ</Form.Label>
-            <Form.Select
-              value={selectedSize}
-              onChange={(e) => setSelectedSize(e.target.value)}
-            >
-              {item.availableSizes?.map((size) => (
-                <option key={size.name} value={size.name}>
-                  {size.name} -{" "}
-                  {size.price.discount
-                    ? `${size.price.discount.toLocaleString()} ₫ (Giảm từ ${size.price.original.toLocaleString()} ₫)`
-                    : `${size.price.original.toLocaleString()} ₫`}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-
-          {item.availableTastes && item.availableTastes.length > 0 && (
-            <Form.Group className="mb-3">
-              <Form.Label>Hương vị</Form.Label>
-              <Form.Select
-                value={selectedTaste}
-                onChange={(e) => setSelectedTaste(e.target.value)}
-              >
-                <option value="Không">Không</option>
-                {item.availableTastes.map((taste) => (
-                  <option key={taste} value={taste}>
-                    {taste}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          )}
-
-          <Form.Group className="mb-3">
-            <Form.Label>Số lượng</Form.Label>
-            <div className={styles.quantityWrapper}>
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              >
-                -
-              </Button>
-              <Form.Control
-                type="number"
-                value={quantity}
-                min={1}
-                max={item.maxAvailable}
-                className={styles.quantityInput}
-                onChange={(e) => {
-                  const newQty = parseInt(e.target.value) || 1;
-                  if (newQty <= (item.maxAvailable || Infinity)) {
-                    setQuantity(newQty);
-                  } else {
-                    toast.error(`Số lượng tối đa có thể đặt là ${item.maxAvailable}`);
-                  }
-                }}
-              />
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={() => {
-                  if (quantity < (item.maxAvailable || Infinity)) {
-                    setQuantity(quantity + 1);
-                  } else {
-                    toast.error(`Số lượng tối đa có thể đặt là ${item.maxAvailable}`);
-                  }
-                }}
-              >
-                +
-              </Button>
-            </div>
-            {item.maxAvailable !== undefined && (
-              <Form.Text className="text-muted">
-                Số lượng tối đa: {item.maxAvailable}
-              </Form.Text>
-            )}
-          </Form.Group>
-
-          <div className="fw-bold">
-            Thành tiền: {(price * quantity).toLocaleString()} ₫
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            Cập nhật
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    );
-  };
-
   /** ================== HOOKS ================== */
   useEffect(() => {
     fetchCart();
     fetchVouchers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!isLoading) fetchVouchers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems, isLoading]);
 
   useEffect(() => {
@@ -585,7 +612,14 @@ export default function Cart() {
         {isLoading ? (
           <Alert variant="info">Đang tải giỏ hàng...</Alert>
         ) : cartItems.length === 0 ? (
-          <Alert variant="warning">Giỏ hàng của bạn đang trống.</Alert>
+          orderSuccess ? (
+            <Alert variant="success">
+              Đơn hàng của bạn sẽ được giao thành công trong vòng{" "}
+              <strong>30 phút - 2 tiếng <Link style={{ textDecoration: "none" }} href="/account">Xem đơn hàng tại đây</Link></strong>.
+            </Alert>
+          ) : (
+            <Alert variant="warning">Giỏ hàng của bạn đang trống.</Alert>
+          )
         ) : (
           <Row className="justify-content-center">
             {/* ================== Bảng giỏ hàng ================== */}
@@ -605,8 +639,14 @@ export default function Cart() {
                         {item.sizeName ? `Cỡ ${item.sizeName}` : ""}
                         {item.taste?.[0] ? ` - ${item.taste[0]}` : ""}
                       </div>
-                      <div className={styles.itemPrice}>{item.price.toLocaleString()} ₫</div>
-
+                      <div className={styles.itemPrice}>
+                        {item.price.toLocaleString()} ₫
+                      </div>
+                      {item.maxAvailable !== undefined && (
+                        <Form.Text className="text-muted">
+                          Số lượng tối đa: {item.maxAvailable}
+                        </Form.Text>
+                      )}
                       <div className={styles.quantityWrapper}>
                         <Button
                           variant="outline-secondary"
@@ -625,7 +665,10 @@ export default function Cart() {
                           className={styles.quantityInput}
                           onChange={(e) => {
                             let newQty = parseInt(e.target.value) || 1;
-                            updateItemLocallyAndSync({ ...item, quantity: newQty });
+                            updateItemLocallyAndSync({
+                              ...item,
+                              quantity: newQty,
+                            });
                           }}
                         />
                         <Button
@@ -641,10 +684,16 @@ export default function Cart() {
                       </div>
 
                       <div className={styles.actionLinks}>
-                        <span className={styles.deleteIcon} onClick={() => handleRemove(item.id)}>
+                        <span
+                          className={styles.deleteIcon}
+                          onClick={() => handleRemove(item.id)}
+                        >
                           <FontAwesomeIcon icon={faTrash} />
                         </span>
-                        <span className={styles.choose} onClick={() => handleEditItem(item)}>
+                        <span
+                          className={styles.choose}
+                          onClick={() => handleEditItem(item)}
+                        >
                           Điều Chỉnh
                         </span>
                       </div>
@@ -690,7 +739,10 @@ export default function Cart() {
                                 setFinalTotal(0);
                               } else {
                                 setSelectedVoucher(voucher);
-                                localStorage.setItem("selectedVoucher", JSON.stringify(voucher));
+                                localStorage.setItem(
+                                  "selectedVoucher",
+                                  JSON.stringify(voucher)
+                                );
                                 applyVoucher(voucher);
                               }
                             }
@@ -699,16 +751,21 @@ export default function Cart() {
                           <Card.Body className="d-flex justify-content-between align-items-center">
                             <div>
                               <h6 className="mb-1">{voucher.code}</h6>
-                              <p className="mb-1 text-muted small">{voucher.description}</p>
+                              <p className="mb-1 text-muted small">
+                                {voucher.description}
+                              </p>
                               {voucher.expiresAt && (
                                 <small className="text-danger">
-                                  HSD:{" "}
-                                  {new Date(voucher.expiresAt).toLocaleDateString("vi-VN")}
+                                  HSD: {" "}
+                                  {new Date(
+                                    voucher.expiresAt
+                                  ).toLocaleDateString("vi-VN")}
                                 </small>
                               )}
                               {voucher.usageLimit && (
                                 <small className="d-block">
-                                  Đã dùng: {voucher.currentUsage || 0}/{voucher.usageLimit}
+                                  Đã dùng: {voucher.currentUsage || 0}/
+                                  {voucher.usageLimit}
                                 </small>
                               )}
                             </div>
@@ -746,16 +803,11 @@ export default function Cart() {
                       <strong>Giảm giá:</strong> -{discount.toLocaleString()} ₫
                     </p>
                     <p>
-                      <strong>Thành tiền:</strong> {finalTotal.toLocaleString()}{" "}
-                      ₫
+                      <strong>Thành tiền:</strong> {finalTotal.toLocaleString()} ₫
                     </p>
                   </>
                 )}
-                <Button
-                  variant="dark"
-                  className="w-100"
-                  onClick={handleCheckout}
-                >
+                <Button variant="dark" className="w-100" onClick={handleCheckout}>
                   Thanh toán
                 </Button>
               </Card>
@@ -770,9 +822,11 @@ export default function Cart() {
             handleClose={() => setVariantModalShow(false)}
             item={editingItem}
             onSave={handleSaveEdit}
+            apiUrl={API_URL}
           />
         )}
       </Container>
     </ProtectedRoute>
   );
 }
+

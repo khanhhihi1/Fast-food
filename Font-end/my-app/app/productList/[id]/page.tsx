@@ -18,6 +18,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faHeartBroken, faStar } from "@fortawesome/free-solid-svg-icons";
 import styles from "../../styles/HotProduct.module.css";
 import Link from "next/link";
+import { useCart } from "@/app/context/CartContext";
 
 interface SizeType {
   name: string;
@@ -83,6 +84,8 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>({});
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const { refreshCart } = useCart();
+  const { refreshFavorite } = useCart();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -204,6 +207,7 @@ const ProductDetail = () => {
           ...prev,
           [productId]: !prev[productId],
         }));
+        await refreshFavorite();
         toast.success(result.message || "Cập nhật yêu thích thành công");
       } else {
         toast.error(result.message || "Lỗi cập nhật yêu thích");
@@ -249,46 +253,79 @@ const ProductDetail = () => {
 
 
   const handleAddToCart = async (product: ProductType) => {
-    if (!selectedSize || !product?._id) {
-      toast.error("Vui lòng chọn kích cỡ");
-      return;
-    }
+  if (!selectedSize || !product?._id) {
+    toast.error("Vui lòng chọn kích cỡ");
+    return;
+  }
 
-    const sizeInfo = product.sizes?.find((s) => s.name === selectedSize);
-    if (!sizeInfo) {
-      toast.error("Kích cỡ không hợp lệ");
-      return;
-    }
+  const sizeInfo = product.sizes?.find((s) => s.name === selectedSize);
+  if (!sizeInfo) {
+    toast.error("Kích cỡ không hợp lệ");
+    return;
+  }
 
-    const price = {
-      original: sizeInfo.price.original,
-      discount: sizeInfo.price.discount,
-    };
-
-    try {
-      const res = await fetch(`${API_URL}/cart/add`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productId: product._id,
-          sizeName: selectedSize,
-          taste: selectedTaste ? [selectedTaste] : [],
-          quantity,
-          price,
-        }),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Lỗi không xác định");
-
-      toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
-    } catch (error: any) {
-      toast.error(`Thêm giỏ hàng thất bại: ${error.message}`);
-    }
+  const price = {
+    original: sizeInfo.price.original,
+    discount: sizeInfo.price.discount,
   };
+
+  try {
+    // 1. Lấy giỏ hàng hiện tại để kiểm tra số lượng
+    const cartRes = await fetch(`${API_URL}/cart`, {
+      credentials: "include",
+    });
+    if (!cartRes.ok) {
+      throw new Error("Lỗi khi lấy giỏ hàng");
+    }
+    const cartData = await cartRes.json();
+    const cartItems = cartData.result?.items || []; // Đảm bảo là mảng
+
+    if (!Array.isArray(cartItems)) {
+      throw new Error("Dữ liệu giỏ hàng không hợp lệ");
+    }
+
+    // 2. Kiểm tra xem sản phẩm đã có trong giỏ chưa (với cùng size và taste)
+    const existingItem = cartItems.find(
+      (item: any) =>
+        (item.productId._id || item.productId) === product._id && // Xử lý productId là string hoặc object
+        item.sizeName === selectedSize &&
+        JSON.stringify(item.taste || []) === JSON.stringify(selectedTaste ? [selectedTaste] : [])
+    );
+
+    const currentQty = existingItem ? existingItem.quantity : 0;
+    const newQty = currentQty + quantity;
+
+    if (newQty > product.quantity) {
+      toast.error(`Bạn chỉ có thể đặt tối đa ${product.quantity} sản phẩm này`);
+      return;
+    }
+
+    // 3. Thêm vào giỏ với số lượng mới
+    const res = await fetch(`${API_URL}/cart/add`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productId: product._id,
+        sizeName: selectedSize,
+        taste: selectedTaste ? [selectedTaste] : [],
+        quantity, // API sẽ cộng dồn nếu tồn tại
+        price,
+      }),
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Lỗi không xác định");
+
+    await refreshCart();
+    toast.success(`${product.name} đã được thêm vào giỏ hàng.`);
+  } catch (error: any) {
+    console.error("Lỗi thêm giỏ hàng:", error);
+    toast.error(`Thêm giỏ hàng thất bại: ${error.message || "Lỗi không xác định"}`);
+  }
+};
 
   if (productLoading || categoryLoading || commentLoading) return <p>Đang tải...</p>;
   if (productError) return <p>Lỗi khi tải sản phẩm: {productError.message}</p>;
@@ -528,3 +565,7 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+function refreshCart() {
+  throw new Error("Function not implemented.");
+}
+

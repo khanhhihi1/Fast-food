@@ -212,8 +212,8 @@ async function loginUser(data) {
     }
 
     // Hợp nhất đoạn bị conflict
-    const token = jwt.sign({ id: user._id, role: user.role }, "secret_key", {
-      expiresIn: "7d",
+    const token = jwt.sign({ id: user._id, role: user.role },process.env.JWT_SECRET || "secret_key", {
+      expiresIn: "1d",
     });
 
     return {

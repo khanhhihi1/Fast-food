@@ -3,12 +3,12 @@ const Schema = mongoose.Schema;
 
 const userSchema = new mongoose.Schema(
   {
-    username: { type: String, required: false, unique: true }, // Cho phép null nếu login Google
+    username: { type: String, required: false, unique: true }, 
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: false }, // 👈 không bắt buộc
+    password: { type: String, required: false }, 
     favorites: [{ type: Schema.Types.ObjectId, ref: "products" }],
-    googleId: { type: String, unique: true, default: null },
+    googleId: { type: String, sparse: true, unique: true },
     role: {
       type: String,
       enum: ["user", "staff", "admin"],
