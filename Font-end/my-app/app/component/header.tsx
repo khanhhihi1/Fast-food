@@ -2,16 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Dropdown,
-  Navbar,
-  Nav,
-  NavDropdown,
-  Container,
-  Image,
-  Row,
-  Col,
-} from "react-bootstrap";
+import { Dropdown, Container, Image, Row, Col } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPhone,
@@ -20,12 +11,14 @@ import {
   faUser,
   faShoppingBag,
   faHeart,
+  faBell,
 } from "@fortawesome/free-solid-svg-icons";
 import debounce from "lodash/debounce";
 import styles from "../styles/header.module.css";
 import { toast } from "react-toastify";
 import { Badge } from "react-bootstrap";
 import { useCart } from "../context/CartContext";
+
 interface Product {
   id: string;
   _id?: string;
@@ -45,14 +38,26 @@ interface Product {
   taste?: string[] | Record<string, number>;
 }
 
+interface Notification {
+  _id: string;
+  title: string;
+  message: string;
+  type: string;
+  link: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export default function Header() {
   const [user, setUser] = useState(null);
-  const router = useRouter();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const { cartCount, setCartCount, favoriteCount, setFavoriteCount } = useCart();
+  const [showNotifications, setShowNotifications] = useState(false);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const router = useRouter();
 
   const renderPrice = (sizes?: Product["sizes"]) => {
     if (!sizes || sizes.length === 0) return "Không rõ";
@@ -82,6 +87,39 @@ export default function Header() {
     }
   };
 
+  // Giả lập dữ liệu notifications
+  useEffect(() => {
+    setNotifications([
+      {
+        _id: "68ca23684b51cb23f816b81e",
+        title: "Đặt hàng thành công 🎉",
+        message: "Đơn hàng #68ca23684b51cb23f816b818 đã được tạo thành công.",
+        type: "order",
+        link: "/orders/68ca23684b51cb23f816b818",
+        isRead: false,
+        createdAt: "2025-09-17T02:56:40.087Z",
+      },
+      {
+        _id: "68ca23f44b51cb23f816b820",
+        title: "Khuyến mãi hot 🔥",
+        message: "Giảm ngay 30% cho Pizza size L trong hôm nay!",
+        type: "promo",
+        link: "/category/pizza",
+        isRead: false,
+        createdAt: "2025-09-16T10:00:00.000Z",
+      },
+      {
+        _id: "68ca24084b51cb23f816b821",
+        title: "Cập nhật đơn hàng",
+        message: "Đơn hàng #68c99e352274d52a0dead579 đã được giao thành công.",
+        type: "order",
+        link: "/orders/68c99e352274d52a0dead579",
+        isRead: true,
+        createdAt: "2025-09-15T08:30:00.000Z",
+      },
+    ]);
+  }, []);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -110,7 +148,7 @@ export default function Header() {
       const data = await res.json();
       if (res.ok && data.status) {
         setUser(null);
-        toast.success("Đăng xuất thành công")
+        toast.success("Đăng xuất thành công");
       } else {
         alert("Đăng xuất thất bại!");
       }
@@ -171,6 +209,7 @@ export default function Header() {
       debouncedSearch.cancel();
     };
   }, [searchKeyword, showSearch]);
+
   useEffect(() => {
     const fetchCartCount = async () => {
       try {
@@ -192,9 +231,12 @@ export default function Header() {
 
     const fetchFavoriteCount = async () => {
       try {
-        const res = await fetch("http://localhost:5000/favoriteProduct/favorites", {
-          credentials: "include",
-        });
+        const res = await fetch(
+          "http://localhost:5000/favoriteProduct/favorites",
+          {
+            credentials: "include",
+          }
+        );
         const data = await res.json();
         if (res.ok && data.status) {
           setFavoriteCount(data.result.length); // tùy API
@@ -207,6 +249,7 @@ export default function Header() {
     fetchCartCount();
     fetchFavoriteCount();
   }, []);
+
   return (
     <>
       {/* Thanh thông tin */}
@@ -242,23 +285,92 @@ export default function Header() {
               style={{ gap: "10px" }}
             >
               {user ? (
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="link"
-                    className="text-white p-0 border-0"
-                    style={{ fontSize: "18px" }}
+                <>
+                  {/* User Dropdown */}
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      variant="link"
+                      className="text-white p-0 border-0"
+                      style={{ fontSize: "18px" }}
+                    >
+                      <FontAwesomeIcon icon={faUser} />
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu align="end">
+                      <Dropdown.Item as={Link} href="/account">
+                        Tài khoản
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={handleLogout}>
+                        Đăng xuất
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+
+                  {/* Notifications */}
+                  <Dropdown
+                    show={showNotifications}
+                    onToggle={() => setShowNotifications(!showNotifications)}
                   >
-                    <FontAwesomeIcon icon={faUser} />
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu align="end">
-                    <Dropdown.Item as={Link} href="/account">
-                      Tài khoản
-                    </Dropdown.Item>
-                    <Dropdown.Item onClick={handleLogout}>
-                      Đăng xuất
-                    </Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
+                    <Dropdown.Toggle
+                      variant="link"
+                      className="text-white p-0 border-0 position-relative"
+                      style={{ fontSize: "18px", marginLeft: "10px" }}
+                    >
+                      <FontAwesomeIcon icon={faBell} />
+                      {notifications.filter((n) => !n.isRead).length > 0 && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "-5px",
+                            right: "-5px",
+                            background: "red",
+                            color: "white",
+                            borderRadius: "50%",
+                            fontSize: "10px",
+                            padding: "2px 5px",
+                          }}
+                        >
+                          {notifications.filter((n) => !n.isRead).length}
+                        </span>
+                      )}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu
+                      align="end"
+                      style={{
+                        minWidth: "320px",
+                        maxHeight: "400px",
+                        overflowY: "auto",
+                      }}
+                    >
+                      {notifications.length > 0 ? (
+                        notifications.map((noti) => (
+                          <Dropdown.Item
+                            key={noti._id}
+                            as={Link}
+                            href={noti.link}
+                            className="d-flex flex-column"
+                            style={{
+                              backgroundColor: noti.isRead
+                                ? "white"
+                                : "#f8f9fa",
+                              marginBottom: "2px",
+                            }}
+                            onClick={() => setShowNotifications(false)}
+                          >
+                            <strong>{noti.title}</strong>
+                            <span style={{ fontSize: "14px" }}>
+                              {noti.message}
+                            </span>
+                            <span style={{ fontSize: "12px", color: "gray" }}>
+                              {new Date(noti.createdAt).toLocaleString("vi-VN")}
+                            </span>
+                          </Dropdown.Item>
+                        ))
+                      ) : (
+                        <Dropdown.Item>Không có thông báo</Dropdown.Item>
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </>
               ) : (
                 <Link
                   href="/login"
@@ -274,7 +386,10 @@ export default function Header() {
               )}
 
               {/* Tìm kiếm */}
-              <div className="d-flex align-items-center position-relative">
+              <div
+                className="d-flex align-items-center position-relative"
+                style={{ marginLeft: "10px" }}
+              >
                 <FontAwesomeIcon
                   icon={faSearch}
                   className="text-light"
@@ -319,7 +434,9 @@ export default function Header() {
                           rounded
                         />
                         <div>
-                          <div style={{ fontWeight: "600" }}>{product.name}</div>
+                          <div style={{ fontWeight: "600" }}>
+                            {product.name}
+                          </div>
                           {renderPrice(product.sizes)}
                         </div>
                       </Link>
