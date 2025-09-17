@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Button, Container, Table, Form, Image } from "react-bootstrap";
+import { Button, Container, Table, Form, Image, Modal, FormControl } from "react-bootstrap";
 import { toast } from "react-toastify";
 import ModalsAdmin from "@/app/component/create.model.admin";
 import UpdateModelAdmin from "@/app/component/update-model-admin";
@@ -9,14 +9,18 @@ import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
 import styles from "../styles/product.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAngleLeft, faAngleRight, faEyeSlash, faPenToSquare, faPlus, faRotate } from "@fortawesome/free-solid-svg-icons";
+import { faAngleLeft, faAngleRight, faEyeSlash, faPenToSquare, faPlus, faRotate, faWarehouse } from "@fortawesome/free-solid-svg-icons";
 import { FaSearch } from "react-icons/fa";
 import { PostType } from "@/app/type/type";
+import RestockModal from "@/app/component/restocModalAdmin";
+
 export default function ShowAdmin() {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [post, setPost] = useState<PostType | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showUpdateModal, setUpdateModal] = useState(false);
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<PostType | null>(null);
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,10 +37,9 @@ export default function ShowAdmin() {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       if (data?.result) {
-        // Ánh xạ status thành isHidden
         const mappedPosts = data.result.map((p: any) => ({
           ...p,
-          isHidden: !p.status, // Chuyển status thành isHidden
+          isHidden: !p.status,
         }));
         setPosts(mappedPosts);
       } else {
@@ -55,10 +58,9 @@ export default function ShowAdmin() {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       if (data?.result) {
-        // Ánh xạ status thành isHidden
         const mappedPosts = data.result.map((p: any) => ({
           ...p,
-          isHidden: !p.status, // Chuyển status thành isHidden
+          isHidden: !p.status,
         }));
         setPosts(mappedPosts);
       } else {
@@ -101,8 +103,8 @@ export default function ShowAdmin() {
     () =>
       posts
         .filter((p) => {
-          if (filter === "active") return p.status; // Sử dụng status
-          if (filter === "inactive") return !p.status; // Sử dụng status
+          if (filter === "active") return p.status;
+          if (filter === "inactive") return !p.status;
           return true;
         })
         .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -171,6 +173,11 @@ export default function ShowAdmin() {
     } catch (e) {
       toast.error(`Ẩn sản phẩm thất bại: ${(e as Error).message}`);
     }
+  };
+
+  const handleRestock = (product: PostType) => {
+    setSelectedProduct(product);
+    setShowRestockModal(true);
   };
 
   const renderSizes = (sizes?: PostType["sizes"]) => {
@@ -283,6 +290,8 @@ export default function ShowAdmin() {
                 <th>Số lượng</th>
                 <th>Vị</th>
                 <th>Danh mục</th>
+                <th>Loại sản phẩm</th> 
+                <th>Số lượng ban đầu</th>
                 <th>Trạng thái</th>
                 <th>Chức năng</th>
               </tr>
@@ -293,7 +302,7 @@ export default function ShowAdmin() {
                   <td>{indexOfFirst + index + 1}</td>
                   <td>{product.name}</td>
                   <td className="text-center">
-                    <Image  src={`${API_URL}/${product.image}`} alt={product.name} width={60} height={60} rounded className={`$styles["product-img"] `} />
+                    <Image src={`${API_URL}/${product.image}`} alt={product.name} width={60} height={60} rounded className={styles["product-img"]} />
                   </td>
                   <td>{renderSizes(product.sizes)}</td>
                   <td>{product.quantity}</td>
@@ -303,6 +312,8 @@ export default function ShowAdmin() {
                       ? product.categoryId.name
                       : categories.find((c) => c._id === product.categoryId)?.name || "Không rõ"}
                   </td>
+                  <td>{product.isDaily ? "Theo ngày" : "Tồn kho"}</td> 
+                  <td>{product.isDaily ? product.dailyInitialQuantity : "N/A"}</td>
                   <td>
                     <span className={`${styles["status-badge"]} ${product.status ? styles.active : styles.inactive}`}>
                       {product.status ? "Hoạt động" : "Ngừng bán"}
@@ -313,14 +324,17 @@ export default function ShowAdmin() {
                       <FontAwesomeIcon icon={faPenToSquare} />
                     </Button>
                     {product.status ? (
-                      <Button variant="outline-danger" size="sm" onClick={() => handleHideProduct(product._id)}>
+                      <Button variant="outline-danger" size="sm" className="me-2" onClick={() => handleHideProduct(product._id)}>
                         <FontAwesomeIcon icon={faEyeSlash} />
                       </Button>
                     ) : (
-                      <Button variant="outline-success" size="sm" onClick={() => handleShowProduct(product._id)}>
+                      <Button variant="outline-success" size="sm" className="me-2" onClick={() => handleShowProduct(product._id)}>
                         <FontAwesomeIcon icon={faRotate} />
                       </Button>
                     )}
+                    <Button variant="outline-primary" size="sm" onClick={() => handleRestock(product)}>
+                      <FontAwesomeIcon icon={faWarehouse} /> {/* Icon cho nhập liệu */}
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -329,7 +343,6 @@ export default function ShowAdmin() {
         </div>
 
         <div className={`d-flex justify-content-center mt-3 ${styles.pagination}`}>
-          {/* Nút trang trước */}
           <Button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
@@ -338,19 +351,16 @@ export default function ShowAdmin() {
             <FontAwesomeIcon icon={faAngleLeft} />
           </Button>
 
-          {/* Số trang */}
           {Array.from({ length: totalPages }, (_, i) => (
             <Button
               key={i}
               onClick={() => setCurrentPage(i + 1)}
-              className={`${styles.pageNumber} ${currentPage === i + 1 ? styles.active : ""
-                }`}
+              className={`${styles.pageNumber} ${currentPage === i + 1 ? styles.active : ""}`}
             >
               {i + 1}
             </Button>
           ))}
 
-          {/* Nút trang sau */}
           <Button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
@@ -362,6 +372,12 @@ export default function ShowAdmin() {
 
         <ModalsAdmin showModal={showModal} setShowModal={setShowModal} fetchPosts={fetchPosts} />
         <UpdateModelAdmin showUpdateModal={showUpdateModal} setUpdateModal={setUpdateModal} post={post} fetchPosts={fetchPosts} />
+        <RestockModal
+          show={showRestockModal}
+          onHide={() => setShowRestockModal(false)}
+          product={selectedProduct}
+          fetchPosts={fetchPosts}
+        />
       </Container>
     </div>
   );

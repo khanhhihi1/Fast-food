@@ -450,6 +450,84 @@ async function buyMultiple(items) {
     throw error;
   }
 }
+async function restockProduct(id, quantity) {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new Error("ID sản phẩm không hợp lệ");
+    }
+
+    const product = await productsModel.findById(id);
+    if (!product) {
+      throw new Error("Sản phẩm không tồn tại");
+    }
+
+    // Kiểm tra nếu cần reset thủ công (nếu ngày mới nhưng cron chưa chạy)
+    const today = moment().startOf('day').toDate();
+    if (product.isDaily && (!product.lastResetDate || moment(product.lastResetDate).isBefore(today))) {
+      await resetProduct(product); // Reset trước khi restock
+    }
+
+    if (product.isDaily) {
+      // Daily products: Không cho nhập nếu còn tồn kho
+      if (product.quantity > 0) {
+        throw new Error(`Sản phẩm ${product.name} đang tồn kho (${product.quantity}). Không thể nhập thêm cho sản phẩm theo ngày.`);
+      }
+      // Set về giá trị mới (hoặc initial nếu không chỉ định)
+      product.quantity = quantity || product.dailyInitialQuantity;
+    } else {
+      // Persistent products: Tích lũy tồn kho
+      product.quantity += quantity;
+    }
+
+    product.lastResetDate = today; // Cập nhật nếu là daily
+    await product.save();
+
+    await notificationController.createNotification({
+      message: `Đã nhập liệu ${quantity} cho sản phẩm ${product.name}.`,
+      type: "system",
+    });
+
+    return product;
+  } catch (error) {
+    console.error("Lỗi khi nhập liệu:", error.message);
+    throw error;
+  }
+}
+
+// Hàm helper: Reset một sản phẩm daily (dùng cho cron hoặc thủ công)
+async function resetProduct(product) {
+  if (!product.isDaily) return;
+
+  const today = moment().startOf('day').toDate();
+  if (product.quantity > 0) {
+    // Chuyển dư thừa vào history cho stats
+    product.leftoverHistory.push({
+      date: moment().subtract(1, 'day').toDate(), // Ngày trước
+      leftoverQuantity: product.quantity
+    });
+    await notificationController.createNotification({
+      message: `Sản phẩm ${product.name} còn dư ${product.quantity}, chuyển vào bán chậm.`,
+      type: "system",
+    });
+  }
+  // Reset quantity
+  product.quantity = product.dailyInitialQuantity;
+  product.lastResetDate = today;
+  await product.save();
+}
+
+// Hàm mới: Reset tất cả daily products (cho cron job)
+async function resetAllDailyProducts() {
+  try {
+    const dailyProducts = await productsModel.find({ isDaily: true });
+    for (const product of dailyProducts) {
+      await resetProduct(product);
+    }
+    console.log("Reset daily products thành công.");
+  } catch (error) {
+    console.error("Lỗi reset daily products:", error);
+  }
+}
 module.exports = {
   getAllPro,
   getDatailPro,
@@ -465,4 +543,6 @@ module.exports = {
   getProductsByCategory,
   // chatWithAI,
   buyMultiple,
+  restockProduct,
+  resetAllDailyProducts
 };
