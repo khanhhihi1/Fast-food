@@ -9,6 +9,7 @@ import { ToastContainer } from "react-toastify";
 import React from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { usePathname } from "next/navigation";
+import { CartProvider } from "./context/CartContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,11 +30,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <CartProvider>
           {!isAdminPage && <Header />}
-        {children}
-        <ToastContainer />
-        {!isAdminPage && <Footer />}
+          {children}
+          <ToastContainer />
+          {!isAdminPage && <Footer />}
+        </CartProvider>
       </body>
     </html>
   );
 }
+
+
+

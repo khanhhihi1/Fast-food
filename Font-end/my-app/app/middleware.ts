@@ -12,7 +12,6 @@ export function middleware(request: NextRequest) {
   if (token) {
     try {
       jwt.verify(token, "secret_key");
-
       // Nếu đã đăng nhập và vào trang login/register thì redirect về trang chủ
       if (isAuthPage) {
         return NextResponse.redirect(new URL("/", request.url));

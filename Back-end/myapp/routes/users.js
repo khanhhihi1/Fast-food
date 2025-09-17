@@ -42,7 +42,7 @@ router.get(
       const token = jwt.sign(
         { id: req.user._id, role: req.user.role },
         process.env.JWT_SECRET || "secret_key",
-        { expiresIn: "7d" }
+        { expiresIn: "1d" }
       );
 
       res.cookie("token", token, {

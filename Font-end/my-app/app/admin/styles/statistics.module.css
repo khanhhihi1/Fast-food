@@ -1,0 +1,55 @@
+.cardHover {
+  transition: all 0.3s ease;
+}
+
+.cardHover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Container tổng */
+/* Container tổng */
+.container-content {
+  flex: 1;
+  padding: 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #f5f6f7; /* ✅ nền xám nhạt phủ toàn bộ */
+  min-height: 100vh; /* ✅ luôn full chiều cao */
+  box-sizing: border-box;
+}
+
+/* Khi sidebar thu gọn */
+.collapsed-content {
+  margin-left: 80px !important;
+}
+
+/* Khi sidebar mở rộng */
+.content {
+  margin-left: 250px;
+  min-height: 100vh;
+  margin-top: 70px; /* tránh bị navbar đè */
+  transition: margin-left 0.3s ease;
+  box-sizing: border-box;
+}
+
+/* Card hover */
+.cardHover {
+  transition: all 0.3s ease;
+}
+
+.cardHover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ Tiêu đề trang */
+.page-title {
+    margin-top: 20px;
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937; /* màu xám đậm */
+  margin-bottom: 30px;
+  position: relative;
+}

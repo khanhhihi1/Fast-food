@@ -24,7 +24,8 @@ import {
 import debounce from "lodash/debounce";
 import styles from "../styles/header.module.css";
 import { toast } from "react-toastify";
-
+import { Badge } from "react-bootstrap";
+import { useCart } from "../context/CartContext";
 interface Product {
   id: string;
   _id?: string;
@@ -50,6 +51,7 @@ export default function Header() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const { cartCount, setCartCount, favoriteCount, setFavoriteCount } = useCart();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const renderPrice = (sizes?: Product["sizes"]) => {
@@ -169,7 +171,42 @@ export default function Header() {
       debouncedSearch.cancel();
     };
   }, [searchKeyword, showSearch]);
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/cart`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.status) {
+          const totalQuantity = data.result.items.reduce(
+            (sum: number, item: any) => sum + item.quantity,
+            0
+          );
+          setCartCount(totalQuantity);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
+    const fetchFavoriteCount = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/favoriteProduct/favorites", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.status) {
+          setFavoriteCount(data.result.length); // tùy API
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchCartCount();
+    fetchFavoriteCount();
+  }, []);
   return (
     <>
       {/* Thanh thông tin */}
@@ -291,19 +328,38 @@ export default function Header() {
                 )}
               </div>
 
-              <Link href="/cart">
+              <Link href="/cart" className="position-relative">
                 <FontAwesomeIcon
                   icon={faShoppingBag}
                   className="text-light me-2"
                   style={{ fontSize: "18px" }}
                 />
+                {cartCount > 0 && (
+                  <Badge
+                    bg="danger"
+                    pill
+                    className="position-absolute top-0 start-100 translate-middle"
+                  >
+                    {cartCount}
+                  </Badge>
+                )}
               </Link>
-              <Link href="/favoriteProduct">
+
+              <Link href="/favoriteProduct" className="position-relative">
                 <FontAwesomeIcon
                   icon={faHeart}
                   className="text-light me-2"
                   style={{ fontSize: "18px" }}
                 />
+                {favoriteCount > 0 && (
+                  <Badge
+                    bg="danger"
+                    pill
+                    className="position-absolute top-0 start-100 translate-middle"
+                  >
+                    {favoriteCount}
+                  </Badge>
+                )}
               </Link>
             </Col>
           </Row>

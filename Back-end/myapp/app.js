@@ -21,6 +21,8 @@ const paymentRouter = require("./routes/payment");
 const favoriteProductRoutes = require("./routes/favoriteProduct");
 const notificationRoutes = require("./routes/notification");
 const contactRoutes = require("./routes/contact");
+const statisticsRoutes = require("./routes/statistics");
+
 
 const session = require('express-session');
 const passport = require('./config/passport.js'); 
@@ -74,6 +76,7 @@ app.use("/orders", orderRouter);
 app.use("/comment", commentRouter);
 app.use("/voucher", voucherRouter);
 app.use("/contacts", contactRoutes);
+app.use("/statistics",  statisticsRoutes);
 app.use("/temp-order", tempOrderRoutes);
 app.use("/payment", paymentRouter);
 app.use("/favoriteProduct", favoriteProductRoutes);

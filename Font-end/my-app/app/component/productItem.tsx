@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faHeartBroken } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
-
+import { useCart } from "../context/CartContext";
 interface Product {
   id: string;
   _id?: string;
@@ -61,6 +61,8 @@ const renderPrice = (sizes?: Product["sizes"], quantity: number = 0) => {
 export default function ProductItem({ product, layout = "vertical" }: ProductItemsProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const productId = product._id || product.id;
+  const { refreshFavorite } = useCart();
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
 
       if (response.ok) {
         setIsFavorite((prev) => !prev);
+        await refreshFavorite();
         toast.success(result.message || "Cập nhật yêu thích thành công");
       } else {
         toast.error(result.message || "Lỗi cập nhật yêu thích");
@@ -107,15 +110,13 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
     }
   };
 
+  if (product.quantity === 0) {
+    return null;
+  }
+
   return (
-    <div
-      className={`${styles.productList} ${styles[layout]} ${product.quantity === 0 ? styles.outOfStock : ""
-        }`}
-    >
-      <Link
-        href={`/productList/${productId}`}
-        className={product.quantity === 0 ? styles.disabledLink : ""}
-      >
+    <div className={`${styles.productList} ${styles[layout]}`}>
+      <Link href={`/productList/${productId}`}>
         <Image
           src={`${API_URL}/${product.image}`}
           className={styles.productImg}
@@ -139,6 +140,5 @@ export default function ProductItem({ product, layout = "vertical" }: ProductIte
         </div>
       </div>
     </div>
-
   );
 }

@@ -233,15 +233,15 @@ export default function CartManagementPage() {
                   <span className={styles.statValue}>{orders.length}</span>
                 </div>
                 <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Doanh thu thực nhận: </span>
+                  <span className={styles.statLabel}>Doanh thu / Doanh thu gộp: </span>
                   <span className={styles.statValue}>
-                    {actualRevenue.toLocaleString("vi-VN")} VNĐ
+                     {currentRevenue.toLocaleString("vi-VN")} VNĐ / {actualRevenue.toLocaleString("vi-VN")} VNĐ 
                   </span>
                 </div>
                 <div className={styles.statCard}>
                   <span className={styles.statLabel}>Doanh thu hiện tại: </span>
                   <span className={styles.statValue}>
-                    {currentRevenue.toLocaleString("vi-VN")} VNĐ
+                  
                   </span>
                 </div>
               </div>

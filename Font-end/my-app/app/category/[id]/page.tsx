@@ -283,6 +283,7 @@ export default function FastFoodMenu() {
       const price = p.sizes?.[0]?.price?.discount ?? p.sizes?.[0]?.price?.original ?? 0;
       return (
         (p.status === undefined || p.status === true) &&
+        p.quantity > 0 &&  
         price <= priceRange &&
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
       );

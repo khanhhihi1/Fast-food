@@ -216,6 +216,7 @@
 
 .pagination {
   gap: 6px;
+  margin-bottom: 20px;
 }
 
 .pageBtn {
