@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 const categoriesModel = require("../model/categoriesModel.js");
 const productsModel = require("../model/productModel.js");
 const notificationController = require("../controller/notificationController");
-const OpenAI = require('openai');
-require('dotenv').config();
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// const OpenAI = require('openai');
+// require('dotenv').config();
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
 // Lấy tất cả sản phẩm
 async function getAllPro() {
   try {
@@ -190,13 +190,7 @@ async function updateProduct(data, id, imagePath) {
       throw new Error("Sản phẩm không tồn tại");
     }
 
-    const requiredFields = [
-      "name",
-      "sizes",
-      "categoryId",
-      "quantity",
-      "taste",
-    ];
+    const requiredFields = ["name", "sizes", "categoryId", "quantity", "taste"];
     for (const field of requiredFields) {
       if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
@@ -246,11 +240,9 @@ async function updateProduct(data, id, imagePath) {
       updateData.image = imagePath; // Cập nhật path ảnh mới nếu có upload
     }
 
-    const result = await productsModel.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
+    const result = await productsModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
 
     // Tạo thông báo hệ thống khi cập nhật sản phẩm
     if (data.saleOff) {
@@ -325,7 +317,10 @@ const chatWithAI = async (message) => {
   const responseCompletion = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
-      { role: "system", content: "Bạn là AI chat box thân thiện, trả lời ngắn gọn." },
+      {
+        role: "system",
+        content: "Bạn là AI chat box thân thiện, trả lời ngắn gọn.",
+      },
       { role: "user", content: responsePrompt },
     ],
     max_tokens: 150,
@@ -404,7 +399,7 @@ async function buyMultiple(items) {
     const productSums = {};
     for (const item of items) {
       const pid = item.productId.toString();
-      if (!productSums[pid]) productSums[pid] = { sum: 0, name: '' };
+      if (!productSums[pid]) productSums[pid] = { sum: 0, name: "" };
       productSums[pid].sum += item.quantity;
     }
 
@@ -416,7 +411,9 @@ async function buyMultiple(items) {
       }
       productSums[pid].name = product.name; // Lưu tên để thông báo lỗi
       if (product.quantity < productSums[pid].sum) {
-        throw new Error(`Không đủ hàng cho sản phẩm ${product.name} (còn ${product.quantity})`);
+        throw new Error(
+          `Không đủ hàng cho sản phẩm ${product.name} (còn ${product.quantity})`
+        );
       }
     }
 
@@ -453,6 +450,6 @@ module.exports = {
   getDiscountProduct,
   searchProducts,
   getProductsByCategory,
-  chatWithAI,
+  // chatWithAI,
   buyMultiple,
 };

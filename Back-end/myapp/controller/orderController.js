@@ -4,6 +4,7 @@ const Product = require("../model/productModel.js");
 const { Order, OrderStatus } = require("../model/orderModel.js");
 const TempOrder = require("../model/tempOrderModel.js");
 const Voucher = require("../model/voucherModel.js");
+const notificationController = require("./notificationController.js");
 
 module.exports = {
   createOrderFromCart,
@@ -26,7 +27,7 @@ async function getOrderById(req) {
       path: "items.productId",
       select: "name image",
     });
-    
+
   if (!order) {
     throw new Error("Không tìm thấy đơn hàng");
   }
@@ -53,33 +54,22 @@ async function getOrderById(req) {
 // Tạo đơn hàng từ giỏ hàng của người dùng
 async function createOrderFromCart(req) {
   const userId = req.userId;
-
-  if (!userId) {
-    throw new Error("Không xác định được người dùng.");
-  }
+  if (!userId) throw new Error("Không xác định được người dùng.");
 
   const cart = await Cart.findOne({ userId });
-  if (!cart || cart.items.length === 0) {
-    throw new Error("Giỏ hàng trống.");
-  }
+  if (!cart || cart.items.length === 0) throw new Error("Giỏ hàng trống.");
 
   let total = 0;
   const orderItems = [];
 
   for (const item of cart.items) {
     const product = await Product.findById(item.productId);
-
-    if (!product || product.status === false) {
-      console.warn(
-        `Sản phẩm không hợp lệ hoặc đã ngừng bán: ${item.productId}`
-      );
-      continue;
-    }
+    if (!product || product.status === false) continue;
 
     const selectedSize = product.sizes.find((s) => s.name === item.sizeName);
     if (!selectedSize) {
       throw new Error(
-        `Kích cỡ '${item.sizeName}' không hợp lệ với sản phẩm '${product.name}'`
+        `Kích cỡ '${item.sizeName}' không hợp lệ cho '${product.name}'`
       );
     }
 
@@ -100,14 +90,12 @@ async function createOrderFromCart(req) {
     });
   }
 
-  if (orderItems.length === 0) {
+  if (orderItems.length === 0)
     throw new Error("Không có sản phẩm hợp lệ trong giỏ hàng.");
-  }
 
   const shippingFee = 15000;
   const tax = Math.round(total * 0.1);
   const grandTotal = total + shippingFee + tax;
-
   const paymentMethod = req.body.paymentMethod || "cod";
 
   const newOrder = new Order({
@@ -117,8 +105,8 @@ async function createOrderFromCart(req) {
     shippingFee,
     tax,
     paymentMethod,
-    isPaid: paymentMethod === "cod" ? false : true, // Set isPaid based on method
-    status: paymentMethod === "cod" ? OrderStatus.PENDING : OrderStatus.PENDING, // Adjust as needed, assuming Stripe moves to PENDING after payment
+    isPaid: paymentMethod === "cod" ? false : true,
+    status: OrderStatus.PENDING,
   });
 
   await newOrder.save();
@@ -126,10 +114,20 @@ async function createOrderFromCart(req) {
   cart.items = [];
   await cart.save();
 
-  return {
-    message: "Đặt hàng thành công",
-    order: newOrder,
-  };
+  try {
+    // 👇 Tạo thông báo khi đặt hàng thành công
+    await notificationController.createNotification({
+      userId,
+      title: "Đặt hàng thành công 🎉",
+      message: `Đơn hàng #${newOrder._id} đã được tạo thành công.`,
+      type: "order",
+      link: `/orders/${newOrder._id}`,
+    });
+  } catch (err) {
+    console.error("❌ Không thể tạo thông báo:", err.message);
+  }
+
+  return { message: "Đặt hàng thành công", order: newOrder };
 }
 
 // Lấy danh sách đơn hàng của người dùng
@@ -230,43 +228,74 @@ async function updateOrderStatus(req) {
   }
 
   let order = await Order.findById(id);
-  if (!order) {
-    throw new Error("Không tìm thấy đơn hàng");
-  }
+  if (!order) throw new Error("Không tìm thấy đơn hàng");
 
   const oldStatus = order.status;
 
-  // Nếu chuyển sang COMPLETED (4) và là COD, set isPaid = true
   if (newStatus === OrderStatus.COMPLETED && order.paymentMethod === "cod") {
     order.isPaid = true;
   }
 
-  // Nếu chuyển sang CANCELLED và chưa cancelled trước đó, khôi phục quantity
-  if (newStatus === OrderStatus.CANCELLED && oldStatus !== OrderStatus.CANCELLED) {
+  if (
+    newStatus === OrderStatus.CANCELLED &&
+    oldStatus !== OrderStatus.CANCELLED
+  ) {
     await restoreQuantity(order);
   }
 
   order.status = newStatus;
   await order.save();
 
+  // 👇 Thêm thông báo theo trạng thái
+  let notifyData = null;
+  switch (newStatus) {
+    case OrderStatus.CONFIRMED:
+      notifyData = {
+        title: "Đơn hàng đã được xác nhận ✅",
+        message: `Đơn hàng #${order._id} đã được xác nhận.`,
+      };
+      break;
+    case OrderStatus.SHIPPING:
+      notifyData = {
+        title: "Đơn hàng đang giao 🚚",
+        message: `Đơn hàng #${order._id} đang trên đường giao.`,
+      };
+      break;
+    case OrderStatus.COMPLETED:
+      notifyData = {
+        title: "Đơn hàng đã giao thành công 🎉",
+        message: `Đơn hàng #${order._id} đã được giao.`,
+      };
+      break;
+    case OrderStatus.CANCELLED:
+      notifyData = {
+        title: "Đơn hàng đã bị hủy ❌",
+        message: `Đơn hàng #${order._id} đã bị hủy.`,
+      };
+      break;
+  }
+
+  if (notifyData) {
+    await notificationController.createNotification({
+      userId: order.userId,
+      title: notifyData.title,
+      message: notifyData.message,
+      type: "order",
+      link: `/orders/${order._id}`,
+    });
+  }
+
   let updated = await Order.findById(id)
     .populate("userId", "name email")
-    .populate({
-      path: "items.productId",
-      select: "name image",
-    });
+    .populate({ path: "items.productId", select: "name image" });
 
-  // Format với prepend URL
   updated = updated.toObject();
   updated.items = updated.items.map((item) => {
     let image = item.image || (item.productId ? item.productId.image : "");
     if (image && !image.startsWith("http")) {
       image = `${req.protocol}://${req.get("host")}${image}`;
     }
-    return {
-      ...item,
-      image,
-    };
+    return { ...item, image };
   });
 
   return {
@@ -296,18 +325,15 @@ async function createOrderFromTempOrder(req) {
 
   const enrichedItems = await Promise.all(
     tempOrder.items.map(async (item) => {
-      const product = await Product.findById(item.productId); // Fetch product để lấy image chính xác nếu cần
+      const product = await Product.findById(item.productId);
 
       const original =
         item?.price?.original ?? item?.fullPrice?.original ?? item?.price ?? 0;
-
       const discountPrice =
         item?.price?.discount ?? item?.fullPrice?.discount ?? undefined;
-
       const final = item?.finalPrice ?? discountPrice ?? original;
 
       let image = item.image || (product ? product.image : "");
-
       if (image && !image.startsWith("http")) {
         image = `${req.protocol}://${req.get("host")}${image}`;
       }
@@ -343,15 +369,13 @@ async function createOrderFromTempOrder(req) {
     paymentMethod,
     shippingFee,
     tax,
-    isPaid: paymentMethod === "cod" ? false : true, // Set isPaid: false for COD, true for Stripe/other
-    status:
-      paymentMethod === "cod"
-        ? OrderStatus.PENDING
-        : OrderStatus.PENDING, // Adjust if Stripe should start at CONFIRMED
+    isPaid: paymentMethod === "cod" ? false : true,
+    status: OrderStatus.PENDING, // có thể điều chỉnh nếu cần
     createdAt: new Date(),
   });
 
   await newOrder.save();
+
   if (voucherCode) {
     const voucher = await Voucher.findOne({ code: voucherCode });
     if (voucher) {
@@ -361,6 +385,19 @@ async function createOrderFromTempOrder(req) {
   }
 
   await TempOrder.deleteMany({ userId });
+
+  // 👇 Thêm thông báo ở đây
+  try {
+    await notificationController.createNotification({
+      userId,
+      title: "Đặt hàng thành công 🎉",
+      message: `Đơn hàng #${newOrder._id} đã được tạo thành công.`,
+      type: "order",
+      link: `/orders/${newOrder._id}`,
+    });
+  } catch (err) {
+    console.error("❌ Không thể tạo thông báo:", err.message);
+  }
 
   return {
     message: "Đặt hàng thành công",
@@ -374,13 +411,12 @@ async function cancelOrder(req) {
   const userId = req.userId;
 
   const order = await Order.findById(id);
-  if (!order) {
-    throw new Error("Không tìm thấy đơn hàng");
-  }
+  if (!order) throw new Error("Không tìm thấy đơn hàng");
 
   if (order.userId.toString() !== userId) {
     throw new Error("Không có quyền hủy đơn hàng này");
   }
+
   if (order.voucherCode) {
     const voucher = await Voucher.findOne({ code: order.voucherCode });
     if (voucher && voucher.currentUsage > 0) {
@@ -388,22 +424,27 @@ async function cancelOrder(req) {
       await voucher.save();
     }
   }
+
   if (
     ![OrderStatus.PENDING, OrderStatus.WAITING_PAYMENT].includes(order.status)
   ) {
     throw new Error("Không thể hủy đơn hàng ở trạng thái hiện tại");
   }
 
-  // Khôi phục quantity trước khi cập nhật status
   await restoreQuantity(order);
-
   order.status = OrderStatus.CANCELLED;
   await order.save();
 
-  return {
-    message: "Hủy đơn hàng thành công",
-    order,
-  };
+  // 👇 Thông báo hủy đơn hàng
+  await notificationController.createNotification({
+    userId: order.userId,
+    title: "Đơn hàng đã bị hủy ❌",
+    message: `Đơn hàng #${order._id} đã được hủy.`,
+    type: "order",
+    link: `/orders/${order._id}`,
+  });
+
+  return { message: "Hủy đơn hàng thành công", order };
 }
 
 // Lấy trạng thái đơn hàng
