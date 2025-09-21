@@ -1,10 +1,15 @@
 // Updated orderController.js (backend controller with changes for isPaid logic)
 const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
-const { Order, OrderStatus } = require("../model/orderModel.js");
+const {
+  Order,
+  OrderStatus,
+  OrderStatusText,
+} = require("../model/orderModel.js");
 const TempOrder = require("../model/tempOrderModel.js");
 const Voucher = require("../model/voucherModel.js");
 const notificationController = require("./notificationController.js");
+const User = require("../model/userModel.js");
 
 module.exports = {
   createOrderFromCart,
@@ -232,10 +237,12 @@ async function updateOrderStatus(req) {
 
   const oldStatus = order.status;
 
+  // Nếu trạng thái thay đổi sang COMPLETED và phương thức là COD, đánh dấu đã thanh toán
   if (newStatus === OrderStatus.COMPLETED && order.paymentMethod === "cod") {
     order.isPaid = true;
   }
 
+  // Nếu hủy đơn, restore quantity sản phẩm
   if (
     newStatus === OrderStatus.CANCELLED &&
     oldStatus !== OrderStatus.CANCELLED
@@ -243,48 +250,55 @@ async function updateOrderStatus(req) {
     await restoreQuantity(order);
   }
 
+  // Cập nhật trạng thái mới
   order.status = newStatus;
   await order.save();
 
-  // 👇 Thêm thông báo theo trạng thái
-  let notifyData = null;
-  switch (newStatus) {
-    case OrderStatus.CONFIRMED:
-      notifyData = {
-        title: "Đơn hàng đã được xác nhận ✅",
-        message: `Đơn hàng #${order._id} đã được xác nhận.`,
-      };
-      break;
-    case OrderStatus.SHIPPING:
-      notifyData = {
-        title: "Đơn hàng đang giao 🚚",
-        message: `Đơn hàng #${order._id} đang trên đường giao.`,
-      };
-      break;
-    case OrderStatus.COMPLETED:
-      notifyData = {
-        title: "Đơn hàng đã giao thành công 🎉",
-        message: `Đơn hàng #${order._id} đã được giao.`,
-      };
-      break;
-    case OrderStatus.CANCELLED:
-      notifyData = {
-        title: "Đơn hàng đã bị hủy ❌",
-        message: `Đơn hàng #${order._id} đã bị hủy.`,
-      };
-      break;
-  }
+  // --- Thông báo cho client ---
+  try {
+    const newStatusText = OrderStatusText[newStatus] || "Không xác định";
 
-  if (notifyData) {
     await notificationController.createNotification({
       userId: order.userId,
-      title: notifyData.title,
-      message: notifyData.message,
+      title: "Cập nhật trạng thái đơn hàng",
+      message: `Đơn hàng #${order._id} đã được chuyển sang trạng thái '${newStatusText}'.`,
       type: "order",
       link: `/orders/${order._id}`,
     });
+    console.log(`✅ Notification client created: ${order.userId}`);
+  } catch (err) {
+    console.error(
+      "❌ Không thể tạo thông báo trạng thái cho client:",
+      err.message
+    );
   }
 
+  // --- Thông báo cho tất cả admin ---
+  try {
+    const admins = await User.find({ role: "admin" });
+    if (admins && admins.length > 0) {
+      const newStatusText = OrderStatusText[newStatus] || "Không xác định";
+
+      await Promise.all(
+        admins.map(async (admin) => {
+          await notificationController.createNotification({
+            userId: admin._id,
+            title: "Trạng thái đơn hàng cập nhật 🔄",
+            message: `Đơn hàng #${order._id} đã được cập nhật trạng thái thành công: '${newStatusText}'.`,
+            type: "order",
+            link: `/admin/orders/${order._id}`,
+          });
+          console.log(`✅ Notification admin created: ${admin._id}`);
+        })
+      );
+    } else {
+      console.warn("⚠️ Không tìm thấy admin để gửi notification");
+    }
+  } catch (err) {
+    console.error("❌ Lỗi tạo notification cho admin:", err.message);
+  }
+
+  // Trả về đơn hàng mới
   let updated = await Order.findById(id)
     .populate("userId", "name email")
     .populate({ path: "items.productId", select: "name image" });
@@ -323,6 +337,7 @@ async function createOrderFromTempOrder(req) {
     paymentMethod,
   } = tempOrder;
 
+  // Enrich items với thông tin sản phẩm
   const enrichedItems = await Promise.all(
     tempOrder.items.map(async (item) => {
       const product = await Product.findById(item.productId);
@@ -346,7 +361,7 @@ async function createOrderFromTempOrder(req) {
         taste: item.taste || [],
         quantity: item.quantity,
         price: {
-          original: original,
+          original,
           discount: discountPrice,
         },
         finalPrice: final,
@@ -358,6 +373,7 @@ async function createOrderFromTempOrder(req) {
   const tax = 0;
   const finalTotal = total + shippingFee + tax;
 
+  // Tạo đơn hàng mới
   const newOrder = new Order({
     userId,
     items: enrichedItems,
@@ -370,23 +386,33 @@ async function createOrderFromTempOrder(req) {
     shippingFee,
     tax,
     isPaid: paymentMethod === "cod" ? false : true,
-    status: OrderStatus.PENDING, // có thể điều chỉnh nếu cần
+    status: OrderStatus.PENDING,
     createdAt: new Date(),
   });
 
   await newOrder.save();
 
+  // Cập nhật voucher nếu có
   if (voucherCode) {
-    const voucher = await Voucher.findOne({ code: voucherCode });
-    if (voucher) {
-      voucher.currentUsage = (voucher.currentUsage || 0) + 1;
-      await voucher.save();
+    try {
+      const voucher = await Voucher.findOne({ code: voucherCode });
+      if (voucher) {
+        voucher.currentUsage = (voucher.currentUsage || 0) + 1;
+        await voucher.save();
+      }
+    } catch (err) {
+      console.error(`❌ Lỗi cập nhật voucher ${voucherCode}:`, err.message);
     }
   }
 
-  await TempOrder.deleteMany({ userId });
+  // Xóa TempOrder
+  try {
+    await TempOrder.deleteMany({ userId });
+  } catch (err) {
+    console.error(`❌ Lỗi xóa TempOrder của user ${userId}:`, err.message);
+  }
 
-  // 👇 Thêm thông báo ở đây
+  // --- Thông báo cho user ---
   try {
     await notificationController.createNotification({
       userId,
@@ -395,8 +421,40 @@ async function createOrderFromTempOrder(req) {
       type: "order",
       link: `/orders/${newOrder._id}`,
     });
+    console.log(`✅ Notification user created: ${userId}`);
   } catch (err) {
-    console.error("❌ Không thể tạo thông báo:", err.message);
+    console.error(`❌ Lỗi tạo notification cho user ${userId}:`, err.message);
+  }
+
+  // --- Thông báo cho admin ---
+  try {
+    // Lấy danh sách admin, loại trừ user hiện tại
+    const admins = await User.find({ role: "admin", _id: { $ne: userId } });
+    if (!admins || admins.length === 0) {
+      console.warn("⚠️ Không tìm thấy admin để gửi notification");
+    } else {
+      await Promise.all(
+        admins.map(async (admin) => {
+          try {
+            await notificationController.createNotification({
+              userId: admin._id,
+              title: "Đơn hàng mới 📦",
+              message: `Bạn có đơn hàng mới #${newOrder._id}.`,
+              type: "order",
+              link: `/admin/orders/${newOrder._id}`,
+            });
+            console.log(`✅ Notification admin created: ${admin._id}`);
+          } catch (err) {
+            console.error(
+              `❌ Lỗi notification admin ${admin._id}:`,
+              err.message
+            );
+          }
+        })
+      );
+    }
+  } catch (err) {
+    console.error("❌ Lỗi khi lấy admin để gửi notification:", err.message);
   }
 
   return {
