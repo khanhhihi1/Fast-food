@@ -2,7 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Table } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCartShopping, faComments, faDollar } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCartShopping,
+  faComments,
+  faDollar,
+} from "@fortawesome/free-solid-svg-icons";
 import { FaUsers } from "react-icons/fa";
 import AdminSideBar from "../component/adminSideBar";
 import AdminNavbar from "../component/adminNavbar";
@@ -294,7 +298,9 @@ export default function ShowAdmin() {
                     {activities.map((activity, index) => (
                       <li key={index} className={styles.activityItem}>
                         <div
-                          className={`${styles.activityIcon} ${styles[activity.icon]}`}
+                          className={`${styles.activityIcon} ${
+                            styles[activity.icon]
+                          }`}
                         ></div>
                         <div className={styles.activityContent}>
                           <p>{activity.text}</p>
