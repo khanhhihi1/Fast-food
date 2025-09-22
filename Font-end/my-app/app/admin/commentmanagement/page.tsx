@@ -2,71 +2,71 @@
 import React, { useState, useEffect } from "react";
 import { Container, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import styles from "../styles/comment.module.css"; 
+import styles from "../styles/comment.module.css";
 import AdminSideBar from "@/app/component/adminSideBar";
 import AdminNavbar from "@/app/component/adminNavbar";
 
 interface Comment {
-    _id: string;
-    userId: { name: string };
-    orderId?: { _id: string };
-    productId?: { name: string; image?: string };
-    comment: string;
-    rating: number;
-    createdAt: string;
+  _id: string;
+  userId: { name: string };
+  orderId?: { _id: string };
+  productId?: { name: string; image?: string };
+  comment: string;
+  rating: number;
+  createdAt: string;
 }
 
 export default function CartManagementPage() {
-    const [collapsed, setCollapsed] = useState(false);
-    const [filterType, setFilterType] = useState<string>("all"); // all | high-low | low-high
-    const [activeTab, setActiveTab] = useState<"all" | "order" | "product">("all");
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [searchTerm, setSearchTerm] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string>("");
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const [collapsed, setCollapsed] = useState(false);
+  const [filterType, setFilterType] = useState<string>("all"); // all | high-low | low-high
+  const [activeTab, setActiveTab] = useState<"all" | "order" | "product">("all");
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-    const fetchComments = async () => {
-        try {
-            setLoading(true);
-            const res = await fetch(`${API_URL}/comment/all`);
-            const data = await res.json();
-            if (data.status) {
-                setComments(data.result);
-            } else {
-                setError(data.message || "Lỗi khi tải bình luận");
-            }
-        } catch (err) {
-            setError("Lỗi kết nối đến máy chủ");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/comment/all`);
+      const data = await res.json();
+      if (data.status) {
+        setComments(data.result);
+      } else {
+        setError(data.message || "Lỗi khi tải đánh giá");
+      }
+    } catch (err) {
+      setError("Lỗi kết nối đến máy chủ");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        fetchComments();
-    }, []);
+  useEffect(() => {
+    fetchComments();
+  }, []);
 
-    // Chia dữ liệu
-    const orderComments = comments.filter(c => c.orderId && !c.productId);
-    const productComments = comments.filter(c => c.productId);
+  // Chia dữ liệu
+  const orderComments = comments.filter(c => c.orderId && !c.productId);
+  const productComments = comments.filter(c => c.productId);
 
-    // Sắp xếp
-    const sortComments = (list: Comment[]) => {
-        if (filterType === "high-low") return [...list].sort((a, b) => b.rating - a.rating);
-        if (filterType === "low-high") return [...list].sort((a, b) => a.rating - b.rating);
-        return list;
-    };
+  // Sắp xếp
+  const sortComments = (list: Comment[]) => {
+    if (filterType === "high-low") return [...list].sort((a, b) => b.rating - a.rating);
+    if (filterType === "low-high") return [...list].sort((a, b) => a.rating - b.rating);
+    return list;
+  };
 
-    // Lọc tìm kiếm
-    const searchFilter = (list: Comment[]) => {
-        return list.filter(c => c.userId?.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    };
+  // Lọc tìm kiếm
+  const searchFilter = (list: Comment[]) => {
+    return list.filter(c => c.userId?.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  };
 
-    const sortedOrderComments = searchFilter(sortComments(orderComments));
-    const sortedProductComments = searchFilter(sortComments(productComments));
+  const sortedOrderComments = searchFilter(sortComments(orderComments));
+  const sortedProductComments = searchFilter(sortComments(productComments));
 
-     return (
+  return (
     <div className="d-flex dark-mode">
       <AdminSideBar />
       <Container
@@ -117,7 +117,7 @@ export default function CartManagementPage() {
               </button>
             </div>
 
-            {/* Bộ lọc theo loại bình luận */}
+            {/* Bộ lọc theo loại đánh giá */}
             <div className={styles.filters} style={{ marginTop: "10px" }}>
               <button
                 className={`${styles.filterBtn} ${activeTab === "all" ? styles.active : ""}`}
@@ -135,7 +135,7 @@ export default function CartManagementPage() {
                 className={`${styles.filterBtn} ${activeTab === "product" ? styles.active : ""}`}
                 onClick={() => setActiveTab("product")}
               >
-                Bình luận Sản phẩm
+                Đánh giá Sản phẩm
               </button>
 
               <Form.Control
@@ -155,14 +155,14 @@ export default function CartManagementPage() {
             {/* Hiển thị dữ liệu */}
             {activeTab === "all" && (
               <>
-                <h2 className={`${styles.titleItem} text-center`}>📦 Bình luận theo Đơn hàng</h2>
+                <h2 className={`${styles.titleItem} text-center`}>📦 Đánh giá theo Đơn hàng</h2>
                 <div className={styles.ordersTableWrapper}>
                   <div className={styles.ordersTable}>
                     <div className={styles.tableHeader}>
                       <div>Khách hàng</div>
                       <div>Đơn hàng</div>
+                      <div>Số sao</div>
                       <div>Đánh giá</div>
-                      <div>Bình luận</div>
                       <div>Thời gian</div>
                     </div>
                     <div className={styles.tableBody}>
@@ -183,20 +183,20 @@ export default function CartManagementPage() {
                           </div>
                         ))
                       ) : (
-                        <div className={styles.noData}>Không có bình luận đơn hàng</div>
+                        <div className={styles.noData}>Không có đánh giá đơn hàng</div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <h2 className={`${styles.titleItem1} text-center`}>🛒 Bình luận theo Sản phẩm</h2>
+                <h2 className={`${styles.titleItem1} text-center`}>🛒 Đánh giá theo Sản phẩm</h2>
                 <div className={styles.ordersTableWrapper}>
                   <div className={styles.ordersTable}>
                     <div className={styles.tableHeader}>
                       <div>Khách hàng</div>
                       <div>Sản phẩm</div>
+                      <div>Số sao</div>
                       <div>Đánh giá</div>
-                      <div>Bình luận</div>
                       <div>Thời gian</div>
                     </div>
                     <div className={styles.tableBody}>
@@ -217,7 +217,7 @@ export default function CartManagementPage() {
                           </div>
                         ))
                       ) : (
-                        <div className={styles.noData}>Không có bình luận sản phẩm</div>
+                        <div className={styles.noData}>Không có đánh giá sản phẩm</div>
                       )}
                     </div>
                   </div>
@@ -227,14 +227,14 @@ export default function CartManagementPage() {
 
             {activeTab === "order" && (
               <>
-                <h2  className={`${styles.titleItem} text-center`}>📦 Bình luận theo Đơn hàng</h2>
+                <h2 className={`${styles.titleItem} text-center`}>📦 Đánh giá theo Đơn hàng</h2>
                 <div className={styles.ordersTableWrapper}>
                   <div className={styles.ordersTable}>
                     <div className={styles.tableHeader}>
                       <div>Khách hàng</div>
                       <div>Đơn hàng</div>
+                      <div>Số sao</div>
                       <div>Đánh giá</div>
-                      <div>Bình luận</div>
                       <div>Thời gian</div>
                     </div>
                     <div className={styles.tableBody}>
@@ -251,7 +251,7 @@ export default function CartManagementPage() {
                           </div>
                         ))
                       ) : (
-                        <div className={styles.noData}>Không có bình luận đơn hàng</div>
+                        <div className={styles.noData}>Không có đánh giá đơn hàng</div>
                       )}
                     </div>
                   </div>
@@ -261,14 +261,14 @@ export default function CartManagementPage() {
 
             {activeTab === "product" && (
               <>
-                <h2  className={`${styles.titleItem} text-center`}>🛒 Bình luận theo Sản phẩm</h2>
+                <h2 className={`${styles.titleItem} text-center`}>🛒 Đánh giá theo Sản phẩm</h2>
                 <div className={styles.ordersTableWrapper}>
                   <div className={styles.ordersTable}>
                     <div className={styles.tableHeader}>
                       <div>Khách hàng</div>
                       <div>Sản phẩm</div>
+                      <div>Số sao</div>
                       <div>Đánh giá</div>
-                      <div>Bình luận</div>
                       <div>Thời gian</div>
                     </div>
                     <div className={styles.tableBody}>
@@ -285,7 +285,7 @@ export default function CartManagementPage() {
                           </div>
                         ))
                       ) : (
-                        <div className={styles.noData}>Không có bình luận sản phẩm</div>
+                        <div className={styles.noData}>Không có đánh giá sản phẩm</div>
                       )}
                     </div>
                   </div>

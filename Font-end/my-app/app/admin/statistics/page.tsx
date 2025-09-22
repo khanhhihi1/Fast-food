@@ -1,5 +1,3 @@
-// Front-end code (updated DashboardPage component)
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -93,6 +91,7 @@ interface TopVoucher {
 interface RevenueChart {
     labels: string[];
     data: number[];
+    previousData?: number[];
 }
 
 interface Stats {
@@ -161,7 +160,7 @@ export default function DashboardPage() {
         labels: stats.revenueChart.labels,
         datasets: [
             {
-                label: "Doanh thu",
+                label: "Doanh thu năm nay",
                 data: stats.revenueChart.data,
                 fill: true,
                 borderColor: "rgba(59,130,246,1)",
@@ -170,6 +169,16 @@ export default function DashboardPage() {
                 pointBackgroundColor: "rgba(59,130,246,1)",
                 pointRadius: 4,
             },
+            ...(stats.revenueChart.previousData ? [{
+                label: "Doanh thu năm trước",
+                data: stats.revenueChart.previousData,
+                fill: true,
+                borderColor: "rgba(255,99,132,1)",
+                backgroundColor: "rgba(255,99,132,0.05)",
+                tension: 0.4,
+                pointBackgroundColor: "rgba(255,99,132,1)",
+                pointRadius: 4,
+            }] : []),
         ],
     };
 
@@ -177,7 +186,7 @@ export default function DashboardPage() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: false },
+            legend: { display: true, position: 'top' as const },
             tooltip: {
                 backgroundColor: "#1F2937",
                 titleFont: { size: 14, weight: "bold" as const },
@@ -204,6 +213,8 @@ export default function DashboardPage() {
     // Hàm render phân trang
     const renderPagination = (currentPage: number, total: number, setPage: (page: number) => void) => {
         const totalPages = Math.ceil(total / limit);
+        if (totalPages <= 1) return null; // chỉ hiện khi có từ 2 trang trở lên
+
         let items = [];
         for (let number = 1; number <= totalPages; number++) {
             items.push(
@@ -252,6 +263,7 @@ export default function DashboardPage() {
                             <option value="week">Tuần này</option>
                             <option value="month">Tháng này</option>
                             <option value="year">Năm nay</option>
+                            <option value="compare_years">So sánh năm nay và năm trước</option>
                             <option value="custom">Tùy chọn</option>
                         </Form.Select>
                         {period === "custom" && (
@@ -277,7 +289,7 @@ export default function DashboardPage() {
                     <Col md={6} lg={3}>
                         <Card className={`${styles.cardHover} shadow-sm`}>
                             <Card.Body>
-                                <p className="text-muted">Tổng doanh thu</p>
+                                <p className="text-muted">Doanh thu</p>
                                 <h3 className="fw-bold">
                                     ₫{(stats.totalRevenue ?? 0).toLocaleString()}
                                 </h3>

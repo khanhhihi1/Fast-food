@@ -353,3 +353,27 @@
   font-size: 0.875rem;
   color: #6c757d;
 }
+.itemTotal {
+  font-weight: bold;
+  color: #c90b0b;
+}
+.priceSummaryTopRight {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-weight: bold;
+  color: #9f0606;
+  font-size: 1rem;
+}
+.totalSum{
+    color: #222 !important;
+    font-weight: 500;
+}
+.quantityMax{
+    font-weight: 500;
+}
+.tasteNew{
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+}

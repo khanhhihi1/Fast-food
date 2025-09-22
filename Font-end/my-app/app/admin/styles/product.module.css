@@ -189,7 +189,7 @@
 }
 
 .addProductBtn {
-  background-color: #c62830;
+  background-color: #c62830 !important;
   border: none;
   color: #fff;
   font-weight: 600;
@@ -201,7 +201,25 @@
   transition: all 0.2s ease;
   font-size: 14px;
 }
-
+.reStockProductBtn{
+  background-color: #2485ba !important;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+.reStockProductBtn:hover {
+  background-color: #2178a8;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(40, 143, 198, 0.4);
+  transform: translateY(-1px);
+}
 .addProductBtn:hover {
   background-color: #a71e24;
   box-shadow: 0 4px 10px rgba(198, 40, 48, 0.4);
@@ -220,7 +238,7 @@
 }
 
 .pageBtn {
-  background: #fff;
+  background: #fff ;
   border: 1px solid #ddd;
   color: #666;
   border-radius: 8px;
@@ -229,9 +247,9 @@
 }
 
 .pageBtn:hover:not(:disabled) {
-  background: #f8f9fa;
-  color: #c62830;
-  border-color: #c62830;
+  background: #f8f9fa !important;
+  color: #c62830 !important;
+  border-color: #c62830 !important;
 }
 
 .pageBtn:disabled {

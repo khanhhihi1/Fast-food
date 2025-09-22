@@ -25,7 +25,8 @@ const orderSchema = new Schema(
       ref: "User",
       required: true,
     },
-    items: [orderItemSchema],
+    items: {
+      type: [orderItemSchema]},
     total: { type: Number, required: true },
     discount: { type: Number, default: 0 },
 
