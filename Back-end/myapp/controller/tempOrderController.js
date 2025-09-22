@@ -82,38 +82,55 @@ async function deleteTempOrder(req, res) {
 
 // Cập nhật thông tin giao hàng
 async function updateShippingInfo(req, res) {
-  try {
+   try {
     const userId = req.userId;
     const { name, phone, address } = req.body;
 
+    // Validate dữ liệu
     if (!name || !phone || !address) {
       return res.status(400).json({
         status: false,
         message: "Thiếu thông tin giao hàng",
       });
     }
-    if (!/^\d{9,11}$/.test(phone)) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Số điện thoại không hợp lệ" });
-    }
 
-    const tempOrder = await TempOrder.findOne({ userId });
-    if (!tempOrder) {
-      return res.status(404).json({
+    if (!/^0\d{9}$/.test(phone)) {
+      return res.status(400).json({
         status: false,
-        message: "Không tìm thấy đơn hàng tạm thời",
+        message: "Số điện thoại không hợp lệ (phải bắt đầu bằng 0 và có đúng 10 chữ số)",
       });
     }
 
+    // Tìm TempOrder
+    let tempOrder = await TempOrder.findOne({ userId });
+    if (!tempOrder) {
+      // Nếu chưa có, tạo mới
+      tempOrder = new TempOrder({
+        userId,
+        items: [],
+        total: 0,
+        shippingInfo: { name, phone, address },
+      });
+      await tempOrder.save();
+
+      return res.json({
+        status: true,
+        message: "Tạo đơn hàng tạm thời mới và cập nhật thông tin giao hàng thành công",
+        result: tempOrder,
+      });
+    }
+
+    // Cập nhật thông tin giao hàng
     tempOrder.shippingInfo = { name, phone, address };
     await tempOrder.save();
 
     res.json({
       status: true,
       message: "Cập nhật thông tin giao hàng thành công",
+      result: tempOrder,
     });
   } catch (err) {
+    console.error("Error updateShippingInfo:", err);
     res.status(500).json({ status: false, message: err.message });
   }
 }

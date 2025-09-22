@@ -119,7 +119,22 @@ router.post("/addProduct", upload.single("image"), async (req, res) => {
   }
 });
 
-
+router.post("/reset-daily", async (req, res) => {
+  try {
+    const result = await productsController.resetAllDailyProducts();
+    return res.status(200).json({
+      status: true,
+      message: `Reset daily products thành công (thủ công).`,
+      result,
+    });
+  } catch (error) {
+    console.error("❌ Lỗi khi reset daily products:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Reset daily products thất bại: " + error.message,  // Thêm chi tiết lỗi để debug
+    });
+  }
+});
 
 router.put("/updateProduct/:id", upload.single("image"), async (req, res) => {
   try {
@@ -219,15 +234,18 @@ router.post("/restock/:id", async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 });
-router.get("/:id", async (req, res) => {
+
+// New API: List slow daily products for manual restock
+router.get("/slow-daily", async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await productsController.getDatailPro(id);
+    const result = await productsController.getSlowDailyProducts();
     res.status(200).json({ success: true, result });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
+
+
 router.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -255,5 +273,13 @@ router.post("/buyMultiple", async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 });
-
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await productsController.getDatailPro(id);
+    res.status(200).json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
 module.exports = router;

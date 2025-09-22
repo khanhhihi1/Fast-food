@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require('nodemailer');
 const otpModel = require('../model/otpModel.js'); 
+
 module.exports = {
   registerUser,
   loginUser,
@@ -23,6 +24,7 @@ function isValidEmail(email) {
   const regex = /^\S+@\S+\.\S+$/;
   return regex.test(email);
 }
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -30,37 +32,100 @@ const transporter = nodemailer.createTransport({
     pass: 'hgut emlf kctp poxj', // App Password nếu dùng Gmail
   },
 });
-//google
+
+// Google login: Tìm hoặc tạo user
 async function findOrCreateGoogleUser(profile) {
   try {
-    let user = await userModel.findOne({ email: profile.emails[0].value });
-
-    if (!user) {
-      // Tạo user mới nếu chưa tồn tại
-      user = new userModel({
-        username: profile.id, // Sử dụng Google ID làm username (hoặc tùy chỉnh, ví dụ: profile.emails[0].value.split('@')[0])
-        name: profile.displayName,
-        email: profile.emails[0].value,
-        password: null, // Không cần password cho Google user
-        role: "user",
-        status: "active",
-        isLocked: false,
-        deletedAt: null,
-        googleId: profile.id,
-      });
-      await user.save();
+    if (!profile.id || !profile.emails || !profile.emails[0]) {
+      throw new Error("Thông tin Google profile không đầy đủ (thiếu ID hoặc email)");
     }
 
-    // Tạo token JWT
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || "secret_key", {
-      expiresIn: "1d",
+    const googleId = profile.id;
+    const email = profile.emails[0].value;
+
+    console.log(`🔍 Tìm user với email: ${email} hoặc googleId: ${googleId}`);
+
+    // Bước 1: Tìm user by googleId (ưu tiên, vì unique)
+    let user = await userModel.findOne({ googleId });
+
+    if (user) {
+      console.log(`✅ Tìm thấy user by googleId: ${user._id}`);
+      return generateTokenResponse(user);
+    }
+
+    // Bước 2: Nếu không, tìm by email
+    user = await userModel.findOne({ email });
+
+    if (user) {
+      // Nếu user tồn tại by email nhưng googleId undefined/null, update googleId (atomic để tránh race condition)
+      if (!user.googleId) {
+        console.log(`🔄 User tồn tại by email (${user._id}), update googleId từ null sang ${googleId}`);
+        user = await userModel.findOneAndUpdate(
+          { email, $or: [{ googleId: null }, { googleId: { $exists: false } }] },  // Điều kiện: email khớp VÀ googleId null/undefined
+          { 
+            googleId: googleId,
+            name: profile.displayName || user.name  // Update name nếu có
+          },
+          { new: true }  // Return document sau update
+        ).select("-password");
+
+        if (!user) {
+          throw new Error("Lỗi update googleId (user không tồn tại sau update)");
+        }
+      } else {
+        // Nếu googleId đã set nhưng khác profile.id, có thể là conflict (cảnh báo, nhưng return)
+        if (user.googleId !== googleId) {
+          console.warn(`⚠️ Conflict googleId: User ${user._id} có googleId ${user.googleId}, nhưng profile là ${googleId}`);
+        }
+      }
+
+      console.log(`✅ Return user tồn tại by email: ${user._id}`);
+      return generateTokenResponse(user);
+    }
+
+    // Bước 3: Tạo user mới
+    console.log(`🆕 Tạo user mới với googleId: ${googleId}, email: ${email}`);
+    user = new userModel({
+      username: profile.id, // Sử dụng Google ID làm username (hoặc tùy chỉnh)
+      name: profile.displayName || "Google User",
+      email: email,
+      password: null, // Không cần password cho Google user
+      role: "user",
+      status: "active",
+      isLocked: false,
+      deletedAt: null,
+      googleId: googleId,  // Đảm bảo không null
     });
 
-    return { user, token };
+    await user.save();
+    console.log(`✅ Tạo user mới thành công: ${user._id}`);
+
+    return generateTokenResponse(user);
   } catch (error) {
-    throw new Error(error.message);
+    console.error("❌ Lỗi findOrCreateGoogleUser:", error);
+    throw new Error(error.message || "Lỗi xử lý Google login");
   }
 }
+
+// Helper: Tạo token và response
+function generateTokenResponse(user) {
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || "secret_key", {
+    expiresIn: "1d",
+  });
+
+  return { 
+    user: {
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    }, 
+    token 
+  };
+}
+
 // Hàm tạo OTP ngẫu nhiên
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString(); // 6 chữ số
@@ -69,11 +134,15 @@ function generateOTP() {
 // Bước 1: Gửi OTP khi đăng ký
 async function sendOTPForRegister(data) {
   try {
-    const { username, name, email, password, confirmPassword } = data;
+    const { username, name, email, password, confirmPassword, phone } = data;
 
     // Giữ nguyên kiểm tra dữ liệu như cũ
-    if (!username || !name || !email || !password || !confirmPassword) {
+    if (!username || !name || !email || !password || !confirmPassword || !phone) {
       throw new Error("Thiếu thông tin bắt buộc");
+    }
+
+    if (!/^(0[0-9]{9})$/.test(phone)) {
+      throw new Error("Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)");
     }
     if (!isValidEmail(email)) {
       throw new Error("Email không hợp lệ");
@@ -106,7 +175,7 @@ async function sendOTPForRegister(data) {
     });
 
     // Trả về dữ liệu tạm (sẽ dùng để hoàn tất sau)
-    return { tempData: { username, name, email, password: await bcrypt.hash(password, 10) }, message: 'Đã gửi OTP đến email' };
+    return { tempData: { username, name, email, phone, password: await bcrypt.hash(password, 10) }, message: 'Đã gửi OTP đến email' };
   } catch (error) {
     throw new Error(error.message);
   }
@@ -120,16 +189,18 @@ async function verifyOTPAndRegister(email, otp, tempData) {
       throw new Error('OTP không hợp lệ hoặc đã hết hạn');
     }
 
-    // Tạo user
+    // Tạo user 👈 KHÔNG set googleId (để undefined)
     const newUser = new userModel({
       username: tempData.username,
       name: tempData.name,
       email: tempData.email,
       password: tempData.password,
       role: "user",
+      phone: tempData.phone,
       status: "active",
       isLocked: false,
       deletedAt: null,
+      // googleId: undefined (không set, để schema handle)
     });
 
     const result = await newUser.save();
@@ -142,31 +213,29 @@ async function verifyOTPAndRegister(email, otp, tempData) {
     throw new Error(error.message);
   }
 }
-// Đăng ký
+
+// Đăng ký (cũ, không dùng OTP - giữ để tương thích)
 async function registerUser(data) {
   try {
-    const { username, name, email, password, confirmPassword } = data;
+    const { username, name, email, password, confirmPassword, phone } = data;
 
-    if (!username || !name || !email || !password || !confirmPassword) {
+    if (!username || !name || !email || !password || !confirmPassword || !phone) {
       throw new Error("Thiếu thông tin bắt buộc");
     }
-
+    if (!/^(0[0-9]{9})$/.test(phone)) {
+      throw new Error("Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)");
+    }
     if (!isValidEmail(email)) {
       throw new Error("Email không hợp lệ");
     }
-
     if (password.length < 6) {
       throw new Error("Mật khẩu phải có ít nhất 6 ký tự");
     }
-
     if (password !== confirmPassword) {
       throw new Error("Mật khẩu không khớp");
     }
 
-    const existingUser = await userModel.findOne({
-      $or: [{ username }, { email }],
-    });
-
+    const existingUser = await userModel.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       throw new Error("Tên đăng nhập hoặc email đã tồn tại");
     }
@@ -178,14 +247,15 @@ async function registerUser(data) {
       name,
       email,
       password: hashedPassword,
+      phone,
       role: "user",
       status: "active",
       isLocked: false,
       deletedAt: null,
+      // googleId: undefined (không set)
     });
 
-    const result = await newUser.save();
-    return result;
+    return await newUser.save();
   } catch (error) {
     throw new Error(error.message);
   }
@@ -211,8 +281,7 @@ async function loginUser(data) {
       throw new Error("Tên đăng nhập hoặc mật khẩu không đúng");
     }
 
-    // Hợp nhất đoạn bị conflict
-    const token = jwt.sign({ id: user._id, role: user.role },process.env.JWT_SECRET || "secret_key", {
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || "secret_key", {
       expiresIn: "1d",
     });
 
@@ -240,10 +309,17 @@ async function updateUser(id, data) {
       throw new Error("Người dùng không tồn tại");
     }
 
-    const { name, email, password } = data;
+    const { name, email, password, phone, address } = data; // 👈 Thêm phone và address
     const updateData = {};
 
     if (name) updateData.name = name;
+    if (phone) {
+      if (!/^(0[0-9]{9})$/.test(phone)) { // 👈 Validate phone
+        throw new Error("Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)");
+      }
+      updateData.phone = phone;
+    }
+    if (address) updateData.address = address; // 👈 Hỗ trợ address
     if (email) {
       if (!isValidEmail(email)) {
         throw new Error("Email không hợp lệ");
@@ -274,10 +350,17 @@ async function updateUserByAdmin(id, data) {
     const user = await userModel.findById(id);
     if (!user) throw new Error("Không tìm thấy người dùng");
 
-    const { name, email, role, status, isLocked } = data;
+    const { name, email, role, status, isLocked, phone, address } = data; // 👈 Thêm phone và address
     const updateData = {};
 
     if (name) updateData.name = name;
+    if (phone) {
+      if (!/^(0[0-9]{9})$/.test(phone)) {
+        throw new Error("Số điện thoại không hợp lệ");
+      }
+      updateData.phone = phone;
+    }
+    if (address) updateData.address = address; // 👈 Hỗ trợ address
     if (email && isValidEmail(email)) updateData.email = email;
     if (role && ["user", "staff", "admin"].includes(role))
       updateData.role = role;
@@ -298,7 +381,6 @@ async function updateUserByAdmin(id, data) {
     throw new Error(error.message);
   }
 }
-
 // Soft lock người dùng (chặn tạm thời)
 async function lockUser(id) {
   try {
@@ -376,6 +458,7 @@ async function patchUserByAdmin(id, data) {
     throw new Error(error.message);
   }
 }
+
 async function changePassword(id, data) {
   try {
     const { oldPassword, newPassword, confirmNewPassword } = data;

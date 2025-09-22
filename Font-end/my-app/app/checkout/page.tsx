@@ -21,6 +21,7 @@ import {
   Alert,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
+import styles from '../styles/introduce.module.css';
 
 // Danh sách quận huyện TP.HCM
 const hcmDistricts: string[] = [
@@ -69,6 +70,13 @@ interface ShippingInfo {
   address: string;
 }
 
+interface User {
+  _id: string;
+  name: string;
+  phone: string;
+  address?: string;
+}
+
 export default function Checkout() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -84,6 +92,7 @@ export default function Checkout() {
   const [district, setDistrict] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null);
+  const [user, setUser] = useState<User | null>(null); // 👈 Thêm state cho user
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +116,37 @@ export default function Checkout() {
     const value = e.target.value;
     if (/^\d*$/.test(value)) {
       setPhone(value);
+    }
+  };
+
+  // 👈 Hàm parse address từ user để fill form (giả sử format: "detail, district, TP.HCM")
+  const parseAddress = (fullAddress: string) => {
+    if (!fullAddress) return;
+    const parts = fullAddress.split(",").map((s) => s.trim());
+    if (parts.length >= 2) {
+      setDetailAddress(parts[0] || "");
+      setDistrict(parts[1] || "");
+    }
+  };
+
+  // 👈 Fetch user profile để lấy thông tin mặc định
+  const fetchUserProfile = async () => {
+    try {
+      const res = await fetch(`${API_URL}/users/profile`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.status && data.result) {
+        setUser(data.result);
+        setName(data.result.name || "");
+        setPhone(data.result.phone || "");
+        if (data.result.address) {
+          parseAddress(data.result.address);
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi fetch user profile:", err);
+      // Không throw error, chỉ log
     }
   };
 
@@ -168,18 +208,10 @@ export default function Checkout() {
           setDetailAddress(addressParts[0] || "");
           setDistrict(addressParts[1] || "");
         }
+        return; // 👈 Nếu có savedShipping, không fetch user
       }
 
-      if (voucherData) {
-        setAppliedVoucher(voucherData);
-        setSelectedCode(voucherData.code);
-        setDiscountAmount(
-          items.reduce(
-            (sum: number, item: CartItem) => sum + item.price * item.quantity,
-            0
-          ) - total
-        );
-      }
+      // 👈 Nếu không có savedShipping, dùng user profile (đã fetch ở useEffect)
     } catch {
       setError("Không thể tải đơn hàng tạm thời. Vui lòng thử lại.");
     } finally {
@@ -211,6 +243,20 @@ export default function Checkout() {
 
   // Cập nhật thông tin giao hàng
   const updateShippingInfo = async () => {
+    if (!name || !phone || !district || !detailAddress) {
+      toast.warning("Vui lòng điền đầy đủ thông tin giao hàng", {
+        toastId: "shippingInfoWarning",
+      });
+      return false;
+    }
+
+    if (!isValidPhoneNumber(phone)) {
+      toast.error("Số điện thoại phải bắt đầu bằng 0 và chỉ chứa 10 chữ số", {
+        toastId: "phoneInvalidError",
+      });
+      return false;
+    }
+
     const fullAddress = `${detailAddress}, ${district}, TP.HCM`;
     const shippingData = { name, phone, address: fullAddress };
 
@@ -226,6 +272,8 @@ export default function Checkout() {
       if (data.status) {
         setShippingInfo(shippingData);
         localStorage.setItem("shippingInfo", JSON.stringify(shippingData));
+        await fetchTempOrder(); // Reload temp order để đảm bảo đồng bộ
+
         return true;
       } else {
         toast.error(data.message || "Cập nhật địa chỉ giao hàng thất bại", {
@@ -380,23 +428,7 @@ export default function Checkout() {
       return;
     }
 
-    // Kiểm tra thông tin giao hàng
-    if (!name || !phone || !district || !detailAddress) {
-      toast.warning("Vui lòng điền đầy đủ thông tin giao hàng", {
-        toastId: "shippingInfoWarning",
-      });
-      return;
-    }
-
-    // Kiểm tra định dạng số điện thoại
-    if (!isValidPhoneNumber(phone)) {
-      toast.error("Số điện thoại phải bắt đầu bằng 0 và chỉ chứa 10 chữ số", {
-        toastId: "phoneInvalidError",
-      });
-      return;
-    }
-
-    // Cập nhật thông tin giao hàng
+    // Kiểm tra và cập nhật thông tin giao hàng trước
     const shippingUpdated = await updateShippingInfo();
     if (!shippingUpdated) return;
 
@@ -434,7 +466,7 @@ export default function Checkout() {
         toast.success("Đặt hàng thành công!", {
           toastId: "orderSuccess",
         });
-       router.push("/cart?success=true");
+        router.push("/cart?success=true");
       }
 
       // Xử lý MoMo
@@ -523,6 +555,7 @@ export default function Checkout() {
 
   // Load dữ liệu ban đầu
   useEffect(() => {
+    fetchUserProfile(); // 👈 Fetch user profile trước
     fetchTempOrder();
     fetchVouchers();
 
@@ -540,6 +573,17 @@ export default function Checkout() {
       }
     }
   }, []);
+
+  // 👈 Sau khi fetch user, nếu không có savedShipping, set từ user
+  useEffect(() => {
+    if (user && !shippingInfo) { // Chỉ set nếu chưa có shippingInfo
+      setName(user.name || "");
+      setPhone(user.phone || "");
+      if (user.address) {
+        parseAddress(user.address);
+      }
+    }
+  }, [user, shippingInfo]);
 
   // Áp dụng voucher tự động khi có selectedCode
   useEffect(() => {
@@ -633,9 +677,8 @@ export default function Checkout() {
                         {voucher.code} - {voucher.description} -{" "}
                         {voucher.discountType === "fixed"
                           ? `${voucher.discountValue.toLocaleString()} ₫`
-                          : `Giảm tối đa: ${
-                              voucher.maxDiscount?.toLocaleString() || 0
-                            } ₫`}
+                          : `Giảm tối đa: ${voucher.maxDiscount?.toLocaleString() || 0
+                          } ₫`}
                       </option>
                     ))}
                   </Form.Select>
@@ -686,11 +729,15 @@ export default function Checkout() {
             </Card>
           </Col>
 
-          {/* Bên phải - Thông tin giao hàng */}
+          {/* Bên phải - Thông tin giao hàng - 👈 Đã fetch từ user, cho phép edit */}
           <Col md={4}>
             <Card className="shadow-sm p-4 mb-4">
               <h5 className="mb-3">
                 <FaShippingFast className="me-2" /> Thông tin giao hàng
+                {user?.address && (
+                  <small className="text-muted d-block">
+                  </small>
+                )}
               </h5>
               <Form>
                 <Form.Group className="mb-3">
@@ -742,6 +789,9 @@ export default function Checkout() {
                     required
                   />
                 </Form.Group>
+                <Button onClick={updateShippingInfo} className={styles.saveInfo}>
+                  Lưu thông tin giao hàng
+                </Button>
               </Form>
             </Card>
 
@@ -773,7 +823,8 @@ export default function Checkout() {
                   ₫
                 </strong>
               </div>
-              <Button className="w-100" size="lg" onClick={handleOrder}>
+              <Button className={styles.confirmClick} onClick={handleOrder}
+              >
                 Xác nhận đặt hàng
               </Button>
             </Card>

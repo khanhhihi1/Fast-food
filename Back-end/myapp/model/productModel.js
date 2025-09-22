@@ -1,4 +1,3 @@
-// File: models/productModel.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -9,6 +8,22 @@ const sizeSchema = new Schema(
       original: { type: Number, required: true },
       discount: { type: Number },
     },
+  },
+  { _id: false }
+);
+
+const salesHistorySchema = new Schema(
+  {
+    date: { type: Date, required: true },
+    sold: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
+const leftoverHistorySchema = new Schema(
+  {
+    date: { type: Date, required: true },
+    leftoverQuantity: { type: Number, required: true },
   },
   { _id: false }
 );
@@ -32,13 +47,15 @@ const productSchema = new Schema({
   time: { type: String, default: '30-45min' },
   saleOff: { type: Boolean, default: false },
   sizes: { type: [sizeSchema], required: true },
-  isDaily: { type: Boolean, default: false }, // true: sản phẩm theo ngày, false: tồn kho
-  dailyInitialQuantity: { type: Number, default: 0 }, // Giá trị ban đầu reset hàng ngày (chỉ áp dụng nếu isDaily=true)
-  lastResetDate: { type: Date }, // Theo dõi ngày reset cuối cùng để kiểm tra
-  leftoverHistory: [{ // Lịch sử dư thừa (cho stats), optional
-    date: { type: Date },
-    leftoverQuantity: { type: Number }
-  }]
+
+  // 👇 Các field cho reset hằng ngày
+  isDaily: { type: Boolean, default: false }, 
+  dailyInitialQuantity: { type: Number, default: 0 }, 
+  lastResetDate: { type: Date }, 
+
+  // 👇 Thêm history cho bán hàng và tồn kho
+  salesHistory: { type: [salesHistorySchema], default: [] }, 
+  leftoverHistory: { type: [leftoverHistorySchema], default: [] },
 });
 
 // Pre-save hook to normalize Vietnamese text for search optimization
@@ -58,4 +75,5 @@ function normalizeVietnamese(str) {
     .toLowerCase();
 }
 
-module.exports = mongoose.models.products || mongoose.model('products', productSchema);
+module.exports =
+  mongoose.models.products || mongoose.model('products', productSchema);

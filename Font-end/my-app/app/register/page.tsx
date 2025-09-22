@@ -12,6 +12,7 @@ interface FormData {
   email: string;
   password: string;
   confirmPassword: string;
+  phone: string;
 }
 
 export default function SignUpPage() {
@@ -20,6 +21,7 @@ export default function SignUpPage() {
     fullName: "",
     username: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -45,6 +47,12 @@ export default function SignUpPage() {
       newErrors.fullName = "Họ và tên không được để trống!";
     } else if (!/^[\p{L}\s]+$/u.test(fullName)) {
       newErrors.fullName = "Họ và tên chỉ được chứa chữ cái và khoảng trắng!";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Số điện thoại không được để trống!";
+    } else if (!/^0[0-9]{9}$/.test(formData.phone)) {
+      newErrors.phone = "Số điện thoại phải có 10 số và bắt đầu bằng 0!";
     }
 
     if (!username.trim()) {
@@ -91,6 +99,7 @@ export default function SignUpPage() {
     if (!validateForm()) return;
 
     const submitData = {
+      phone: formData.phone,
       name: formData.fullName,
       username: formData.username,
       email: formData.email,
@@ -283,6 +292,21 @@ export default function SignUpPage() {
               )}
             </Form.Group>
 
+            <Form.Group controlId="formPhone">
+              <Form.Label className="fw-medium">Số điện thoại</Form.Label>
+              <Form.Control
+                type="text"
+                name="phone"
+                placeholder="Nhập số điện thoại"
+                value={formData.phone}
+                onChange={handleChange}
+                isInvalid={!!errors.phone}
+              />
+              {errors.phone && (
+                <div className="text-sm text-red-500 mt-1">{errors.phone}</div>
+              )}
+            </Form.Group>
+            
             <Form.Group controlId="formPassword">
               <Form.Label className="fw-medium ">Mật khẩu</Form.Label>
               <div className="relative">

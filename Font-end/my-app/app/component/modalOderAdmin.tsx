@@ -111,10 +111,12 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     }
   };
 
-  const subtotal = currentOrder.items.reduce(
-    (sum, item) => sum + item.finalPrice * item.quantity,
-    0
-  );
+ const subtotal = Array.isArray(currentOrder.items)
+  ? currentOrder.items.reduce(
+      (sum, item) => sum + item.finalPrice * item.quantity,
+      0
+    )
+  : 0;
 
   const discount = currentOrder.discount || 0; // giảm giá trực tiếp từ order
 
@@ -145,7 +147,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton>
-        <Modal.Title>Chi tiết đơn hàng</Modal.Title>
+        <Modal.Title className="text-dark">Chi tiết đơn hàng</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Row className="mb-4">

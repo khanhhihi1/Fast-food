@@ -162,3 +162,30 @@
         padding: 60px 0;
     }
 }
+
+.saveInfo {
+    width: 100%;
+    font-weight: 500;
+    background-color: #cf1938;
+    border: 1px solid #da1031;
+}
+
+.saveInfo:hover {
+    background-color: #b41630 !important;
+    border: 1px solid #b41630 !important;
+    box-shadow: 0 5px 15px rgba(162, 20, 20, 0.326) !important;
+
+}
+
+.confirmClick {
+    background-color: #cf1938;
+    border: 1px solid #da1031;
+    font-weight: 500;
+    height: 45px !important;
+}
+.confirmClick:hover {
+    background-color: #b41630 !important;
+    border: 1px solid #b41630 !important;
+    box-shadow: 0 5px 15px rgba(162, 20, 20, 0.326) !important;
+
+}

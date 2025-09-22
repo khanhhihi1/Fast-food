@@ -112,20 +112,25 @@ export default function ShowAdmin() {
   };
 
   // Fetch Orders
-  const fetchOrders = async () => {
-    try {
-      const res = await fetch(`${API_URL}/orders/admin/all`, {
-        method: "GET",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.status) {
-        setOrders(data.result || []);
-      }
-    } catch {
-      toast.error("Có lỗi khi tải danh sách đơn hàng");
+ const fetchOrders = async () => {
+  try {
+    const res = await fetch(`${API_URL}/orders/admin/all`, {
+      method: "GET",
+      credentials: "include",
+    });
+    const data = await res.json();
+    // Đảm bảo data.result là một mảng trước khi cập nhật state
+    if (data.status && Array.isArray(data.result)) {
+      setOrders(data.result);
+    } else {
+      // Nếu không phải mảng, set về mảng rỗng để tránh lỗi
+      setOrders([]); 
     }
-  };
+  } catch {
+    toast.error("Có lỗi khi tải danh sách đơn hàng");
+    setOrders([]); // Cũng nên set mảng rỗng khi có lỗi
+  }
+};
 
   // Fetch Hot Products
   useEffect(() => {
@@ -163,7 +168,9 @@ export default function ShowAdmin() {
     fetchComments();
   }, []);
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalRevenue = Array.isArray(orders)
+  ? orders.reduce((sum, order) => sum + order.total, 0)
+  : 0;
 
   const activities = [
     { icon: "blue", text: "User A vừa đăng nhập.", time: "4:45 PM" },

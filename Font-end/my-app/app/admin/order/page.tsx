@@ -35,6 +35,8 @@ import AdminNavbar from "@/app/component/adminNavbar";
 import { Collapse } from "react-bootstrap";
 import { toast } from "react-toastify";
 import OderDetailModal from "@/app/component/modalOderAdmin";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faAngleLeft, faAngleRight, faAnglesLeft, faAnglesRight } from "@fortawesome/free-solid-svg-icons";
 
 interface OrderItem {
   productId: string;
@@ -98,18 +100,22 @@ export default function CartManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [filter, setFilter] = useState<string>('all');
   const [collapsed, setCollapsed] = useState(false);
-  const ordersPerPage = 10;
   const { isDarkMode } = useDarkMode();
   const router = useRouter();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [currentRevenue, setCurrentRevenue] = useState(0);
+  const [actualRevenue, setActualRevenue] = useState(0);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const ordersPerPage = 10;
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page: number, selectedFilter: string) => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_URL}/orders/admin/all`, {
+      const res = await fetch(`${API_URL}/orders/admin/all?page=${page}&limit=${ordersPerPage}&filter=${selectedFilter}`, {
         method: "GET",
         credentials: "include",
       });
@@ -119,7 +125,11 @@ export default function CartManagementPage() {
         throw new Error(data.message || "Không thể tải danh sách đơn hàng");
       }
 
-      setOrders(data.result || []);
+      setOrders(data.result.orders || []);
+      setTotalPages(data.result.totalPages || 1);
+      setTotalOrders(data.result.stats.totalOrders || 0);
+      setCurrentRevenue(data.result.stats.currentRevenue || 0);
+      setActualRevenue(data.result.stats.actualRevenue || 0);
     } catch (error: any) {
       setError(error.message || "Có lỗi khi tải danh sách đơn hàng");
       toast.error(error.message || "Có lỗi khi tải danh sách đơn hàng");
@@ -146,8 +156,8 @@ export default function CartManagementPage() {
         throw new Error(data.message || "Không thể cập nhật trạng thái");
       }
 
-      // Fetch lại toàn bộ orders để cập nhật isPaid nếu cần (ví dụ khi complete COD)
-      await fetchOrders();
+      // Fetch lại với page và filter hiện tại
+      await fetchOrders(currentPage, filter);
       toast.success("Cập nhật trạng thái thành công!");
     } catch (error: any) {
       toast.error(error.message || "Có lỗi khi cập nhật trạng thái");
@@ -155,8 +165,8 @@ export default function CartManagementPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(currentPage, filter);
+  }, [currentPage, filter]);
 
   const getStatusColor = (status: number) => {
     switch (status) {
@@ -177,43 +187,21 @@ export default function CartManagementPage() {
     }
   };
 
-  const totalPages = Math.ceil(orders.length / ordersPerPage);
-  const indexOfLast = currentPage * ordersPerPage;
-  const indexOfFirst = indexOfLast - ordersPerPage;
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
-  const filteredOrders = orders.filter(order => {
-    if (filter === 'all') return true;
-    switch (filter) {
-      case 'pending':
-        return order.status === 0 || order.status === 1;
-      case 'processing':
-        return order.status === 2 || order.status === 3;
-      case 'completed':
-        return order.status === 4;
-      case 'cancelled':
-        return order.status === 5;
-      default:
-        return true;
-    }
-  });
+  const handleFilterChange = (newFilter: string) => {
+    setFilter(newFilter);
+    setCurrentPage(1); // Reset về trang 1 khi thay đổi filter
+  };
 
-  // Doanh thu thực nhận: Tiềm năng từ COD chưa paid và chưa hủy
-  const actualRevenue = filteredOrders.reduce((sum, order) => {
-    if (order.paymentMethod === 'cod' && !order.isPaid && order.status !== 5) {
-      return sum + order.total;
-    }
-    return sum;
-  }, 0);
-
-  // Doanh thu hiện tại: Tổng từ các order đã paid (Stripe ngay lập tức + COD khi complete)
-  const currentRevenue = filteredOrders.reduce((sum, order) => {
-    if (order.isPaid) {
-      return sum + order.total;
-    }
-    return sum;
-  }, 0);
-
-  const currentOrders = filteredOrders.slice(indexOfFirst, indexOfLast);
+  const isOverdue = (createdAt: string) => {
+    const now = new Date();
+    const orderTime = new Date(createdAt);
+    const diff = (now.getTime() - orderTime.getTime()) / (1000 * 60); // Phút
+    return diff > 30;
+  };
 
   return (
     <div className="d-flex dark-mode">
@@ -230,18 +218,12 @@ export default function CartManagementPage() {
               <div className={styles.statsGrid}>
                 <div className={styles.statCard}>
                   <span className={styles.statLabel}>Tổng đơn hàng: </span>
-                  <span className={styles.statValue}>{orders.length}</span>
+                  <span className={styles.statValue}>{totalOrders}</span>
                 </div>
                 <div className={styles.statCard}>
                   <span className={styles.statLabel}>Doanh thu / Doanh thu gộp: </span>
                   <span className={styles.statValue}>
-                     {currentRevenue.toLocaleString("vi-VN")} VNĐ / {actualRevenue.toLocaleString("vi-VN")} VNĐ 
-                  </span>
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Doanh thu hiện tại: </span>
-                  <span className={styles.statValue}>
-                  
+                    {currentRevenue.toLocaleString("vi-VN")} VNĐ / {actualRevenue.toLocaleString("vi-VN")} VNĐ
                   </span>
                 </div>
               </div>
@@ -251,31 +233,31 @@ export default function CartManagementPage() {
             <div className={styles.filters}>
               <button
                 className={`${styles.filterBtn} ${filter === "all" ? styles.active : ""}`}
-                onClick={() => setFilter("all")}
+                onClick={() => handleFilterChange("all")}
               >
                 Tất cả
               </button>
               <button
                 className={`${styles.filterBtn} ${filter === "pending" ? styles.active : ""}`}
-                onClick={() => setFilter("pending")}
+                onClick={() => handleFilterChange("pending")}
               >
                 Chờ xử lý
               </button>
               <button
                 className={`${styles.filterBtn} ${filter === "processing" ? styles.active : ""}`}
-                onClick={() => setFilter("processing")}
+                onClick={() => handleFilterChange("processing")}
               >
                 Đang xử lý
               </button>
               <button
                 className={`${styles.filterBtn} ${filter === "completed" ? styles.active : ""}`}
-                onClick={() => setFilter("completed")}
+                onClick={() => handleFilterChange("completed")}
               >
                 Đã hoàn thành
               </button>
               <button
                 className={`${styles.filterBtn} ${filter === "cancelled" ? styles.active : ""}`}
-                onClick={() => setFilter("cancelled")}
+                onClick={() => handleFilterChange("cancelled")}
               >
                 Đã hủy
               </button>
@@ -287,22 +269,27 @@ export default function CartManagementPage() {
                 <div className={styles.tableHeader}>
                   <div className={styles.tableCell}>Khách hàng</div>
                   <div className={styles.tableCell}>Ngày đặt</div>
+                  <div className={styles.tableCell}>Phương thức thanh toán</div>
                   <div className={styles.tableCell}>Trạng thái thanh toán</div>
                   <div className={styles.tableCell}>Trạng thái </div>
                   <div className={styles.tableCell}>Thao tác</div>
                 </div>
 
                 <div className={styles.tableBody}>
-                  {currentOrders.map((order) => (
+                  {orders.map((order) => (
                     <div key={order._id} className={`${styles.tableRow} `}>
-                      <div className={styles.tableCell}>{order.userId?.name}</div>
+                      <div className={`${styles.tableCell} ${order.status === 0 && isOverdue(order.createdAt) ? styles.redText : ''}`}>
+                        {order.userId?.name}
+                      </div>
                       <div className={styles.tableCell}>
                         {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                       </div>
+                      <div className={styles.tableCell} style={{marginLeft:"50px"}}>
+                        {order.paymentMethod.toUpperCase()}
+                      </div>
                       <div className={styles.tableCell}>
                         <span
-                          className={`${styles.statusBadge} ${order.isPaid ? styles.paid : styles.unpaid
-                            }`}
+                          className={`${styles.statusBadge} ${order.isPaid ? styles.paid : styles.unpaid}`}
                         >
                           {order.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
                         </span>
@@ -316,7 +303,7 @@ export default function CartManagementPage() {
                         </span>
                       </div>
 
-                      <div className={styles.tableCell}>
+                      <div className={`${styles.tableCell} ${styles.actionCell}`}>
                         <Button
                           size="sm"
                           className={styles.detailBtn}
@@ -333,6 +320,58 @@ export default function CartManagementPage() {
                 </div>
               </div>
             </div>
+
+            {/* Phân trang */}
+            {totalPages > 1 && (
+              <div className={`d-flex justify-content-center mt-4 ${styles.pagination}`}>
+                {/* First */}
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  className={`${styles.pageBtn} ${currentPage === 1 ? styles.disabled : ""}`}
+                >
+                  <FontAwesomeIcon icon={faAnglesLeft} />
+                </button>
+
+                {/* Prev */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`${styles.pageBtn} ${currentPage === 1 ? styles.disabled : ""}`}
+                >
+                  <FontAwesomeIcon icon={faAngleLeft} />
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => handlePageChange(i + 1)}
+                    className={`${styles.pageNumber} ${currentPage === i + 1 ? styles.active : ""}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+
+                {/* Next */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`${styles.pageBtn} ${currentPage === totalPages ? styles.disabled : ""}`}
+                >
+                  <FontAwesomeIcon icon={faAngleRight} />
+                </button>
+
+                {/* Last */}
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className={`${styles.pageBtn} ${currentPage === totalPages ? styles.disabled : ""}`}
+                >
+                  <FontAwesomeIcon icon={faAnglesRight} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </Container>

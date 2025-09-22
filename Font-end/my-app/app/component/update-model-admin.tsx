@@ -63,44 +63,57 @@ function UpdateModelAdmin({
   }, [showUpdateModal]);
 
   // Load dữ liệu sản phẩm để update
-  useEffect(() => {
-    if (post) {
-      setID(post._id?.toString() || "");
-      setName(post.name || "");
-      setCategory((post.category as string) || (post as any).categoryId || "");
-      setImagePreview(post.image || "");
-      setImageFile(null);
-      setQuantity(post.quantity?.toString() || "");
-      setTaste(Array.isArray(post.taste) ? post.taste : []);
-      setDescription(post.description || "");
-      setStatus(post.status ?? true);
+ // Load dữ liệu sản phẩm để update
+useEffect(() => {
+  if (post) {
+    setID(post._id?.toString() || "");
+    setName(post.name || "");
+    setDescription(post.description || "");
+    setImagePreview(post.image || "");
+    setImageFile(null);
+    setTaste(Array.isArray(post.taste) ? post.taste : []);
+    setStatus(post.status ?? true);
 
-      // Xác định loại sản phẩm
-      if (post.isDaily) {
-        setProductType("Theo ngày");
-        setDailyInitialQuantity(post.dailyInitialQuantity ?? 0);
-      } else {
-        setProductType("Tồn kho");
-      }
-
-      // Sizes
-      if (post.sizes.length === 1 && post.sizes[0].name === "default") {
-        setSize("Không");
-        setPrice(post.sizes[0].price.original.toString());
-        setDiscount(post.sizes[0].price.discount?.toString() || "");
-      } else {
-        setSize("Có");
-        const variantMap: { [key: string]: number } = {};
-        post.sizes.forEach((sz) => {
-          variantMap[`${sz.name}_original`] = sz.price.original;
-          if (sz.price.discount != null) {
-            variantMap[`${sz.name}_discount`] = sz.price.discount;
-          }
-        });
-        setVariantPrices(variantMap);
-      }
+    // Gán danh mục (ưu tiên _id trong object category)
+    if (typeof post.category === "object" && post.category?._id) {
+      setCategory(post.category._id.toString());
+    } else if ((post as any).categoryId) {
+      setCategory((post as any).categoryId.toString());
+    } else if (typeof post.category === "string") {
+      setCategory(post.category);
+    } else {
+      setCategory("");
     }
-  }, [post]);
+
+    // Xác định loại sản phẩm
+    if (post.isDaily) {
+      setProductType("Theo ngày");
+      setDailyInitialQuantity(post.dailyInitialQuantity ?? 0);
+      setQuantity(""); // reset tồn kho
+    } else {
+      setProductType("Tồn kho");
+      setQuantity(post.quantity?.toString() || "");
+      setDailyInitialQuantity(0);
+    }
+
+    // Sizes
+    if (post.sizes?.length === 1 && post.sizes[0].name === "default") {
+      setSize("Không");
+      setPrice(post.sizes[0].price.original.toString());
+      setDiscount(post.sizes[0].price.discount?.toString() || "");
+    } else if (post.sizes?.length > 0) {
+      setSize("Có");
+      const variantMap: { [key: string]: number } = {};
+      post.sizes.forEach((sz) => {
+        variantMap[`${sz.name}_original`] = sz.price.original;
+        if (sz.price.discount != null) {
+          variantMap[`${sz.name}_discount`] = sz.price.discount;
+        }
+      });
+      setVariantPrices(variantMap);
+    }
+  }
+}, [post]);
 
   const handleSubmit = async () => {
     if (!id) {
@@ -363,7 +376,7 @@ function UpdateModelAdmin({
             </Col>
 
             {/* Mô tả */}
-            <Col md={6}>
+            <Col md={12}>
               <Form.Group>
                 <Form.Label>Mô tả sản phẩm</Form.Label>
                 <Form.Control as="textarea" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -371,7 +384,7 @@ function UpdateModelAdmin({
             </Col>
 
             {/* Hình ảnh */}
-            <Col md={6}>
+            <Col md={12}>
               <Form.Group>
                 <Form.Label>Hình ảnh</Form.Label>
                 {imagePreview && (
@@ -396,15 +409,6 @@ function UpdateModelAdmin({
             </Col>
 
             {/* Trạng thái */}
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label>Trạng thái</Form.Label>
-                <Form.Select value={status ? "Đang bán" : "Ngừng bán"} onChange={(e) => setStatus(e.target.value === "Đang bán")}>
-                  <option value="Đang bán">Đang bán</option>
-                  <option value="Ngừng bán">Ngừng bán</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
           </Row>
         </Form>
       </Modal.Body>

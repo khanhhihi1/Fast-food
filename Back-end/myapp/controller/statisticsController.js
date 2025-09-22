@@ -18,6 +18,7 @@ const getDateRange = (period, startDate, endDate) => {
       start = moment().startOf('month');
       break;
     case 'year':
+    case 'compare_years':
       start = moment().startOf('year');
       break;
     case 'custom':
@@ -53,8 +54,9 @@ const getDashboardStats = async (req, res) => {
     const vouchersUsed = await Order.countDocuments({ voucherCode: { $exists: true, $ne: null }, createdAt: { $gte: start, $lte: end } });
 
     // Revenue Chart Data
+    const currentYearStart = moment().startOf('year').toDate();
     const revenueByMonth = await Order.aggregate([
-      { $match: { status: 4, createdAt: { $gte: moment().startOf('year').toDate(), $lte: end } } },
+      { $match: { status: 4, createdAt: { $gte: currentYearStart, $lte: end } } },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
@@ -63,9 +65,31 @@ const getDashboardStats = async (req, res) => {
       },
       { $sort: { _id: 1 } },
     ]);
+
+    let previousRevenueByMonth = [];
+    if (period === 'compare_years') {
+      const prevYearStart = moment().subtract(1, 'year').startOf('year').toDate();
+      const prevYearEnd = moment().subtract(1, 'year').endOf('year').toDate();
+      previousRevenueByMonth = await Order.aggregate([
+        { $match: { status: 4, createdAt: { $gte: prevYearStart, $lte: prevYearEnd } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            total: { $sum: '$total' },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+    }
+
     const months = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
     const revenueData = months.map((month, idx) => {
       const found = revenueByMonth.find(item => item._id.endsWith(`-${String(idx + 1).padStart(2, '0')}`));
+      return found ? found.total : 0;
+    });
+
+    const previousRevenueData = months.map((month, idx) => {
+      const found = previousRevenueByMonth.find(item => item._id.endsWith(`-${String(idx + 1).padStart(2, '0')}`));
       return found ? found.total : 0;
     });
 
@@ -82,21 +106,25 @@ const getDashboardStats = async (req, res) => {
         },
       },
       { $addFields: { orderCount: { $size: '$orderCount' } } },
-      { $sort: { orderCount: -1 } },
-      { $skip: (topPage - 1) * topLimit },
-      { $limit: parseInt(topLimit) },
+      { $match: { totalSold: { $gte: 30 } } },
       { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
       { $unwind: '$product' },
+      { $match: { 'product.status': true } },
+      { $sort: { orderCount: 1 } },
+      { $skip: (topPage - 1) * topLimit },
+      { $limit: parseInt(topLimit) },
     ]);
 
     // Slow Selling Products (bao gồm cả sản phẩm chưa bán)
+    const topProductIds = topProductsAgg.map(p => p._id);
     const slowProductsAgg = await Product.aggregate([
+      { $match: { status: true, _id: { $nin: topProductIds } } },
       {
         $lookup: {
           from: "orders",
           let: { productId: "$_id" },
           pipeline: [
-            { $match: { status: 4 } },
+            { $match: { status: 4, createdAt: { $gte: start, $lte: end } } },
             { $unwind: "$items" },
             { $match: { $expr: { $eq: ["$items.productId", "$$productId"] } } },
             {
@@ -141,15 +169,33 @@ const getDashboardStats = async (req, res) => {
     ]);
 
     // Top Vouchers
-    const topVouchers = await Voucher.aggregate([
+    const topVouchers = await Order.aggregate([
+      { $match: { voucherCode: { $ne: null }, createdAt: { $gte: start, $lte: end } } },
+      { $group: { _id: '$voucherCode', uses: { $sum: 1 }, savings: { $sum: '$discount' } } },
       { $sort: { uses: -1 } },
       { $limit: 2 },
     ]);
 
     // Previous period for comparisons
-    const duration = moment(end).diff(moment(start), 'days') + 1;
-    const prevStart = moment(start).subtract(duration, 'days').toDate();
-    const prevEnd = moment(start).subtract(1, 'millisecond').toDate();
+    let prevStart, prevEnd;
+    let subtractUnit;
+    switch (period) {
+      case 'day': subtractUnit = 'day'; break;
+      case 'week': subtractUnit = 'week'; break;
+      case 'month': subtractUnit = 'month'; break;
+      case 'year':
+      case 'compare_years': subtractUnit = 'year'; break;
+      case 'custom':
+        const durationDays = moment(end).diff(moment(start), 'days');
+        prevStart = moment(start).subtract(durationDays, 'days').toDate();
+        prevEnd = moment(end).subtract(durationDays, 'days').toDate();
+        break;
+    }
+    if (subtractUnit) {
+      prevStart = moment(start).subtract(1, subtractUnit).toDate();
+      prevEnd = moment(end).subtract(1, subtractUnit).toDate();
+    }
+
     const prevRevenueAgg = await Order.aggregate([
       { $match: { status: 4, createdAt: { $gte: prevStart, $lte: prevEnd } } },
       { $group: { _id: null, total: { $sum: '$total' } } },
@@ -167,13 +213,18 @@ const getDashboardStats = async (req, res) => {
     const vouchersChange = prevVouchersUsed ? ((vouchersUsed - prevVouchersUsed) / prevVouchersUsed * 100).toFixed(0) : 0;
 
     // Tổng số sản phẩm để phân trang
-    const totalTopProducts = await Order.aggregate([
+    const totalTopProductsAgg = await Order.aggregate([
       { $match: { status: 4, createdAt: { $gte: start, $lte: end } } },
       { $unwind: '$items' },
       { $group: { _id: '$items.productId' } },
+      { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
+      { $unwind: '$product' },
+      { $match: { 'product.status': true } },
       { $count: 'total' },
     ]);
-    const totalSlowProducts = await Product.countDocuments();
+    const totalTopProducts = totalTopProductsAgg[0]?.total || 0;
+
+    const totalSlowProducts = await Product.countDocuments({ status: true });
 
     res.json({
       totalRevenue: revenue,
@@ -187,6 +238,7 @@ const getDashboardStats = async (req, res) => {
       revenueChart: {
         labels: months,
         data: revenueData,
+        ...(period === 'compare_years' ? { previousData: previousRevenueData } : {}),
       },
       topProducts: topProductsAgg.map(p => ({
         name: p.product.name,
@@ -195,7 +247,7 @@ const getDashboardStats = async (req, res) => {
         orderCount: p.orderCount,
         image: p.product.image || 'http://static.photos/retail/200x200/default',
       })),
-      topProductsTotal: totalTopProducts[0]?.total || 0,
+      topProductsTotal: totalTopProducts,
       slowProducts: slowProductsAgg.map(p => ({
         name: p.name,
         revenue: p.totalRevenue,
@@ -211,7 +263,7 @@ const getDashboardStats = async (req, res) => {
         image: 'https://cdn.sforum.vn/sforum/wp-content/uploads/2023/10/avatar-trang-4.jpg',
       })),
       topVouchers: topVouchers.map(v => ({
-        code: v.code,
+        code: v._id,
         uses: v.uses,
         savings: v.savings,
       })),
