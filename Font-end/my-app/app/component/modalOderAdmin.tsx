@@ -154,7 +154,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           <Col md={6}>
             <h6>Thông tin khách hàng</h6>
             <p>
-              <strong>Tên:</strong> {currentOrder.userId?.name || "Không xác định"}
+              <strong>Tên:</strong> {currentOrder.shippingInfo?.name ||currentOrder.userId?.name || "Không xác định"}
             </p>
             <p>
               <strong>Email:</strong> {currentOrder.userId?.email || "Không xác định"}

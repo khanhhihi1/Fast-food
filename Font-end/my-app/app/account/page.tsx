@@ -16,6 +16,7 @@ import {
   Image,
   ListGroup,
   InputGroup,
+  Alert,
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -41,6 +42,10 @@ import {
   faEye,
   faEdit,
   faSave,
+  faPlus,
+  faUser,
+  faPhone,
+  faLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
 import "./account.css";
 import ProtectedRoute from "../component/ProtectedRoute";
@@ -54,7 +59,12 @@ interface User {
   email: string;
   role: string;
   phone: string;
-  address?: string; // 👈 Thêm trường address
+  addresses: { // 👈 Thay đổi thành mảng addresses
+    name: string;
+    phone: string;
+    address: string;
+    isDefault: boolean;
+  }[];
 }
 type ProductIdLike = string | { _id: string };
 
@@ -164,11 +174,14 @@ const UserProfile = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [district, setDistrict] = useState("");
 
-  // 👈 Thêm state cho chỉnh sửa thông tin (bao gồm địa chỉ)
-  const [editAddress, setEditAddress] = useState("");
-  const [editPhone, setEditPhone] = useState("");
+  // 👈 State cho quản lý địa chỉ
+  const [editAddressIndex, setEditAddressIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
-  const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [editPhone, setEditPhone] = useState("");
+  const [editDetailAddress, setEditDetailAddress] = useState("");
+  const [editDistrict, setEditDistrict] = useState("");
+  const [updatingAddress, setUpdatingAddress] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false); // 👈 Modal cho thêm/sửa địa chỉ
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -189,15 +202,8 @@ const UserProfile = () => {
         const userData = await userRes.json();
         const ordersData = await ordersRes.json();
 
-        console.log("User Data:", JSON.stringify(userData, null, 2));
-        console.log("Orders Data:", JSON.stringify(ordersData, null, 2));
-
         if (userRes.ok && userData.status) {
           setUser(userData.result);
-          // 👈 Khởi tạo state edit từ user data
-          setEditName(userData.result.name || "");
-          setEditPhone(userData.result.phone || "");
-          setEditAddress(userData.result.address || "");
         } else {
           setUser(null);
           toast.error(userData.message || "Không thể lấy thông tin người dùng");
@@ -208,26 +214,14 @@ const UserProfile = () => {
           const completedOrders = ordersData.result.filter(
             (order: Order) => order.status === 4
           );
-          console.log(
-            "Completed Orders:",
-            JSON.stringify(completedOrders, null, 2)
-          );
 
           const commentablePromises = completedOrders.map((order: Order) => {
             if (!order._id || !userData.result?._id) {
-              console.error("Missing orderId or userId:", {
-                orderId: order._id,
-                userId: userData.result?._id,
-              });
               return Promise.resolve({
                 status: false,
                 message: "Thiếu ID",
               });
             }
-            console.log("Fetching commentable products for:", {
-              orderId: order._id,
-              userId: userData.result._id,
-            });
             return fetch(
               `${API_URL}/comment/commentable-products?orderId=${order._id}&userId=${userData.result._id}`,
               { credentials: "include" }
@@ -235,10 +229,6 @@ const UserProfile = () => {
           });
 
           const commentableResults = await Promise.all(commentablePromises);
-          console.log(
-            "Commentable Results:",
-            JSON.stringify(commentableResults, null, 2)
-          );
 
           const commentableMap: { [orderId: string]: CommentableProduct[] } = {};
           const canCommentOrderMap: { [orderId: string]: boolean } = {};
@@ -248,21 +238,8 @@ const UserProfile = () => {
                 commentableResults[index].result || [];
               canCommentOrderMap[order._id.toString()] =
                 commentableResults[index].canCommentOrder || false;
-            } else {
-              console.error(
-                `Failed to fetch commentable products for order ${order._id}:`,
-                commentableResults[index].message
-              );
             }
           });
-          console.log(
-            "Commentable Products:",
-            JSON.stringify(commentableMap, null, 2)
-          );
-          console.log(
-            "Can Comment Order:",
-            JSON.stringify(canCommentOrderMap, null, 2)
-          );
           setCommentableProducts(commentableMap);
           setCanCommentOrder(canCommentOrderMap);
         } else {
@@ -270,10 +247,6 @@ const UserProfile = () => {
           toast.error(ordersData.message || "Không thể lấy đơn hàng");
         }
       } catch (err: any) {
-        console.error("Fetch error:", {
-          message: err.message,
-          stack: err.stack,
-        });
         toast.error("Lỗi kết nối đến máy chủ");
         setUser(null);
         setOrders([]);
@@ -285,34 +258,35 @@ const UserProfile = () => {
     fetchUserAndOrders();
   }, []);
 
-  // 👈 Hàm cập nhật thông tin cá nhân (bao gồm địa chỉ)
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user?._id) return;
+  // 👈 Hàm thêm/sửa địa chỉ
+  const handleSaveAddress = async () => {
+    if (!editName || !editPhone || !editDistrict || !editDetailAddress) {
+      toast.warning("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
 
-    setUpdatingProfile(true);
+    if (!/^(0[0-9]{9})$/.test(editPhone)) {
+      toast.error("Số điện thoại không hợp lệ");
+      return;
+    }
+
+    const newAddress = {
+      name: editName,
+      phone: editPhone,
+      address: `${editDetailAddress}, ${editDistrict}, TP.HCM`,
+      isDefault: user?.addresses.length === 0 // Mặc định nếu là địa chỉ đầu tiên
+    };
+
+    setUpdatingAddress(true);
     try {
-      const updateData: Record<string, any> = {};
-
-      if (editName !== user.name) updateData.name = editName;
-      if (editPhone !== user.phone) updateData.phone = editPhone;
-
-      // Format lại address: chi tiết + district (nếu có)
-      if (editAddress !== user.address || district !== "") {
-        if (district) {
-          updateData.address = `${editAddress}, ${district}, TP.HCM`;
-        } else {
-          // fallback nếu chưa chọn district
-          updateData.address = editAddress;
-        }
+      let updateData;
+      if (editAddressIndex !== null) {
+        updateData = { updateAddress: { index: editAddressIndex, ...newAddress } };
+      } else {
+        updateData = { addAddress: newAddress };
       }
 
-      if (Object.keys(updateData).length === 0) {
-        toast.info("Không có thay đổi nào");
-        return;
-      }
-
-      const res = await fetch(`${API_URL}/users/update/${user._id}`, {
+      const res = await fetch(`${API_URL}/users/update/${user?._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -320,18 +294,104 @@ const UserProfile = () => {
       });
 
       const data = await res.json();
-      if (!data.status) {
-        throw new Error(data.message || "Không thể cập nhật thông tin");
+      if (data.status) {
+        setUser(data.result);
+        toast.success(editAddressIndex !== null ? "Cập nhật địa chỉ thành công!" : "Thêm địa chỉ thành công!");
+        setShowAddressModal(false);
+        resetAddressForm();
+      } else {
+        toast.error(data.message || "Lỗi khi lưu địa chỉ");
       }
-
-      // Cập nhật local state
-      setUser({ ...user, ...updateData });
-      toast.success("Cập nhật thông tin thành công!");
-    } catch (err: any) {
-      toast.error(err.message || "Lỗi khi cập nhật thông tin");
+    } catch (err) {
+      toast.error("Lỗi khi lưu địa chỉ");
     } finally {
-      setUpdatingProfile(false);
+      setUpdatingAddress(false);
     }
+  };
+
+  // 👈 Hàm xóa địa chỉ
+  const handleDeleteAddress = async (index: number) => {
+    if (!confirm("Bạn chắc chắn muốn xóa địa chỉ này?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/users/update/${user?._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ deleteAddress: index }),
+      });
+
+      const data = await res.json();
+      if (data.status) {
+        setUser(data.result);
+        toast.success("Xóa địa chỉ thành công!");
+      } else {
+        toast.error(data.message || "Lỗi khi xóa địa chỉ");
+      }
+    } catch (err) {
+      toast.error("Lỗi khi xóa địa chỉ");
+    }
+  };
+
+  // 👈 Hàm set default địa chỉ
+  const handleSetDefault = async (index: number) => {
+    try {
+      const res = await fetch(`${API_URL}/users/update/${user?._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ setDefaultAddress: index }),
+      });
+
+      const data = await res.json();
+      if (data.status) {
+        setUser(data.result);
+        toast.success("Đặt địa chỉ mặc định thành công!");
+      } else {
+        toast.error(data.message || "Lỗi khi đặt mặc định");
+      }
+    } catch (err) {
+      toast.error("Lỗi khi đặt mặc định");
+    }
+  };
+
+  // 👈 Hàm edit địa chỉ
+  const handleEditAddress = (index: number) => {
+    const addr = user?.addresses[index];
+    if (addr) {
+      setEditAddressIndex(index);
+      setEditName(addr.name || "");
+      setEditPhone(addr.phone || "");
+      const parsed = parseAddress(addr.address);
+      setEditDetailAddress(parsed.detail);
+      setEditDistrict(parsed.district);
+      setShowAddressModal(true);
+    }
+  };
+
+  // 👈 Hàm mở modal thêm mới
+  const handleOpenAddAddress = () => {
+    resetAddressForm();
+    setShowAddressModal(true);
+  };
+
+  // 👈 Reset form địa chỉ
+  const resetAddressForm = () => {
+    setEditAddressIndex(null);
+    setEditName("");
+    setEditPhone("");
+    setEditDetailAddress("");
+    setEditDistrict("");
+  };
+
+  // Hàm parse address
+  const parseAddress = (fullAddress: string) => {
+    if (!fullAddress) return { detail: "", district: "" };
+    const parts = fullAddress.split(",").map((s) => s.trim());
+    return {
+      detail: parts[0] || "",
+      district: parts[1] || ""
+    };
   };
 
   const cancelOrder = async (orderId: string) => {
@@ -400,8 +460,6 @@ const UserProfile = () => {
         return;
       }
 
-      console.log("Comment Data:", JSON.stringify(commentData, null, 2));
-
       const res = await fetch(`${API_URL}/comment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -435,11 +493,6 @@ const UserProfile = () => {
         }));
       }
     } catch (err: any) {
-      console.error("Submit Comment Error:", {
-        message: err.message,
-        stack: err.stack,
-        commentData,
-      });
       toast.error(err.message || "Không thể gửi bình luận");
     }
   };
@@ -550,11 +603,11 @@ const UserProfile = () => {
 
                   <Nav.Item>
                     <Nav.Link
-                      eventKey="settings"
+                      eventKey="addresses"
                       className={styles.navLink}
                     >
-                      <FontAwesomeIcon icon={faCog} className={styles.icon} />
-                      Thông tin
+                      <FontAwesomeIcon icon={faMapMarkerAlt} className={styles.icon} />
+                      Địa chỉ
                     </Nav.Link>
                   </Nav.Item>
                 </Nav>
@@ -599,16 +652,6 @@ const UserProfile = () => {
                               <div>{user.role === "admin" ? "Quản trị viên" : "Khách hàng"}</div>
                             </div>
                           </ListGroup.Item>
-                          {/* 👈 Thêm hiển thị địa chỉ nếu có */}
-                          {user.address && (
-                            <ListGroup.Item className="d-flex align-items-center py-3">
-                              <FontAwesomeIcon icon={faMapMarkerAlt} className="text-muted me-3" />
-                              <div>
-                                <div className="fw-bold">Địa chỉ mặc định</div>
-                                <div>{shortenAddress(user.address)}</div>
-                              </div>
-                            </ListGroup.Item>
-                          )}
                         </ListGroup>
                       ) : (
                         <p className="text-muted">Không có thông tin người dùng.</p>
@@ -915,93 +958,81 @@ const UserProfile = () => {
                       )}
                     </Card>
                   </Tab.Pane>
-                  {/* 👈 Triển khai tab Settings cho cập nhật địa chỉ */}
-                  <Tab.Pane eventKey="settings">
+                  {/* 👈 Tab mới cho quản lý địa chỉ */}
+                  <Tab.Pane eventKey="addresses">
                     <Card className={`p-4 border-0 shadow-sm ${styles.cardContainer}`}>
                       <h5 className={styles.cardTitle}>
-                        <FontAwesomeIcon icon={faCog} className="text-primary me-2" />
-                        Cập nhật thông tin
+                        <FontAwesomeIcon icon={faMapMarkerAlt} className="text-primary me-2" />
+                        Quản lý địa chỉ
                       </h5>
 
-                      <Form onSubmit={handleUpdateProfile}>
-                        <Form.Group controlId="editName" className={`mb-3 ${styles.formGroup}`}>
-                          <Form.Label>Họ tên</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            placeholder="Nhập họ tên"
-                            className={styles.inputField}
-                          />
-                        </Form.Group>
+                      {user?.addresses && user.addresses.length > 0 ? (
+                        <ListGroup className="mb-3">
+                          {user.addresses.map((addr, index) => (
+                            <ListGroup.Item
+                              key={index}
+                              className={`d-flex justify-content-between align-items-start ${styles.addressItem}`}
+                            >
+                              <div className={styles.addressInfo}>
+                                <p>
+                                  <FontAwesomeIcon icon={faUser} className={styles.infoIcon} />
+                                  <strong>Họ tên:</strong> {addr.name}
+                                </p>
+                                <p>
+                                  <FontAwesomeIcon icon={faPhone} className={styles.infoIcon} />
+                                  <strong>Số điện thoại:</strong> {addr.phone}
+                                </p>
+                                <p>
+                                  <FontAwesomeIcon icon={faLocationDot} className={styles.infoIcon} />
+                                  <strong>Địa chỉ:</strong> {addr.address}{" "}
+                                  {addr.isDefault && (
+                                    <Badge className={styles.defaultBadge}>Mặc định</Badge>
+                                  )}
+                                </p>
+                              </div>
+                              <div className={styles.addressActions}>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  className="me-2"
+                                  onClick={() => handleEditAddress(index)}
+                                >
+                                  <FontAwesomeIcon icon={faEdit} />
+                                </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  className="me-2"
+                                  onClick={() => handleDeleteAddress(index)}
+                                >
+                                  <FontAwesomeIcon icon={faTrashAlt} />
+                                </Button>
+                                {!addr.isDefault && (
+                                  <Button
+                                    variant="outline-success"
+                                    size="sm"
+                                    onClick={() => handleSetDefault(index)}
+                                  >
+                                    <FontAwesomeIcon icon={faCheckCircle} />
+                                  </Button>
+                                )}
+                              </div>
+                            </ListGroup.Item>
 
-                        <Form.Group controlId="editPhone" className={`mb-3 ${styles.formGroup}`}>
-                          <Form.Label>Số điện thoại</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={editPhone}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^\d*$/.test(value) && value.length <= 10) {
-                                setEditPhone(value);
-                              }
-                            }}
-                            placeholder="Nhập số điện thoại (bắt đầu bằng 0)"
-                            className={styles.inputField}
-                          />
-                        </Form.Group>
+                          ))}
+                        </ListGroup>
+                      ) : (
+                        <Alert variant="info">Chưa có địa chỉ nào.</Alert>
+                      )}
 
-                        <Form.Group controlId="district" className={`mb-3 ${styles.formGroup}`}>
-                          <Form.Label>Quận / Huyện</Form.Label>
-                          <Form.Select
-                            value={district}
-                            onChange={(e) => setDistrict(e.target.value)}
-                            className={styles.selectField}
-                          >
-                            <option value="">-- Chọn quận/huyện --</option>
-                            {hcmDistricts.map((d, index) => (
-                              <option key={index} value={d}>
-                                {d}
-                              </option>
-                            ))}
-                          </Form.Select>
-                        </Form.Group>
-
-                        <Form.Group controlId="editAddress" className={`mb-4 ${styles.formGroup}`}>
-                          <Form.Label>
-                            Địa chỉ mặc định (VD: Số nhà, đường, Quận/Huyện, TP.HCM)
-                          </Form.Label>
-                          <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={editAddress}
-                            onChange={(e) => setEditAddress(e.target.value)}
-                            placeholder="Nhập địa chỉ đầy đủ"
-                            className={styles.textareaField}
-                          />
-                          <Form.Text className={styles.helperText}>
-                            Địa chỉ này sẽ được sử dụng mặc định khi đặt hàng.
-                          </Form.Text>
-                        </Form.Group>
-
-                        <Button
-                          type="submit"
-                          className={`w-100 ${styles.saveButton}`}
-                          disabled={updatingProfile}
-                        >
-                          {updatingProfile ? (
-                            <>
-                              <Spinner animation="border" size="sm" className="me-2" />
-                              Đang cập nhật...
-                            </>
-                          ) : (
-                            <>
-                              <FontAwesomeIcon icon={faSave} className="me-2" />
-                              Lưu thay đổi
-                            </>
-                          )}
-                        </Button>
-                      </Form>
+                      <Button
+                        variant="primary"
+                        className={styles.saveButton}
+                        onClick={handleOpenAddAddress}
+                      >
+                        <FontAwesomeIcon icon={faPlus} className="me-2" />
+                        Thêm địa chỉ mới
+                      </Button>
                     </Card>
                   </Tab.Pane>
                 </Tab.Content>
@@ -1081,6 +1112,96 @@ const UserProfile = () => {
             </Button>
           </Modal.Footer>
         </Modal>
+
+        {/* 👈 Modal cho thêm/sửa địa chỉ */}
+        <Modal show={showAddressModal} onHide={() => setShowAddressModal(false)} centered>
+          <Modal.Header closeButton className={styles.modalHeader}>
+            <Modal.Title className={styles.modalTitle}>
+              {editAddressIndex !== null ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
+            </Modal.Title>
+          </Modal.Header>
+
+          <Modal.Body className={styles.modalBody}>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label className={styles.formGroup}>Họ tên</Form.Label>
+                <Form.Control
+                  type="text"
+                  className={styles.formControl}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Nhập họ tên"
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label className={styles.formGroup}>Số điện thoại</Form.Label>
+                <Form.Control
+                  type="text"
+                  className={styles.formControl}
+                  value={editPhone}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d*$/.test(value) && value.length <= 10) {
+                      setEditPhone(value);
+                    }
+                  }}
+                  placeholder="Nhập số điện thoại (bắt đầu bằng 0)"
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label className={styles.formGroup}>Quận / Huyện</Form.Label>
+                <Form.Select
+                  value={editDistrict}
+                  className={styles.formControl}
+                  onChange={(e) => setEditDistrict(e.target.value)}
+                >
+                  <option value="">-- Chọn quận/huyện --</option>
+                  {hcmDistricts.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label className={styles.formGroup}>Địa chỉ chi tiết</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  className={`${styles.formControl} ${styles.textareaControl}`}
+                  value={editDetailAddress}
+                  onChange={(e) => setEditDetailAddress(e.target.value)}
+                  placeholder="Nhập địa chỉ chi tiết"
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+
+          <Modal.Footer className={styles.modalFooter}>
+            <Button
+              variant="secondary"
+              className={styles.cancelButton}
+              onClick={() => setShowAddressModal(false)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="primary"
+              className={styles.saveButton}
+              onClick={handleSaveAddress}
+              disabled={updatingAddress}
+            >
+              {updatingAddress ? (
+                <Spinner animation="border" size="sm" className="me-2" />
+              ) : null}
+              {editAddressIndex !== null ? "Cập nhật địa chỉ" : "Thêm địa chỉ mới"}
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
       </Container>
     </ProtectedRoute>
   );

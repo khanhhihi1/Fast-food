@@ -101,7 +101,7 @@ export default function CartManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>('pending');
   const [collapsed, setCollapsed] = useState(false);
   const { isDarkMode } = useDarkMode();
   const router = useRouter();
@@ -261,6 +261,7 @@ export default function CartManagementPage() {
               >
                 Đã hủy
               </button>
+
             </div>
 
             {/* Bảng đơn hàng */}
@@ -279,12 +280,12 @@ export default function CartManagementPage() {
                   {orders.map((order) => (
                     <div key={order._id} className={`${styles.tableRow} `}>
                       <div className={`${styles.tableCell} ${order.status === 0 && isOverdue(order.createdAt) ? styles.redText : ''}`}>
-                        {order.userId?.name}
+                        {order.shippingInfo?.name || order.userId?.name}
                       </div>
                       <div className={styles.tableCell}>
                         {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                       </div>
-                      <div className={styles.tableCell} style={{marginLeft:"50px"}}>
+                      <div className={styles.tableCell} style={{ marginLeft: "50px" }}>
                         {order.paymentMethod.toUpperCase()}
                       </div>
                       <div className={styles.tableCell}>

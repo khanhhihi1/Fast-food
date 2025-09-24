@@ -309,35 +309,72 @@ async function updateUser(id, data) {
       throw new Error("Người dùng không tồn tại");
     }
 
-    const { name, email, password, phone, address } = data; // 👈 Thêm phone và address
     const updateData = {};
 
-    if (name) updateData.name = name;
-    if (phone) {
-      if (!/^(0[0-9]{9})$/.test(phone)) { // 👈 Validate phone
-        throw new Error("Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)");
+    if (data.name) updateData.name = data.name;
+    if (data.phone) {
+      if (!/^(0[0-9]{9})$/.test(data.phone)) {
+        throw new Error("Số điện thoại không hợp lệ");
       }
-      updateData.phone = phone;
+      updateData.phone = data.phone;
     }
-    if (address) updateData.address = address; // 👈 Hỗ trợ address
-    if (email) {
-      if (!isValidEmail(email)) {
+    if (data.email) {
+      if (!isValidEmail(data.email)) {
         throw new Error("Email không hợp lệ");
       }
-      updateData.email = email;
+      updateData.email = data.email;
     }
-
-    if (password) {
-      if (password.length < 6) {
+    if (data.password) {
+      if (data.password.length < 6) {
         throw new Error("Mật khẩu phải có ít nhất 6 ký tự");
       }
-      updateData.password = await bcrypt.hash(password, 10);
+      updateData.password = await bcrypt.hash(data.password, 10);
     }
 
-    const result = await userModel
-      .findByIdAndUpdate(id, updateData, { new: true })
-      .select("-password");
+    // 👈 Xử lý thêm địa chỉ mới
+    if (data.addAddress) {
+      user.addresses.push({
+        ...data.addAddress,
+        isDefault: user.addresses.length === 0 // Mặc định nếu là đầu tiên
+      });
+    }
 
+    // 👈 Xử lý cập nhật địa chỉ
+    if (data.updateAddress) {
+      const { index, ...addr } = data.updateAddress;
+      if (index >= 0 && index < user.addresses.length) {
+        user.addresses[index] = addr;
+      } else {
+        throw new Error("Index địa chỉ không hợp lệ");
+      }
+    }
+
+    // 👈 Xử lý xóa địa chỉ
+    if (data.deleteAddress !== undefined) {
+      const index = data.deleteAddress;
+      if (index >= 0 && index < user.addresses.length) {
+        user.addresses.splice(index, 1);
+      } else {
+        throw new Error("Index địa chỉ không hợp lệ");
+      }
+    }
+
+    // 👈 Xử lý set default
+    if (data.setDefaultAddress !== undefined) {
+      const index = data.setDefaultAddress;
+      if (index >= 0 && index < user.addresses.length) {
+        user.addresses = user.addresses.map((addr, i) => ({
+          ...addr,
+          isDefault: i === index
+        }));
+      } else {
+        throw new Error("Index địa chỉ không hợp lệ");
+      }
+    }
+
+    await user.save();
+
+    const result = await userModel.findById(id).select("-password");
     return result;
   } catch (error) {
     throw new Error(error.message);

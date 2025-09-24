@@ -22,6 +22,8 @@ const favoriteProductRoutes = require("./routes/favoriteProduct");
 const notificationRoutes = require("./routes/notification");
 const contactRoutes = require("./routes/contact");
 const statisticsRoutes = require("./routes/statistics");
+const chatRoutes = require("./routes/chat");
+
 
 const productsController = require('./controller/productController');
 
@@ -87,6 +89,7 @@ app.use("/voucher", voucherRouter);
 app.use("/contacts", contactRoutes);
 app.use("/statistics",  statisticsRoutes);
 app.use("/temp-order", tempOrderRoutes);
+app.use("/chats", chatRoutes);
 app.use("/payment", paymentRouter);
 app.use("/favoriteProduct", favoriteProductRoutes);
 app.use("/notifications", notificationRoutes);
