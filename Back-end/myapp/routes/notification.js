@@ -1,12 +1,24 @@
 const express = require("express");
 const router = express.Router();
 const notificationController = require("../controller/notificationController.js");
+const authMiddleware = require("../middleware/authMiddleware");
+const isAdminMiddleware = require("../middleware/isAdminMiddleware");
 
 // Lấy danh sách thông báo theo user
 router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const result = await notificationController.getNotificationsByUser(userId);
+    res.status(200).json({ success: true, result });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// Lấy thông báo cho admin (phải login và có role admin)
+router.get("/admin", authMiddleware, isAdminMiddleware, async (req, res) => {
+  try {
+    const result = await notificationController.getNotificationsForAdmins();
     res.status(200).json({ success: true, result });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

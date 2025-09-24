@@ -1,5 +1,6 @@
 const notificationModel = require("../model/notificationModel.js");
 const mongoose = require("mongoose");
+const User = require("../model/userModel.js");
 
 // Tạo thông báo mới
 async function createNotification(data) {
@@ -36,6 +37,24 @@ async function getNotificationsByUser(userId) {
     return notifications;
   } catch (error) {
     console.error("❌ Lỗi khi lấy thông báo:", error.message);
+    throw error;
+  }
+}
+
+async function getNotificationsForAdmins() {
+  try {
+    // Lấy danh sách tất cả admin
+    const admins = await User.find({ role: "admin" }).select("_id");
+    const adminIds = admins.map((a) => a._id);
+
+    // Lấy tất cả thông báo có userId thuộc danh sách admin
+    const notifications = await notificationModel
+      .find({ userId: { $in: adminIds } })
+      .sort({ createdAt: -1 });
+
+    return notifications;
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy thông báo admin:", error.message);
     throw error;
   }
 }
@@ -90,6 +109,7 @@ async function deleteNotification(id) {
 module.exports = {
   createNotification,
   getNotificationsByUser,
+  getNotificationsForAdmins,
   getSystemNotifications,
   markAsRead,
   deleteNotification,

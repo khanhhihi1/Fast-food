@@ -49,12 +49,13 @@ interface Notification {
 }
 
 export default function Header() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const { cartCount, setCartCount, favoriteCount, setFavoriteCount } = useCart();
+  const { cartCount, setCartCount, favoriteCount, setFavoriteCount } =
+    useCart();
   const [showNotifications, setShowNotifications] = useState(false);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
@@ -87,39 +88,7 @@ export default function Header() {
     }
   };
 
-  // Giả lập dữ liệu notifications
-  useEffect(() => {
-    setNotifications([
-      {
-        _id: "68ca23684b51cb23f816b81e",
-        title: "Đặt hàng thành công 🎉",
-        message: "Đơn hàng #68ca23684b51cb23f816b818 đã được tạo thành công.",
-        type: "order",
-        link: "/orders/68ca23684b51cb23f816b818",
-        isRead: false,
-        createdAt: "2025-09-17T02:56:40.087Z",
-      },
-      {
-        _id: "68ca23f44b51cb23f816b820",
-        title: "Khuyến mãi hot 🔥",
-        message: "Giảm ngay 30% cho Pizza size L trong hôm nay!",
-        type: "promo",
-        link: "/category/pizza",
-        isRead: false,
-        createdAt: "2025-09-16T10:00:00.000Z",
-      },
-      {
-        _id: "68ca24084b51cb23f816b821",
-        title: "Cập nhật đơn hàng",
-        message: "Đơn hàng #68c99e352274d52a0dead579 đã được giao thành công.",
-        type: "order",
-        link: "/orders/68c99e352274d52a0dead579",
-        isRead: true,
-        createdAt: "2025-09-15T08:30:00.000Z",
-      },
-    ]);
-  }, []);
-
+  // Lấy user đang đăng nhập
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -139,6 +108,28 @@ export default function Header() {
     fetchUser();
   }, []);
 
+  // Lấy danh sách thông báo từ API
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/notifications/user/${user._id}`,
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setNotifications(data.result);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy thông báo:", err);
+      }
+    };
+
+    fetchNotifications();
+  }, [user]);
+
   const handleLogout = async () => {
     try {
       const res = await fetch("http://localhost:5000/users/logout", {
@@ -149,6 +140,8 @@ export default function Header() {
       if (res.ok && data.status) {
         setUser(null);
         toast.success("Đăng xuất thành công");
+        router.refresh(); // refresh lại toàn bộ dữ liệu server component
+        router.push("/login"); // chuyển hướng về trang login
       } else {
         alert("Đăng xuất thất bại!");
       }
@@ -178,8 +171,6 @@ export default function Header() {
       );
 
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Lỗi tìm kiếm:", errorData.message || "Có lỗi xảy ra");
         return;
       }
 
@@ -239,7 +230,7 @@ export default function Header() {
         );
         const data = await res.json();
         if (res.ok && data.status) {
-          setFavoriteCount(data.result.length); // tùy API
+          setFavoriteCount(data.result.length);
         }
       } catch (err) {
         console.error(err);
