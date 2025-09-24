@@ -47,7 +47,6 @@ import {
   faPhone,
   faLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
-import "./account.css";
 import ProtectedRoute from "../component/ProtectedRoute";
 import { toast } from "react-toastify";
 import styles from "../styles/account.module.css";
@@ -59,7 +58,7 @@ interface User {
   email: string;
   role: string;
   phone: string;
-  addresses: { // 👈 Thay đổi thành mảng addresses
+  addresses: { //  Thay đổi thành mảng addresses
     name: string;
     phone: string;
     address: string;
@@ -173,15 +172,19 @@ const UserProfile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [district, setDistrict] = useState("");
-
-  // 👈 State cho quản lý địa chỉ
+  const [activeKey, setActiveKey] = useState("");
+  //  State mới cho OTP
+  const [otp, setOtp] = useState("");
+  const [showOtpModal, setShowOtpModal] = useState(false); //  Modal nhập OTP
+  const [otpSent, setOtpSent] = useState(false);
+  //  State cho quản lý địa chỉ
   const [editAddressIndex, setEditAddressIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editDetailAddress, setEditDetailAddress] = useState("");
   const [editDistrict, setEditDistrict] = useState("");
   const [updatingAddress, setUpdatingAddress] = useState(false);
-  const [showAddressModal, setShowAddressModal] = useState(false); // 👈 Modal cho thêm/sửa địa chỉ
+  const [showAddressModal, setShowAddressModal] = useState(false); //  Modal cho thêm/sửa địa chỉ
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -258,7 +261,7 @@ const UserProfile = () => {
     fetchUserAndOrders();
   }, []);
 
-  // 👈 Hàm thêm/sửa địa chỉ
+  //  Hàm thêm/sửa địa chỉ
   const handleSaveAddress = async () => {
     if (!editName || !editPhone || !editDistrict || !editDetailAddress) {
       toast.warning("Vui lòng điền đầy đủ thông tin");
@@ -308,8 +311,83 @@ const UserProfile = () => {
       setUpdatingAddress(false);
     }
   };
+  const handleSendOtp = async () => {
+    if (!oldPassword) {
+      toast.error("Vui lòng nhập mật khẩu cũ");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast.error("Mật khẩu mới và xác nhận không khớp");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
 
-  // 👈 Hàm xóa địa chỉ
+    setPasswordLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/users/change-password/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ 
+          email: user?.email,
+          oldPassword
+        }),
+      });
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể gửi OTP");
+      }
+      toast.success("OTP đã được gửi đến email của bạn");
+      setOtpSent(true);
+      setShowOtpModal(true);
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi khi gửi OTP");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  // 👈 Hàm xác thực OTP và thay đổi mật khẩu
+  const handleVerifyOtpAndChangePassword = async () => {
+    if (!otp) {
+      toast.error("Vui lòng nhập OTP");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/users/change-password/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: user?.email,
+          otp,
+          newPassword,
+          confirmNewPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!data.status) {
+        throw new Error(data.message || "Không thể thay đổi mật khẩu");
+      }
+      toast.success("Thay đổi mật khẩu thành công");
+      setShowOtpModal(false);
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setOtp("");
+      setOtpSent(false);
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi khi thay đổi mật khẩu");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+  //  Hàm xóa địa chỉ
   const handleDeleteAddress = async (index: number) => {
     if (!confirm("Bạn chắc chắn muốn xóa địa chỉ này?")) return;
 
@@ -333,7 +411,7 @@ const UserProfile = () => {
     }
   };
 
-  // 👈 Hàm set default địa chỉ
+  //  Hàm set default địa chỉ
   const handleSetDefault = async (index: number) => {
     try {
       const res = await fetch(`${API_URL}/users/update/${user?._id}`, {
@@ -355,7 +433,7 @@ const UserProfile = () => {
     }
   };
 
-  // 👈 Hàm edit địa chỉ
+  //  Hàm edit địa chỉ
   const handleEditAddress = (index: number) => {
     const addr = user?.addresses[index];
     if (addr) {
@@ -369,13 +447,13 @@ const UserProfile = () => {
     }
   };
 
-  // 👈 Hàm mở modal thêm mới
+  //  Hàm mở modal thêm mới
   const handleOpenAddAddress = () => {
     resetAddressForm();
     setShowAddressModal(true);
   };
 
-  // 👈 Reset form địa chỉ
+  //  Reset form địa chỉ
   const resetAddressForm = () => {
     setEditAddressIndex(null);
     setEditName("");
@@ -570,11 +648,15 @@ const UserProfile = () => {
               </div>
 
               <Tab.Container defaultActiveKey="orders">
-                <Nav className="justify-content-center mt-4">
+                <Nav
+                  className="justify-content-center mt-4"
+                  activeKey={activeKey}
+                  onSelect={(selectedKey) => setActiveKey(selectedKey!)}
+                >
                   <Nav.Item>
                     <Nav.Link
                       eventKey="profile"
-                      className={styles.navLink}
+                      className={`${styles.navLink} ${activeKey === "profile" ? "active" : ""}`}
                     >
                       <FontAwesomeIcon icon={faUserCircle} className={styles.icon} />
                       Thông tin cá nhân
@@ -584,7 +666,7 @@ const UserProfile = () => {
                   <Nav.Item>
                     <Nav.Link
                       eventKey="security"
-                      className={styles.navLink}
+                      className={`${styles.navLink} ${activeKey === "security" ? "active" : ""}`}
                     >
                       <FontAwesomeIcon icon={faLock} className={styles.icon} />
                       Bảo mật
@@ -594,7 +676,7 @@ const UserProfile = () => {
                   <Nav.Item>
                     <Nav.Link
                       eventKey="orders"
-                      className={styles.navLink}
+                      className={`${styles.navLink} ${activeKey === "orders" ? "active" : ""}`}
                     >
                       <FontAwesomeIcon icon={faShoppingBag} className={styles.icon} />
                       Đơn hàng
@@ -604,7 +686,7 @@ const UserProfile = () => {
                   <Nav.Item>
                     <Nav.Link
                       eventKey="addresses"
-                      className={styles.navLink}
+                      className={`${styles.navLink} ${activeKey === "addresses" ? "active" : ""}`}
                     >
                       <FontAwesomeIcon icon={faMapMarkerAlt} className={styles.icon} />
                       Địa chỉ
@@ -616,7 +698,7 @@ const UserProfile = () => {
                   <Tab.Pane eventKey="profile">
                     <Card className="p-4 border-0 shadow-sm">
                       <h5 className="mb-4 text-center">
-                        <FontAwesomeIcon icon={faUserCircle} className="text-primary me-2" />
+                        <FontAwesomeIcon icon={faUserCircle} className="text-dark me-2" />
                         Thông tin cá nhân
                       </h5>
 
@@ -659,12 +741,12 @@ const UserProfile = () => {
                     </Card>
                   </Tab.Pane>
                   <Tab.Pane eventKey="security">
-                    <Card className={`p-4 border-0 shadow-sm ${styles.cardContainer}`}>
+                   <Card className={`p-4 border-0 shadow-sm ${styles.cardContainer}`}>
                       <h5 className={styles.cardTitle}>
-                        <FontAwesomeIcon icon={faLock} className="text-primary me-2" />
+                        <FontAwesomeIcon icon={faLock} className="text-dark me-2" />
                         Thay đổi mật khẩu
                       </h5>
-                      <Form onSubmit={handleChangePassword}>
+                      <Form>
                         <Form.Group controlId="oldPassword" className={`mb-3 ${styles.formGroup}`}>
                           <Form.Label>Mật khẩu cũ</Form.Label>
                           <InputGroup>
@@ -728,14 +810,14 @@ const UserProfile = () => {
 
                         <Button
                           variant="primary"
-                          type="submit"
                           className={`w-100 ${styles.saveButton}`}
                           disabled={passwordLoading}
+                          onClick={handleSendOtp}
                         >
                           {passwordLoading ? (
                             <Spinner animation="border" size="sm" className="me-2" />
                           ) : null}
-                          Thay đổi mật khẩu
+                        Xác nhận thay đổi mật khẩu
                         </Button>
                       </Form>
                     </Card>
@@ -743,7 +825,7 @@ const UserProfile = () => {
                   <Tab.Pane eventKey="orders">
                     <Card className="p-4 border-0 shadow-sm">
                       <h5 className="mb-4">
-                        <FontAwesomeIcon icon={faShoppingBag} className="text-primary me-2" />
+                        <FontAwesomeIcon icon={faShoppingBag} className="text-dark me-2" />
                         Lịch sử đơn hàng
                       </h5>
 
@@ -844,7 +926,7 @@ const UserProfile = () => {
                                       <div className="d-flex align-items-center mb-2">
                                         <FontAwesomeIcon
                                           icon={faMapMarkerAlt}
-                                          className="text-primary me-2"
+                                          className="text-dark me-2"
                                         />
                                         <span className="fw-bold">Giao đến:</span>
                                       </div>
@@ -958,11 +1040,11 @@ const UserProfile = () => {
                       )}
                     </Card>
                   </Tab.Pane>
-                  {/* 👈 Tab mới cho quản lý địa chỉ */}
+                  {/*  Tab mới cho quản lý địa chỉ */}
                   <Tab.Pane eventKey="addresses">
                     <Card className={`p-4 border-0 shadow-sm ${styles.cardContainer}`}>
                       <h5 className={styles.cardTitle}>
-                        <FontAwesomeIcon icon={faMapMarkerAlt} className="text-primary me-2" />
+                        <FontAwesomeIcon icon={faMapMarkerAlt} className="text-dark me-2" />
                         Quản lý địa chỉ
                       </h5>
 
@@ -1113,7 +1195,7 @@ const UserProfile = () => {
           </Modal.Footer>
         </Modal>
 
-        {/* 👈 Modal cho thêm/sửa địa chỉ */}
+        {/*  Modal cho thêm/sửa địa chỉ */}
         <Modal show={showAddressModal} onHide={() => setShowAddressModal(false)} centered>
           <Modal.Header closeButton className={styles.modalHeader}>
             <Modal.Title className={styles.modalTitle}>
@@ -1201,7 +1283,35 @@ const UserProfile = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-
+        {/*  Modal nhập OTP cho đổi mật khẩu */}
+        <Modal show={showOtpModal} onHide={() => setShowOtpModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Xác thực OTP</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group controlId="otp" className="mb-3">
+                <Form.Label>Nhập mã OTP (gửi đến {user?.email})</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="Nhập OTP 6 chữ số"
+                  maxLength={6}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowOtpModal(false)}>
+              Hủy
+            </Button>
+            <Button variant="primary" disabled={passwordLoading} onClick={handleVerifyOtpAndChangePassword}>
+              {passwordLoading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
+              Xác thực và thay đổi
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </Container>
     </ProtectedRoute>
   );

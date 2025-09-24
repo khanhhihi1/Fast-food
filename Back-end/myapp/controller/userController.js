@@ -17,6 +17,8 @@ module.exports = {
   sendOTPForRegister,
   verifyOTPAndRegister,
   findOrCreateGoogleUser,
+  verifyOTPAndChangePassword,
+  sendOTPForChangePassword,
 };
 
 // Helper
@@ -525,6 +527,84 @@ async function changePassword(id, data) {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedNewPassword;
     await user.save();
+
+    return { message: "Mật khẩu đã được thay đổi thành công" };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+async function sendOTPForChangePassword(data, userId) {
+  try {
+    const { email, oldPassword } = data;
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      throw new Error("Người dùng không tồn tại");
+    }
+
+    if (user.email !== email) {
+      throw new Error("Email không khớp với tài khoản");
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new Error("Mật khẩu cũ không đúng");
+    }
+
+    // Tạo OTP
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // Hết hạn sau 5 phút
+
+    // Lưu OTP
+    await otpModel.create({ email, otp, expiresAt });
+
+    // Gửi email
+    await transporter.sendMail({
+      from: 'your-email@gmail.com',
+      to: email,
+      subject: 'Mã OTP Thay Đổi Mật Khẩu Fast-Food',
+      text: `Mã OTP của bạn là: ${otp}. Mã hết hạn sau 5 phút. Nếu không phải bạn, hãy bỏ qua.`,
+    });
+
+    return { message: 'Đã gửi OTP đến email' };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+// 👈 Bước 2: Xác thực OTP và thay đổi mật khẩu
+async function verifyOTPAndChangePassword(data, userId) {
+  try {
+    const { email, otp, newPassword, confirmNewPassword } = data;
+
+    if (!newPassword || !confirmNewPassword) {
+      throw new Error("Thiếu mật khẩu mới hoặc xác nhận");
+    }
+
+    if (newPassword.length < 6) {
+      throw new Error("Mật khẩu mới phải có ít nhất 6 ký tự");
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      throw new Error("Mật khẩu mới và xác nhận không khớp");
+    }
+
+    const otpRecord = await otpModel.findOne({ email, otp });
+    if (!otpRecord || otpRecord.expiresAt < new Date()) {
+      throw new Error('OTP không hợp lệ hoặc đã hết hạn');
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user || user.email !== email) {
+      throw new Error("Người dùng không tồn tại hoặc email không khớp");
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save();
+
+    // Xóa OTP sau khi dùng
+    await otpModel.deleteOne({ _id: otpRecord._id });
 
     return { message: "Mật khẩu đã được thay đổi thành công" };
   } catch (error) {

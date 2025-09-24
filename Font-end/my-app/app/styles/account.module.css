@@ -64,7 +64,7 @@
   color: #7f8c8d;
 }
 .navLink {
-  color: #c0392b; /* đỏ nhạt khi chưa active */
+  color: #e51818;
   font-weight: 500;
   border-radius: 10px;
   padding: 10px 18px;
@@ -72,18 +72,21 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  margin: 0 5px;
 }
 
 .navLink:hover {
-  background-color: rgba(207, 25, 56, 0.1); /* nền đỏ nhạt */
-  color: #cf1938;
+  background-color: rgba(189, 10, 10, 0.552);
+  color: #ffffff;
 }
 
-.navLink.active {
-  background-color: #cf1938 !important;
-  color: #fff !important;
-  font-weight: 600;
-  box-shadow: 0 3px 8px rgba(207, 25, 56, 0.3);
+.navLink:global(.active) {
+  background: linear-gradient(135deg, #e74c3c, #cf1938);
+    color: #fff !important;
+  font-weight: 500;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(207, 25, 56, 0.3);
+  transform: scale(1.02);
 }
 
 /* icon theo text */
@@ -99,7 +102,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: 0.2s ease, transform 0.2s ease;
 }
 
 .addressItem:hover {
@@ -123,7 +126,7 @@
 
 .infoIcon {
   margin-right: 8px;
-  color: #007bff;
+  color: #000000;
   min-width: 16px;
 }
 
@@ -134,7 +137,7 @@
 
 .defaultBadge {
   margin-left: 8px;
-  background: linear-gradient(45deg, #007bff, #00c6ff) !important;
+  background: linear-gradient(45deg, #f31313, #e64449) !important;
   border-radius: 6px;
   font-size: 0.75rem;
   padding: 4px 8px;
