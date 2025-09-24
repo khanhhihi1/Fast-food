@@ -79,7 +79,7 @@ export default function AdminNavbar() {
     };
 
     fetchNotifications();
-  }, []);
+  }, [API_URL]);
 
   return (
     <Navbar className={styles.navbar}>
@@ -135,13 +135,20 @@ export default function AdminNavbar() {
                 notifications.map((noti) => (
                   <Dropdown.Item
                     key={noti._id}
-                    href={noti.link}
                     className="d-flex flex-column"
                     style={{
                       backgroundColor: noti.isRead ? "white" : "#f8f9fa",
                       marginBottom: "2px",
+                      cursor: "pointer",
                     }}
-                    onClick={() => setShowNotifications(false)}
+                    onClick={() => {
+                      setShowNotifications(false);
+                      if (noti.type === "order") {
+                        router.push("/admin/order");
+                      } else {
+                        router.push(noti.link);
+                      }
+                    }}
                   >
                     <strong>{noti.title}</strong>
                     <span style={{ fontSize: "14px" }}>{noti.message}</span>

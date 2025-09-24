@@ -15,14 +15,38 @@ import {
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // 👈 import hook này
+import { usePathname, useRouter } from "next/navigation"; // thêm useRouter
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify"; // thêm toast
 import styles from "./stylesComponent/adminSidebar.module.css";
 
 export default function AdminSideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [openProductMenu, setOpenProductMenu] = useState(false);
-  const pathname = usePathname(); // 👈 lấy URL hiện tại
+  const pathname = usePathname();
+  const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  // Hàm logout giống header
+  const handleLogout = async () => {
+    try {
+      const res = await fetch(`${API_URL}/users/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok && data.status) {
+        toast.success("Đăng xuất thành công");
+        router.push("/login"); // quay lại trang login
+        router.refresh();
+      } else {
+        toast.error("Đăng xuất thất bại!");
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+      toast.error("Có lỗi xảy ra khi đăng xuất!");
+    }
+  };
 
   return (
     <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
@@ -33,8 +57,9 @@ export default function AdminSideBar() {
         <div className={styles.navItem}>
           {/* Dashboard */}
           <div
-            className={`${styles.navLink} ${pathname === "/admin" ? styles.active : ""
-              }`}
+            className={`${styles.navLink} ${
+              pathname === "/admin" ? styles.active : ""
+            }`}
           >
             <FontAwesomeIcon icon={faHouse} className={styles.icon} />
             <Link href="/admin" className={styles.linkText}>
@@ -68,15 +93,17 @@ export default function AdminSideBar() {
               >
                 <Link
                   href="/admin/productActive"
-                  className={`${styles.subLink} ${pathname === "/admin/productActive" ? styles.active : ""
-                    }`}
+                  className={`${styles.subLink} ${
+                    pathname === "/admin/productActive" ? styles.active : ""
+                  }`}
                 >
                   Sản phẩm đang bán
                 </Link>
                 <Link
                   href="/admin/productCategory"
-                  className={`${styles.subLink} ${pathname === "/admin/productCategory" ? styles.active : ""
-                    }`}
+                  className={`${styles.subLink} ${
+                    pathname === "/admin/productCategory" ? styles.active : ""
+                  }`}
                 >
                   Danh mục sản phẩm
                 </Link>
@@ -86,8 +113,9 @@ export default function AdminSideBar() {
 
           {/* Quản lý đơn hàng */}
           <div
-            className={`${styles.navLink} ${pathname === "/admin/order" ? styles.active : ""
-              }`}
+            className={`${styles.navLink} ${
+              pathname === "/admin/order" ? styles.active : ""
+            }`}
           >
             <FontAwesomeIcon icon={faCartShopping} className={styles.icon} />
             <Link href="/admin/order" className={styles.linkText}>
@@ -97,8 +125,9 @@ export default function AdminSideBar() {
 
           {/* Quản lý voucher */}
           <div
-            className={`${styles.navLink} ${pathname === "/admin/vouchermanagement" ? styles.active : ""
-              }`}
+            className={`${styles.navLink} ${
+              pathname === "/admin/vouchermanagement" ? styles.active : ""
+            }`}
           >
             <FontAwesomeIcon icon={faTicket} className={styles.icon} />
             <Link href="/admin/vouchermanagement" className={styles.linkText}>
@@ -108,8 +137,9 @@ export default function AdminSideBar() {
 
           {/* Quản lý người dùng */}
           <div
-            className={`${styles.navLink} ${pathname === "/admin/user" ? styles.active : ""
-              }`}
+            className={`${styles.navLink} ${
+              pathname === "/admin/user" ? styles.active : ""
+            }`}
           >
             <FontAwesomeIcon icon={faCircleUser} className={styles.icon} />
             <Link href="/admin/user" className={styles.linkText}>
@@ -119,8 +149,9 @@ export default function AdminSideBar() {
 
           {/* Thống kê */}
           <div
-            className={`${styles.navLink} ${pathname === "/admin/statistics" ? styles.active : ""
-              }`}
+            className={`${styles.navLink} ${
+              pathname === "/admin/statistics" ? styles.active : ""
+            }`}
           >
             <FontAwesomeIcon icon={faChartSimple} className={styles.icon} />
             <Link href="/admin/statistics" className={styles.linkText}>
@@ -130,28 +161,39 @@ export default function AdminSideBar() {
 
           {/* Đánh giá */}
           <div
-            className={`${styles.navLink} ${pathname === "/admin/commentmanagement" ? styles.active : ""
-              }`}
+            className={`${styles.navLink} ${
+              pathname === "/admin/commentmanagement" ? styles.active : ""
+            }`}
           >
             <FontAwesomeIcon icon={faComments} className={styles.icon} />
             <Link href="/admin/commentmanagement" className={styles.linkText}>
               Đánh giá
             </Link>
           </div>
-          <div className={styles.navLink}>
-            <FontAwesomeIcon icon={faRightFromBracket} className={styles.icon} />
+
+          {/* Liên hệ */}
+          <div
+            className={`${styles.navLink} ${
+              pathname === "/admin/contact" ? styles.active : ""
+            }`}
+          >
+            <FontAwesomeIcon
+              icon={faRightFromBracket}
+              className={styles.icon}
+            />
             <Link href="/admin/contact" className={styles.linkText}>
               Liên hệ
             </Link>
           </div>
-          {/* Đăng xuất */}
-          <div className={styles.navLink}>
-            <FontAwesomeIcon icon={faRightFromBracket} className={styles.icon} />
-            <Link href="#" className={styles.linkText}>
-              Đăng xuất
-            </Link>
-          </div>
 
+          {/* Đăng xuất */}
+          <div className={styles.navLink} onClick={handleLogout}>
+            <FontAwesomeIcon
+              icon={faRightFromBracket}
+              className={styles.icon}
+            />
+            <span className={styles.linkText}>Đăng xuất</span>
+          </div>
         </div>
       </div>
     </div>
