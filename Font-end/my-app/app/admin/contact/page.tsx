@@ -5,16 +5,14 @@ import styles from "../styles/contact.module.css";
 import AdminSideBar from "../../component/adminSideBar";
 import AdminNavbar from "../../component/adminNavbar";
 
-// Type cho User
 interface User {
   id: string;
   name: string;
   lastMessage: string;
   time: string;
-  replied: boolean; // ✅ thêm trạng thái đã trả lời
+  replied: boolean;
 }
 
-// Type cho Message
 interface Message {
   id: string | number;
   text: string;
@@ -29,38 +27,28 @@ export default function AdminContactPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     fetchContacts();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(fetchContacts, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchContacts = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${API_URL}/contacts`);
-      const data: {
-        id: string;
-        name: string;
-        lastMessage: string;
-        time: string;
-        replied: boolean;
-      }[] = await response.json();
-
-      if (!response.ok) throw new Error("Failed to fetch contacts");
-
-      const mappedUsers: User[] = data.map((contact) => ({
-        id: contact.id,
-        name: contact.name,
-        lastMessage: contact.lastMessage,
-        time: contact.time,
-        replied: contact.replied, // ✅ lấy trạng thái từ backend
-      }));
-
-      setUsers(mappedUsers);
+      const response = await fetch(`${API_URL}/chats/contacts`);
+      if (!response.ok) throw new Error("Không thể tải danh sách liên hệ");
+      const data: User[] = await response.json();
+      setUsers(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
+      setError(err instanceof Error ? err.message : "Lỗi không xác định");
+      console.error("Error fetching contacts:", err);
     } finally {
       setLoading(false);
     }
@@ -70,74 +58,90 @@ export default function AdminContactPage() {
     setSelectedUser(user);
     setMessages([]);
     setError("");
-    try {
-      const response = await fetch(`${API_URL}/contacts/${user.id}`);
-      const data: Message[] = await response.json();
+    await fetchMessages(user.id);
+  };
 
-      if (!response.ok) throw new Error("Failed to fetch messages");
-      setMessages(data);
+  const fetchMessages = async (userId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/chats/${userId}`);
+      if (!response.ok) throw new Error("Không thể tải tin nhắn");
+      const data: { messages: { sender: string; text: string; timestamp: Date }[] } = await response.json();
+      const mappedMessages: Message[] = data.messages.map((msg, idx) => ({
+        id: idx,
+        text: msg.text,
+        time: new Date(msg.timestamp).toLocaleTimeString(),
+        incoming: msg.sender === "user",
+      }));
+      setMessages(mappedMessages);
+      setError("");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
+      setError(err instanceof Error ? err.message : "Lỗi không xác định");
+      console.error("Error fetching messages:", err);
     }
   };
 
+  useEffect(() => {
+    if (selectedUser) {
+      const interval = setInterval(() => fetchMessages(selectedUser.id), 5000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedUser]);
+
   const handleSend = async () => {
-    if (!input.trim() || !selectedUser) return;
+    if (!input.trim() || !selectedUser) {
+      setError("Vui lòng nhập tin nhắn và chọn người dùng");
+      return;
+    }
     setError("");
     try {
-      const response = await fetch(`${API_URL}/contacts/${selectedUser.id}/reply`, {
+      const response = await fetch(`${API_URL}/chats/${selectedUser.id}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reply: input }),
       });
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || "Failed to send reply");
+      if (!response.ok) throw new Error("Không thể gửi tin nhắn");
 
       const newMsg: Message = {
         id: Date.now(),
         text: input,
-        time: "Just now",
+        time: new Date().toLocaleTimeString(),
         incoming: false,
       };
       setMessages((prev) => [...prev, newMsg]);
       setInput("");
 
-      // ✅ Cập nhật trạng thái user thành "đã trả lời"
       setUsers((prevUsers) =>
         prevUsers.map((u) =>
           u.id === selectedUser.id
-            ? { ...u, lastMessage: input, time: "Just now", replied: true }
+            ? { ...u, lastMessage: input, time: new Date().toLocaleTimeString(), replied: true }
             : u
         )
       );
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
+      setError(err instanceof Error ? err.message : "Lỗi gửi tin nhắn");
+      console.error("Error sending reply:", err);
     }
   };
 
   return (
     <div className="d-flex">
-      {/* Sidebar cố định */}
       <AdminSideBar />
-
-      {/* Nội dung */}
       <div className={`${styles.content} flex-grow-1`}>
         <AdminNavbar />
-
         <Container fluid className="h-100">
           <Row className="h-100">
-            {/* Danh sách user */}
             <Col md={4} lg={3} className="border-end bg-white p-0">
               <div className="p-3 border-bottom">
                 <h5 className="fw-bold">Liên hệ</h5>
-                <Form.Control type="text" placeholder="Search contacts..." className="mt-2" />
+                <Form.Control type="text" placeholder="Tìm kiếm liên hệ..." className="mt-2" />
               </div>
               <div>
                 {loading ? (
-                  <p className="p-3">Loading...</p>
+                  <p className="p-3">Đang tải...</p>
                 ) : error ? (
                   <p className="p-3 text-danger">{error}</p>
+                ) : users.length === 0 ? (
+                  <p className="p-3 text-muted">Không có liên hệ nào</p>
                 ) : (
                   users.map((user) => (
                     <div
@@ -154,7 +158,6 @@ export default function AdminContactPage() {
                         </div>
                         <small className="text-muted text-truncate">{user.lastMessage}</small>
                       </div>
-                      {/* ✅ Hiển thị dot trạng thái: đỏ nếu chưa trả lời, xám nếu đã trả lời */}
                       <div
                         className={user.replied ? styles.repliedDot : styles.unrepliedDot}
                       ></div>
@@ -163,17 +166,14 @@ export default function AdminContactPage() {
                 )}
               </div>
             </Col>
-
-            {/* Chat */}
             <Col md={8} lg={9} className="d-flex flex-column p-0">
               {!selectedUser ? (
                 <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center bg-light">
                   <i className="bi bi-chat-dots text-secondary fs-1 mb-3"></i>
-                  <h5 className="text-muted">Select a user to chat</h5>
+                  <h5 className="text-muted">Chọn một người dùng để chat</h5>
                 </div>
               ) : (
                 <div className="d-flex flex-column h-100">
-                  {/* Header */}
                   <div className="d-flex align-items-center border-bottom p-3 bg-white">
                     <div>
                       <div className="fw-medium">{selectedUser.name}</div>
@@ -182,9 +182,10 @@ export default function AdminContactPage() {
                       </small>
                     </div>
                   </div>
-
-                  {/* Messages */}
                   <div className="flex-grow-1 overflow-auto p-3">
+                    {messages.length === 0 && !error && (
+                      <div className="text-muted text-center">Chưa có tin nhắn</div>
+                    )}
                     {messages.map((msg) => (
                       <div
                         key={msg.id}
@@ -206,18 +207,16 @@ export default function AdminContactPage() {
                     ))}
                     {error && <p className="text-danger text-center">{error}</p>}
                   </div>
-
-                  {/* Input */}
                   <div className="border-top p-3 bg-white d-flex">
                     <Form.Control
                       type="text"
-                      placeholder="Type a message..."
+                      placeholder="Nhập tin nhắn..."
                       className="me-2"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSend()}
                     />
-                    <Button onClick={handleSend}>Send</Button>
+                    <Button onClick={handleSend}>Gửi</Button>
                   </div>
                 </div>
               )}

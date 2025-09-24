@@ -84,6 +84,7 @@ async function createOrderFromCart(req) {
       sizeName: item.sizeName,
       taste: item.taste || [],
       quantity: item.quantity,
+      shippingInfo,               // 👈 Lưu thẳng vào order
       price,
       finalPrice,
     });
@@ -233,21 +234,31 @@ async function getAllOrders(req) {
     }, 0),
   };
 
-  // Sort với ưu tiên: chờ xác nhận (0) lên đầu, hoàn tất (4) và hủy (5) xuống dưới, các khác ở giữa
-  // Trong mỗi nhóm: theo createdAt ascending (cũ nhất đến mới nhất)
   allOrders = allOrders.sort((a, b) => {
-    const getPriority = (status) => {
-      if (status === OrderStatus.PENDING) return 0; // Chờ xác nhận lên đầu
-      if (status === OrderStatus.COMPLETED || status === OrderStatus.CANCELLED) return 2; // Hoàn tất và hủy xuống dưới
-      return 1; // Các khác ở giữa
-    };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // reset về 00:00 hôm nay
 
-    const priA = getPriority(a.status);
-    const priB = getPriority(b.status);
+  const isToday = (date) => {
+    const d = new Date(date);
+    return d >= today; // lớn hơn hoặc bằng 00:00 hôm nay
+  };
 
-    if (priA !== priB) return priA - priB;
-    return new Date(a.createdAt) - new Date(b.createdAt);
-  });
+  const getPriority = (order) => {
+    // Ưu tiên cao nhất: đơn hôm nay
+    if (isToday(order.createdAt)) return -1;
+
+    if (order.status === OrderStatus.PENDING) return 0; 
+    if (order.status === OrderStatus.COMPLETED || order.status === OrderStatus.CANCELLED) return 2;
+    return 1; 
+  };
+
+  const priA = getPriority(a);
+  const priB = getPriority(b);
+
+  if (priA !== priB) return priA - priB;
+  return new Date(a.createdAt) - new Date(b.createdAt);
+});
+
 
   // Pagination
   const paginatedOrders = allOrders.slice((page - 1) * limit, page * limit);
