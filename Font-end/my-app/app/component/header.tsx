@@ -277,6 +277,8 @@ export default function Header() {
             >
               {user ? (
                 <>
+                <p>Chào! {user?.name || "Người dùng"}</p>
+                
                   {/* User Dropdown */}
                   <Dropdown>
                     <Dropdown.Toggle

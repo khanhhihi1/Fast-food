@@ -586,7 +586,6 @@ export default function Cart() {
   return (
     <ProtectedRoute>
       <Container className="py-5">
-        <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
         {error && <Alert variant="danger">{error}</Alert>}
 
         {isLoading ? (
@@ -604,6 +603,8 @@ export default function Cart() {
           )
         ) : (
           <Row className="justify-content-center">
+            <h2 className="text-center mb-4">Giỏ hàng của bạn</h2>
+
             {/* ================== Bảng giỏ hàng ================== */}
             <Col md={8} style={{ position: "relative" }}>
               <div className={styles.cartContainer}>
@@ -635,7 +636,7 @@ export default function Cart() {
                       </div>
                       {item.maxQuantity !== undefined && (
                         <Form.Text className={styles.quantityMax}>
-                         Số lượng: {item.maxQuantity} 
+                          Số lượng: {item.maxQuantity}
                         </Form.Text>
                       )}
                       <div className={styles.quantityWrapper}>

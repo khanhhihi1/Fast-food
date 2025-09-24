@@ -25,6 +25,8 @@ import {
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 import styles from '../styles/introduce.module.css';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLocationDot, faPhone, faUser } from "@fortawesome/free-solid-svg-icons";
 
 // Danh sách quận huyện TP.HCM
 const hcmDistricts: string[] = [
@@ -784,33 +786,54 @@ export default function Checkout() {
 
           {/* Bên phải - Thông tin giao hàng */}
           <Col md={4}>
-            <Card className="shadow-sm p-4 mb-4">
-              <h5 className="mb-3">
-                <FaShippingFast className="me-2" /> Thông tin giao hàng
+            <Card className={`${styles.shippingCard} p-4`}>
+              <h5 className={`${styles.header} mb-3`}>
+                <FaShippingFast className="me-2" />
+                Thông tin giao hàng
               </h5>
               {user?.addresses && user.addresses.length > 0 ? (
                 <>
-                  <ListGroup className="mb-3">
+                  <ListGroup className={`${styles.addressList} mb-3`}>
                     {user.addresses.map((addr, index) => (
                       <ListGroup.Item
                         key={index}
                         action
-                        active={selectedAddressIndex === index}
                         onClick={() => handleSelectAddress(index)}
+                        className={
+                          selectedAddressIndex === index
+                            ? styles.addressItemActive
+                            : styles.addressItem
+                        }
                       >
-                        {addr.name} - {addr.phone}<br />
-                        {addr.address} {addr.isDefault && <Badge bg="primary">Mặc định</Badge>}
+                        <div className={styles.addressInfo}>
+                          <p className="d-flex">
+                            <FontAwesomeIcon icon={faUser} className={styles.infoIcon} />
+                            <strong>Họ tên:</strong> {addr.name}
+                            {addr.isDefault && (
+                              <Badge className={styles.defaultBadge}>Mặc định</Badge>
+                            )}
+                          </p>
+                          <p>
+                            <FontAwesomeIcon icon={faPhone} className={styles.infoIcon} />
+                            <strong>Số điện thoại:</strong> {addr.phone}
+                          </p>
+                          <p>
+                            <FontAwesomeIcon icon={faLocationDot} className={styles.infoIcon} />
+                            <strong>Địa chỉ:</strong> {addr.address}{" "}
+
+                          </p>
+                        </div>
                       </ListGroup.Item>
                     ))}
                   </ListGroup>
+
+                  {/* dùng class addButton thay vì outline-primary */}
                   <Button
-                    variant="outline-primary"
-                    className="mb-3 w-100"
-                    onClick={() => {
+                    className={styles.confirmClick} onClick={() => {
                       setShowNewAddressModal(true);
                       setSelectedAddressIndex(null);
-                      setName(  "");
-                      setPhone(  "");
+                      setName("");
+                      setPhone("");
                       setDetailAddress("");
                       setDistrict("");
                     }}
@@ -819,15 +842,12 @@ export default function Checkout() {
                   </Button>
                 </>
               ) : (
-                <Alert variant="info">Chưa có địa chỉ nào. Hãy thêm mới.</Alert>
-              )}
-
-              {selectedAddressIndex !== null && (
-                <Button onClick={updateShippingInfo} className="mt-3 w-100">
-                  Sử dụng địa chỉ này
-                </Button>
+                <Alert variant="info" className={styles.emptyAlert}>
+                  Chưa có địa chỉ nào. Hãy thêm mới.
+                </Alert>
               )}
             </Card>
+
 
             {/* Tổng đơn hàng */}
             <Card className="shadow-sm p-4">
@@ -868,15 +888,16 @@ export default function Checkout() {
 
       {/* 👈 Modal cho thêm địa chỉ mới */}
       <Modal show={showNewAddressModal} onHide={() => setShowNewAddressModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Thêm địa chỉ mới</Modal.Title>
+        <Modal.Header closeButton className={styles.modalHeader}>
+          <Modal.Title className={styles.modalTitle}>Thêm địa chỉ mới</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className={styles.modalBody}>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Họ tên người nhận</Form.Label>
+              <Form.Label className={styles.formGroup}>Họ tên người nhận</Form.Label>
               <Form.Control
                 type="text"
+                className={styles.formControl}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nhập họ tên"
@@ -885,9 +906,10 @@ export default function Checkout() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Số điện thoại</Form.Label>
+              <Form.Label className={styles.formGroup}>Số điện thoại</Form.Label>
               <Form.Control
                 type="text"
+                className={styles.formControl}
                 value={phone}
                 onChange={handlePhoneChange}
                 placeholder="Nhập số điện thoại (bắt đầu bằng 0)"
@@ -896,9 +918,11 @@ export default function Checkout() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Quận/Huyện (TP.HCM)</Form.Label>
+              <Form.Label className={styles.formGroup}>Quận/Huyện (TP.HCM)</Form.Label>
               <Form.Select
                 value={district}
+                className={styles.formControl}
+
                 onChange={(e) => setDistrict(e.target.value)}
                 required
               >
@@ -912,10 +936,11 @@ export default function Checkout() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Địa chỉ chi tiết</Form.Label>
+              <Form.Label className={styles.formGroup}>Địa chỉ chi tiết</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
+                className={`${styles.formControl} ${styles.textareaControl}`}
                 value={detailAddress}
                 onChange={(e) => setDetailAddress(e.target.value)}
                 placeholder="Nhập địa chỉ chi tiết"
@@ -925,11 +950,11 @@ export default function Checkout() {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowNewAddressModal(false)}>
+          <Button   className={styles.cancelButton} variant="secondary" onClick={() => setShowNewAddressModal(false)}>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleAddNewAddress}>
-            Lưu địa chỉ
+          <Button   className={styles.saveButton} variant="primary" onClick={handleAddNewAddress}>
+            Thêm địa chỉ mới
           </Button>
         </Modal.Footer>
       </Modal>

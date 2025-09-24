@@ -127,7 +127,24 @@ router.put("/change-password", authMiddleware, async (req, res) => {
     res.status(400).json({ status: false, message: error.message });
   }
 });
+router.post("/change-password/send-otp", authMiddleware, async (req, res) => {
+  try {
+    const result = await userController.sendOTPForChangePassword(req.body, req.userId);
+    res.status(200).json({ status: true, result, message: "Đã gửi OTP" });
+  } catch (error) {
+    res.status(400).json({ status: false, message: error.message });
+  }
+});
 
+// 👈 Xác thực OTP và đổi mật khẩu
+router.post("/change-password/verify-otp", authMiddleware, async (req, res) => {
+  try {
+    const result = await userController.verifyOTPAndChangePassword(req.body, req.userId);
+    res.status(200).json({ status: true, result, message: "Thay đổi mật khẩu thành công" });
+  } catch (error) {
+    res.status(400).json({ status: false, message: error.message });
+  }
+});
 // ---------------- ADMIN ----------------
 
 // Lấy danh sách người dùng
