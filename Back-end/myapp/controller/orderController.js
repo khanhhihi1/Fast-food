@@ -1,4 +1,3 @@
-// Updated orderController.js (backend controller with changes for isPaid logic)
 const Cart = require("../model/cartModel.js");
 const Product = require("../model/productModel.js");
 const {
@@ -80,7 +79,6 @@ async function createOrderFromCart(req) {
 
     const price = selectedSize.price || { original: item.price.original };
     const finalPrice = price.discount ?? price.original;
-
     total += finalPrice * item.quantity;
 
     orderItems.push({
@@ -90,6 +88,7 @@ async function createOrderFromCart(req) {
       sizeName: item.sizeName,
       taste: item.taste || [],
       quantity: item.quantity,
+      shippingInfo,               // 👈 Lưu thẳng vào order
       price,
       finalPrice,
     });
@@ -110,17 +109,34 @@ async function createOrderFromCart(req) {
     shippingFee,
     tax,
     paymentMethod,
-    isPaid: paymentMethod === "cod" ? false : true,
+    isPaid: paymentMethod !== "cod",
     status: OrderStatus.PENDING,
   });
 
   await newOrder.save();
 
+  try {
+    // 👇 Trừ quantity và cộng soldToday nếu isDaily
+    for (const item of newOrder.items) {
+      const product = await Product.findById(item.productId);
+      if (!product) continue;
+
+      product.quantity -= item.quantity;
+      if (product.isDaily) {
+        product.soldToday = (product.soldToday || 0) + item.quantity;
+      }
+      await product.save();
+    }
+  } catch (subtractError) {
+    console.error("❌ Lỗi trừ quantity:", subtractError);
+    await Order.findByIdAndDelete(newOrder._id); // rollback
+    throw new Error("Tạo order thất bại do cập nhật tồn kho. Đã rollback.");
+  }
+
   cart.items = [];
   await cart.save();
 
   try {
-    // 👇 Tạo thông báo khi đặt hàng thành công
     await notificationController.createNotification({
       userId,
       title: "Đặt hàng thành công 🎉",
@@ -135,6 +151,7 @@ async function createOrderFromCart(req) {
   return { message: "Đặt hàng thành công", order: newOrder };
 }
 
+
 // Lấy danh sách đơn hàng của người dùng
 async function getUserOrders(req) {
   const userId = req.userId;
@@ -143,7 +160,11 @@ async function getUserOrders(req) {
       path: "items.productId",
       select: "name image",
     })
-    .sort({ createdAt: -1 });
+
+    .sort({
+      createdAt: -1
+
+    });
 
   // Format với prepend URL
   orders = orders.map((order) => {
@@ -167,18 +188,89 @@ async function getUserOrders(req) {
 
 // Lấy tất cả đơn hàng (admin)
 async function getAllOrders(req) {
-  let orders = await Order.find()
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const filter = req.query.filter || 'all';
+
+  let query = {};
+  if (filter !== 'all') {
+    switch (filter) {
+      case 'pending':
+        query = { status: { $in: [OrderStatus.PENDING, OrderStatus.WAITING_PAYMENT] } };
+        break;
+      case 'processing':
+        query = { status: { $in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPING] } };
+        break;
+      case 'completed':
+        query = { status: OrderStatus.COMPLETED };
+        break;
+      case 'cancelled':
+        query = { status: OrderStatus.CANCELLED };
+        break;
+    }
+  }
+
+  let allOrders = await Order.find(query)
     .populate("userId", "name email")
     .populate({
       path: "items.productId",
       select: "name image",
     })
-    .sort({ createdAt: -1 });
+    .sort({
+      createdAt: 1
+    });
+  // Use lean for performance
 
-  // Format với prepend URL
-  orders = orders.map((order) => {
-    const orderDoc = order.toObject();
-    orderDoc.items = orderDoc.items.map((item) => {
+  // Tính toán stats trên tất cả orders filtered
+  const stats = {
+    totalOrders: allOrders.length,
+    actualRevenue: allOrders.reduce((sum, order) => {
+      if (order.paymentMethod === 'cod' && !order.isPaid && order.status !== OrderStatus.CANCELLED) {
+        return sum + order.total;
+      }
+      return sum;
+    }, 0),
+    currentRevenue: allOrders.reduce((sum, order) => {
+      if (order.isPaid) {
+        return sum + order.total;
+      }
+      return sum;
+    }, 0),
+  };
+
+  allOrders = allOrders.sort((a, b) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // reset về 00:00 hôm nay
+
+  const isToday = (date) => {
+    const d = new Date(date);
+    return d >= today; // lớn hơn hoặc bằng 00:00 hôm nay
+  };
+
+  const getPriority = (order) => {
+    // Ưu tiên cao nhất: đơn hôm nay
+    if (isToday(order.createdAt)) return -1;
+
+    if (order.status === OrderStatus.PENDING) return 0; 
+    if (order.status === OrderStatus.COMPLETED || order.status === OrderStatus.CANCELLED) return 2;
+    return 1; 
+  };
+
+  const priA = getPriority(a);
+  const priB = getPriority(b);
+
+  if (priA !== priB) return priA - priB;
+  return new Date(a.createdAt) - new Date(b.createdAt);
+});
+
+
+  // Pagination
+  const paginatedOrders = allOrders.slice((page - 1) * limit, page * limit);
+  const totalPages = Math.ceil(allOrders.length / limit);
+
+  // Format với prepend URL cho paginated orders
+  const formattedOrders = paginatedOrders.map((order) => {
+    order.items = order.items.map((item) => {
       let image = item.image || (item.productId ? item.productId.image : "");
       if (image && !image.startsWith("http")) {
         image = `${req.protocol}://${req.get("host")}${image}`;
@@ -188,10 +280,14 @@ async function getAllOrders(req) {
         image,
       };
     });
-    return orderDoc;
+    return order;
   });
 
-  return orders;
+  return {
+    orders: formattedOrders,
+    totalPages,
+    stats,
+  };
 }
 
 // Function khôi phục quantity khi hủy đơn hàng
@@ -391,8 +487,22 @@ async function createOrderFromTempOrder(req) {
   });
 
   await newOrder.save();
+  try {
+    for (const item of newOrder.items) {
+      const product = await Product.findById(item.productId);
+      if (!product) continue;
 
-  // Cập nhật voucher nếu có
+      product.quantity -= item.quantity;
+      if (product.isDaily) {
+        product.soldToday = (product.soldToday || 0) + item.quantity;
+      }
+      await product.save();
+    }
+  } catch (subtractError) {
+    console.error("❌ Lỗi trừ quantity:", subtractError);
+    await Order.findByIdAndDelete(newOrder._id);
+    throw new Error("Rollback order do lỗi tồn kho.");
+  }
   if (voucherCode) {
     try {
       const voucher = await Voucher.findOne({ code: voucherCode });

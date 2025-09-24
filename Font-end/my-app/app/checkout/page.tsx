@@ -19,8 +19,12 @@ import {
   Form,
   Button,
   Alert,
+  ListGroup,
+  Badge,
+  Modal,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
+import styles from '../styles/introduce.module.css';
 
 // Danh sách quận huyện TP.HCM
 const hcmDistricts: string[] = [
@@ -67,6 +71,14 @@ interface ShippingInfo {
   name: string;
   phone: string;
   address: string;
+  isDefault?: boolean;
+}
+
+interface User {
+  _id: string;
+  name: string;
+  phone: string;
+  addresses: ShippingInfo[]; // 👈 Thay đổi thành mảng addresses
 }
 
 export default function Checkout() {
@@ -84,6 +96,9 @@ export default function Checkout() {
   const [district, setDistrict] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [selectedAddressIndex, setSelectedAddressIndex] = useState<number | null>(null); // 👈 Index địa chỉ được chọn
+  const [showNewAddressModal, setShowNewAddressModal] = useState(false); // 👈 Modal cho thêm địa chỉ mới
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +122,44 @@ export default function Checkout() {
     const value = e.target.value;
     if (/^\d*$/.test(value)) {
       setPhone(value);
+    }
+  };
+
+  // 👈 Hàm parse address từ user để fill form (giả sử format: "detail, district, TP.HCM")
+  const parseAddress = (fullAddress: string) => {
+    if (!fullAddress) return { detail: "", district: "" };
+    const parts = fullAddress.split(",").map((s) => s.trim());
+    return {
+      detail: parts[0] || "",
+      district: parts[1] || ""
+    };
+  };
+
+  // 👈 Fetch user profile để lấy thông tin mặc định
+  const fetchUserProfile = async () => {
+    try {
+      const res = await fetch(`${API_URL}/users/profile`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.status && data.result) {
+        setUser(data.result);
+        // 👈 Preload địa chỉ mặc định nếu có
+        const defaultAddress = data.result.addresses?.find((addr: ShippingInfo) => addr.isDefault);
+        if (defaultAddress) {
+          setName(defaultAddress.name || data.result.name || "");
+          setPhone(defaultAddress.phone || data.result.phone || "");
+          const parsed = parseAddress(defaultAddress.address);
+          setDetailAddress(parsed.detail);
+          setDistrict(parsed.district);
+          setSelectedAddressIndex(data.result.addresses.indexOf(defaultAddress));
+        } else {
+          setName(data.result.name || "");
+          setPhone(data.result.phone || "");
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi fetch user profile:", err);
     }
   };
 
@@ -168,17 +221,7 @@ export default function Checkout() {
           setDetailAddress(addressParts[0] || "");
           setDistrict(addressParts[1] || "");
         }
-      }
-
-      if (voucherData) {
-        setAppliedVoucher(voucherData);
-        setSelectedCode(voucherData.code);
-        setDiscountAmount(
-          items.reduce(
-            (sum: number, item: CartItem) => sum + item.price * item.quantity,
-            0
-          ) - total
-        );
+        return;
       }
     } catch {
       setError("Không thể tải đơn hàng tạm thời. Vui lòng thử lại.");
@@ -211,6 +254,20 @@ export default function Checkout() {
 
   // Cập nhật thông tin giao hàng
   const updateShippingInfo = async () => {
+    if (!name || !phone || !district || !detailAddress) {
+      toast.warning("Vui lòng điền đầy đủ thông tin giao hàng", {
+        toastId: "shippingInfoWarning",
+      });
+      return false;
+    }
+
+    if (!isValidPhoneNumber(phone)) {
+      toast.error("Số điện thoại phải bắt đầu bằng 0 và chỉ chứa 10 chữ số", {
+        toastId: "phoneInvalidError",
+      });
+      return false;
+    }
+
     const fullAddress = `${detailAddress}, ${district}, TP.HCM`;
     const shippingData = { name, phone, address: fullAddress };
 
@@ -226,6 +283,8 @@ export default function Checkout() {
       if (data.status) {
         setShippingInfo(shippingData);
         localStorage.setItem("shippingInfo", JSON.stringify(shippingData));
+        await fetchTempOrder();
+
         return true;
       } else {
         toast.error(data.message || "Cập nhật địa chỉ giao hàng thất bại", {
@@ -238,6 +297,62 @@ export default function Checkout() {
         toastId: "updateShippingError",
       });
       return false;
+    }
+  };
+
+  // 👈 Hàm chọn địa chỉ từ list
+  const handleSelectAddress = (index: number) => {
+    const selected = user?.addresses[index];
+    if (selected) {
+      setSelectedAddressIndex(index);
+      setName(selected.name || "");
+      setPhone(selected.phone || "");
+      const parsed = parseAddress(selected.address);
+      setDetailAddress(parsed.detail);
+      setDistrict(parsed.district);
+    }
+  };
+
+  // 👈 Hàm thêm địa chỉ mới và lưu vào user
+  const handleAddNewAddress = async () => {
+    if (!name || !phone || !district || !detailAddress) {
+      toast.warning("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    if (!isValidPhoneNumber(phone)) {
+      toast.error("Số điện thoại không hợp lệ");
+      return;
+    }
+
+    const newAddress = {
+      name,
+      phone,
+      address: `${detailAddress}, ${district}, TP.HCM`
+    };
+
+    try {
+      const res = await fetch(`${API_URL}/users/update/${user?._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ addAddress: newAddress }),
+      });
+
+      const data = await res.json();
+      if (data.status) {
+        setUser(data.result);
+        toast.success("Thêm địa chỉ mới thành công!");
+        setShowNewAddressModal(false);
+        // Chọn địa chỉ mới
+        const newIndex = data.result.addresses.length - 1;
+        handleSelectAddress(newIndex);
+        await updateShippingInfo();
+      } else {
+        toast.error(data.message || "Thêm địa chỉ thất bại");
+      }
+    } catch (err) {
+      toast.error("Lỗi khi thêm địa chỉ");
     }
   };
 
@@ -380,23 +495,7 @@ export default function Checkout() {
       return;
     }
 
-    // Kiểm tra thông tin giao hàng
-    if (!name || !phone || !district || !detailAddress) {
-      toast.warning("Vui lòng điền đầy đủ thông tin giao hàng", {
-        toastId: "shippingInfoWarning",
-      });
-      return;
-    }
-
-    // Kiểm tra định dạng số điện thoại
-    if (!isValidPhoneNumber(phone)) {
-      toast.error("Số điện thoại phải bắt đầu bằng 0 và chỉ chứa 10 chữ số", {
-        toastId: "phoneInvalidError",
-      });
-      return;
-    }
-
-    // Cập nhật thông tin giao hàng
+    // Kiểm tra và cập nhật thông tin giao hàng trước
     const shippingUpdated = await updateShippingInfo();
     if (!shippingUpdated) return;
 
@@ -434,7 +533,7 @@ export default function Checkout() {
         toast.success("Đặt hàng thành công!", {
           toastId: "orderSuccess",
         });
-       router.push("/cart?success=true");
+        router.push("/cart?success=true");
       }
 
       // Xử lý MoMo
@@ -523,6 +622,7 @@ export default function Checkout() {
 
   // Load dữ liệu ban đầu
   useEffect(() => {
+    fetchUserProfile(); // 👈 Fetch user profile trước
     fetchTempOrder();
     fetchVouchers();
 
@@ -540,6 +640,20 @@ export default function Checkout() {
       }
     }
   }, []);
+
+  // 👈 Sau khi fetch user, nếu không có shippingInfo, set từ user
+  useEffect(() => {
+    if (user && !shippingInfo) { // Chỉ set nếu chưa có shippingInfo
+      const defaultAddress = user.addresses?.find((addr: ShippingInfo) => addr.isDefault);
+      if (defaultAddress) {
+        setName(defaultAddress.name || "");
+        setPhone(defaultAddress.phone || "");
+        const parsed = parseAddress(defaultAddress.address);
+        setDetailAddress(parsed.detail);
+        setDistrict(parsed.district);
+      }
+    }
+  }, [user, shippingInfo]);
 
   // Áp dụng voucher tự động khi có selectedCode
   useEffect(() => {
@@ -633,9 +747,8 @@ export default function Checkout() {
                         {voucher.code} - {voucher.description} -{" "}
                         {voucher.discountType === "fixed"
                           ? `${voucher.discountValue.toLocaleString()} ₫`
-                          : `Giảm tối đa: ${
-                              voucher.maxDiscount?.toLocaleString() || 0
-                            } ₫`}
+                          : `Giảm tối đa: ${voucher.maxDiscount?.toLocaleString() || 0
+                          } ₫`}
                       </option>
                     ))}
                   </Form.Select>
@@ -657,24 +770,7 @@ export default function Checkout() {
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="mb-2"
               />
-              <Form.Check
-                type="radio"
-                label="Momo"
-                name="paymentMethod"
-                value="momo"
-                checked={paymentMethod === "momo"}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="mb-2"
-              />
-              <Form.Check
-                type="radio"
-                label="VNPay"
-                name="paymentMethod"
-                value="vnpay"
-                checked={paymentMethod === "vnpay"}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="mb-2"
-              />
+
               <Form.Check
                 type="radio"
                 label="Stripe (Thẻ tín dụng/ghi nợ)"
@@ -692,57 +788,45 @@ export default function Checkout() {
               <h5 className="mb-3">
                 <FaShippingFast className="me-2" /> Thông tin giao hàng
               </h5>
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Label>Họ tên người nhận</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nhập họ tên"
-                    required
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Số điện thoại</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    placeholder="Nhập số điện thoại (bắt đầu bằng 0)"
-                    required
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Quận/Huyện (TP.HCM)</Form.Label>
-                  <Form.Select
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Chọn Quận/Huyện --</option>
-                    {hcmDistricts.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
+              {user?.addresses && user.addresses.length > 0 ? (
+                <>
+                  <ListGroup className="mb-3">
+                    {user.addresses.map((addr, index) => (
+                      <ListGroup.Item
+                        key={index}
+                        action
+                        active={selectedAddressIndex === index}
+                        onClick={() => handleSelectAddress(index)}
+                      >
+                        {addr.name} - {addr.phone}<br />
+                        {addr.address} {addr.isDefault && <Badge bg="primary">Mặc định</Badge>}
+                      </ListGroup.Item>
                     ))}
-                  </Form.Select>
-                </Form.Group>
+                  </ListGroup>
+                  <Button
+                    variant="outline-primary"
+                    className="mb-3 w-100"
+                    onClick={() => {
+                      setShowNewAddressModal(true);
+                      setSelectedAddressIndex(null);
+                      setName(  "");
+                      setPhone(  "");
+                      setDetailAddress("");
+                      setDistrict("");
+                    }}
+                  >
+                    Thêm địa chỉ mới
+                  </Button>
+                </>
+              ) : (
+                <Alert variant="info">Chưa có địa chỉ nào. Hãy thêm mới.</Alert>
+              )}
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Địa chỉ chi tiết</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    value={detailAddress}
-                    onChange={(e) => setDetailAddress(e.target.value)}
-                    placeholder="Nhập địa chỉ chi tiết"
-                    required
-                  />
-                </Form.Group>
-              </Form>
+              {selectedAddressIndex !== null && (
+                <Button onClick={updateShippingInfo} className="mt-3 w-100">
+                  Sử dụng địa chỉ này
+                </Button>
+              )}
             </Card>
 
             {/* Tổng đơn hàng */}
@@ -773,13 +857,82 @@ export default function Checkout() {
                   ₫
                 </strong>
               </div>
-              <Button className="w-100" size="lg" onClick={handleOrder}>
+              <Button className={styles.confirmClick} onClick={handleOrder}
+              >
                 Xác nhận đặt hàng
               </Button>
             </Card>
           </Col>
         </Row>
       )}
+
+      {/* 👈 Modal cho thêm địa chỉ mới */}
+      <Modal show={showNewAddressModal} onHide={() => setShowNewAddressModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Thêm địa chỉ mới</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Họ tên người nhận</Form.Label>
+              <Form.Control
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nhập họ tên"
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Số điện thoại</Form.Label>
+              <Form.Control
+                type="text"
+                value={phone}
+                onChange={handlePhoneChange}
+                placeholder="Nhập số điện thoại (bắt đầu bằng 0)"
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Quận/Huyện (TP.HCM)</Form.Label>
+              <Form.Select
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                required
+              >
+                <option value="">-- Chọn Quận/Huyện --</option>
+                {hcmDistricts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Địa chỉ chi tiết</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={detailAddress}
+                onChange={(e) => setDetailAddress(e.target.value)}
+                placeholder="Nhập địa chỉ chi tiết"
+                required
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowNewAddressModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={handleAddNewAddress}>
+            Lưu địa chỉ
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }

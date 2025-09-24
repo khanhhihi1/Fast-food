@@ -1,5 +1,3 @@
-// Front-end code (updated DashboardPage component)
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -17,21 +15,18 @@ import {
 } from "react-bootstrap";
 import {
     Chart as ChartJS,
-    LineElement,
+    BarElement,
     CategoryScale,
     LinearScale,
-    PointElement,
     Tooltip,
-    Filler,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
 import styles from "../styles/statistics.module.css";
+import { Bar } from "react-chartjs-2";
 import AdminSideBar from "@/app/component/adminSideBar";
+import useDarkMode from "../hooks/darkmode";
 import AdminNavbar from "@/app/component/adminNavbar";
-
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Filler);
-
-interface OrderItem {
+// Register the necessary components for a Bar chart
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);interface OrderItem {
     productId: string;
     name: string;
     image?: string;
@@ -93,6 +88,7 @@ interface TopVoucher {
 interface RevenueChart {
     labels: string[];
     data: number[];
+    previousData?: number[];
 }
 
 interface Stats {
@@ -139,7 +135,7 @@ export default function DashboardPage() {
     const [endDate, setEndDate] = useState("");
     const [topPage, setTopPage] = useState(1);
     const [slowPage, setSlowPage] = useState(1);
-    const limit = 10; // Số lượng sản phẩm mỗi trang
+    const limit = 10; // Number of products per page
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     useEffect(() => {
@@ -161,15 +157,19 @@ export default function DashboardPage() {
         labels: stats.revenueChart.labels,
         datasets: [
             {
-                label: "Doanh thu",
+                label: "Doanh thu năm nay",
                 data: stats.revenueChart.data,
-                fill: true,
-                borderColor: "rgba(59,130,246,1)",
-                backgroundColor: "rgba(59,130,246,0.05)",
-                tension: 0.4,
-                pointBackgroundColor: "rgba(59,130,246,1)",
-                pointRadius: 4,
+                backgroundColor: "rgba(59, 130, 246, 0.5)",
+                borderColor: "rgba(59, 130, 246, 1)",
+                borderWidth: 1,
             },
+            ...(stats.revenueChart.previousData ? [{
+                label: "Doanh thu năm trước",
+                data: stats.revenueChart.previousData,
+                backgroundColor: "rgba(255, 99, 132, 0.5)",
+                borderColor: "rgba(255, 99, 132, 1)",
+                borderWidth: 1,
+            }] : []),
         ],
     };
 
@@ -177,7 +177,7 @@ export default function DashboardPage() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: false },
+            legend: { display: true, position: 'top' as const },
             tooltip: {
                 backgroundColor: "#1F2937",
                 titleFont: { size: 14, weight: "bold" as const },
@@ -201,9 +201,11 @@ export default function DashboardPage() {
         },
     };
 
-    // Hàm render phân trang
+    // Pagination render function
     const renderPagination = (currentPage: number, total: number, setPage: (page: number) => void) => {
         const totalPages = Math.ceil(total / limit);
+        if (totalPages <= 1) return null;
+
         let items = [];
         for (let number = 1; number <= totalPages; number++) {
             items.push(
@@ -235,14 +237,15 @@ export default function DashboardPage() {
         <div className="d-flex">
             <AdminSideBar />
 
-            <Container fluid className={`${styles.content} container-content`}>
+            <Container fluid   className={` ${styles.content} ${styles.containerContent}content w-100 container-content
+          }`}>
                 <AdminNavbar />
                 <h2 className={styles["page-title"]}>Thống kê</h2>
 
-                {/* Bộ lọc */}
+                {/* Filters */}
                 <Card className="mb-4 shadow-sm">
                     <Card.Body className="d-flex flex-wrap justify-content-between align-items-center">
-                        <h5 className="fw-bold">Bộ lọc thống kê</h5>
+                        <h5 className="fw-bold mb-2 mb-md-0">Bộ lọc thống kê</h5>
                         <Form.Select
                             className="w-auto"
                             value={period}
@@ -252,6 +255,7 @@ export default function DashboardPage() {
                             <option value="week">Tuần này</option>
                             <option value="month">Tháng này</option>
                             <option value="year">Năm nay</option>
+                            <option value="compare_years">So sánh năm nay và năm trước</option>
                             <option value="custom">Tùy chọn</option>
                         </Form.Select>
                         {period === "custom" && (
@@ -271,13 +275,12 @@ export default function DashboardPage() {
                     </Card.Body>
                 </Card>
 
-                {/* Thẻ tổng quan */} {/* Giữ nguyên phần này */}
-
+                {/* Overview Cards */}
                 <Row className="mb-4 g-4">
                     <Col md={6} lg={3}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
-                                <p className="text-muted">Tổng doanh thu</p>
+                                <p className="text-muted">Doanh thu</p>
                                 <h3 className="fw-bold">
                                     ₫{(stats.totalRevenue ?? 0).toLocaleString()}
                                 </h3>
@@ -294,7 +297,7 @@ export default function DashboardPage() {
                         </Card>
                     </Col>
                     <Col md={6} lg={3}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
                                 <p className="text-muted">Người dùng mới</p>
                                 <h3 className="fw-bold">
@@ -313,7 +316,7 @@ export default function DashboardPage() {
                         </Card>
                     </Col>
                     <Col md={6} lg={3}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
                                 <p className="text-muted">Đơn bị hủy</p>
                                 <h3 className="fw-bold">
@@ -332,7 +335,7 @@ export default function DashboardPage() {
                         </Card>
                     </Col>
                     <Col md={6} lg={3}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
                                 <p className="text-muted">Voucher đã dùng</p>
                                 <h3 className="fw-bold">
@@ -352,9 +355,8 @@ export default function DashboardPage() {
                     </Col>
                 </Row>
 
-                {/* Biểu đồ doanh thu */} {/* Giữ nguyên phần này */}
-
-                <Card className={`mb-4 shadow-sm ${styles.cardHover}`}>
+                {/* Revenue Chart */}
+                <Card className="mb-4 shadow-sm">
                     <Card.Body style={{ height: "300px" }}>
                         <div className="d-flex justify-content-between mb-3">
                             <h5 className="fw-bold">Tổng quan doanh thu</h5>
@@ -362,17 +364,17 @@ export default function DashboardPage() {
                                 Xuất dữ liệu
                             </Button>
                         </div>
-                        <Line data={revenueData} options={revenueOptions} />
+                        <Bar data={revenueData} options={revenueOptions} />
                     </Card.Body>
                 </Card>
 
-                {/* Sản phẩm bán chạy & chậm - cập nhật với orderCount và phân trang */}
+                {/* Top & Slow Selling Products */}
                 <Row className="mb-4 g-4 mt-3">
                     <Col lg={6}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
                                 <h5 className="fw-bold mb-3">Sản phẩm bán chạy</h5>
-                                <Table hover>
+                                <Table hover responsive>
                                     <thead>
                                         <tr>
                                             <th>Hình ảnh</th>
@@ -400,10 +402,10 @@ export default function DashboardPage() {
                         </Card>
                     </Col>
                     <Col lg={6}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
                                 <h5 className="fw-bold mb-3">Sản phẩm bán chậm</h5>
-                                <Table hover>
+                                <Table hover responsive>
                                     <thead>
                                         <tr>
                                             <th>Hình ảnh</th>
@@ -432,14 +434,13 @@ export default function DashboardPage() {
                     </Col>
                 </Row>
 
-                {/* Khách hàng & Voucher */} {/* Giữ nguyên phần này */}
-
+                {/* Top Customers & Vouchers */}
                 <Row className="mb-4 g-4">
                     <Col lg={6}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
                                 <h5 className="fw-bold mb-3">Khách hàng hàng đầu</h5>
-                                <Table hover>
+                                <Table hover responsive>
                                     <tbody>
                                         {stats.topCustomers.map((customer, index) => (
                                             <tr key={index}>
@@ -463,10 +464,10 @@ export default function DashboardPage() {
                         </Card>
                     </Col>
                     <Col lg={6}>
-                        <Card className={`${styles.cardHover} shadow-sm`}>
+                        <Card className="shadow-sm">
                             <Card.Body>
                                 <h5 className="fw-bold mb-3">Voucher nổi bật</h5>
-                                <Table hover>
+                                <Table hover responsive>
                                     <tbody>
                                         {stats.topVouchers.map((voucher, index) => (
                                             <tr key={index}>
@@ -487,3 +488,4 @@ export default function DashboardPage() {
         </div>
     );
 }
+

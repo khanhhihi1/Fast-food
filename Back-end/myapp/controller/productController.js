@@ -2,21 +2,46 @@ const mongoose = require("mongoose");
 const categoriesModel = require("../model/categoriesModel.js");
 const productsModel = require("../model/productModel.js");
 const notificationController = require("../controller/notificationController");
-// const OpenAI = require('openai');
-// require('dotenv').config();
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY,
-// });
+const OpenAI = require('openai');
+const moment = require('moment');
+const cron = require("node-cron"); // ✅ thêm dòng này
+
+require('dotenv').config();
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 // Lấy tất cả sản phẩm
 async function getAllPro() {
   try {
-    return await productsModel.find().populate("categoryId");
+    const products = await productsModel.find().populate("categoryId");
+    return products.map(p => {
+      const plain = p.toObject();
+
+      // Nếu sản phẩm là daily thì check dữ liệu hôm qua
+      if (p.isDaily && p.salesHistory?.length > 0) {
+        const yesterday = moment().subtract(1, "day").startOf("day");
+        const lastRecord = p.salesHistory[p.salesHistory.length - 1];
+
+        if (moment(lastRecord.date).isSame(yesterday, "day")) {
+          plain.soldYesterday = lastRecord.sold;
+          plain.salesStatus = lastRecord.sold > 10 ? "best" : "slow";
+        } else {
+          plain.soldYesterday = 0;
+          plain.salesStatus = "normal"; // chưa có dữ liệu hôm qua
+        }
+      } else {
+        // Không phải daily thì không có số liệu hôm qua
+        plain.soldYesterday = undefined;
+        plain.salesStatus = "normal";
+      }
+
+      return plain;
+    });
   } catch (error) {
     console.error(error);
     throw new Error("Lỗi lấy dữ liệu sản phẩm");
   }
 }
-
 async function getProductsByCategory(categoryId) {
   try {
     if (!mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -38,16 +63,32 @@ async function getProductsByCategory(categoryId) {
 // Thêm mới sản phẩm
 async function addPro(data, imagePath) {
   try {
-    const requiredFields = ["name", "sizes", "categoryId", "quantity", "taste"];
+    const requiredFields = ["name", "sizes", "categoryId", "taste"];
+    const isDaily = data.isDaily === "true";
+    if (isDaily) {
+      requiredFields.push("dailyInitialQuantity");
+    } else {
+      requiredFields.push("quantity");
+    }
     for (const field of requiredFields) {
       if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
     }
 
-    const quantity = Number(data.quantity);
-    if (isNaN(quantity) || quantity < 0) {
-      throw new Error("Số lượng không được âm");
+    let quantity;
+    let dailyInitialQuantity = 0;
+    if (isDaily) {
+      dailyInitialQuantity = Number(data.dailyInitialQuantity) || 20;
+      if (isNaN(dailyInitialQuantity) || dailyInitialQuantity <= 0) {
+        throw new Error("Số lượng ban đầu cho sản phẩm daily phải lớn hơn 0");
+      }
+      quantity = dailyInitialQuantity;
+    } else {
+      quantity = Number(data.quantity);
+      if (isNaN(quantity) || quantity < 0) {
+        throw new Error("Số lượng không được âm");
+      }
     }
 
     const category = await categoriesModel.findById(data.categoryId);
@@ -85,6 +126,9 @@ async function addPro(data, imagePath) {
       saleOff: data.saleOff || false,
       time: data.time || "30-45min",
       sizes,
+      isDaily,
+      dailyInitialQuantity,
+      lastResetDate: moment().startOf('day').toDate(),
     });
 
     console.log("👉 Product chuẩn bị lưu:", newProduct);
@@ -190,17 +234,14 @@ async function updateProduct(data, id, imagePath) {
       throw new Error("Sản phẩm không tồn tại");
     }
 
-    const requiredFields = ["name", "sizes", "categoryId", "quantity", "taste"];
+    const requiredFields = ["name", "sizes", "categoryId", "taste"];
     for (const field of requiredFields) {
       if (!data[field]) {
         throw new Error(`Thiếu trường bắt buộc: ${field}`);
       }
     }
 
-    const quantity = Number(data.quantity);
-    if (isNaN(quantity) || quantity < 0) {
-      throw new Error("Số lượng không được âm");
-    }
+    const isDaily = data.isDaily === "true";
 
     const category = await categoriesModel.findById(data.categoryId);
     if (!category) {
@@ -227,14 +268,27 @@ async function updateProduct(data, id, imagePath) {
     const updateData = {
       name: data.name,
       categoryId: category._id,
-      quantity,
       taste: data.taste,
       description: data.description || product.description,
       status: data.status !== undefined ? data.status : product.status,
       saleOff: data.saleOff !== undefined ? data.saleOff : product.saleOff,
       time: data.time || product.time,
       sizes,
+      isDaily,
     };
+
+    if (isDaily) {
+      const dailyInit = Number(data.dailyInitialQuantity);
+      if (!isNaN(dailyInit) && dailyInit > 0) {
+        updateData.dailyInitialQuantity = dailyInit;
+      }
+    } else {
+      updateData.dailyInitialQuantity = 0;
+      const qty = Number(data.quantity);
+      if (!isNaN(qty) && qty >= 0) {
+        updateData.quantity = qty;
+      }
+    }
 
     if (imagePath) {
       updateData.image = imagePath; // Cập nhật path ảnh mới nếu có upload
@@ -299,7 +353,7 @@ const chatWithAI = async (message) => {
   const query = completion.choices[0].message.content.trim();
 
   // Bước 2: Tìm sản phẩm trong MongoDB
-  const products = await Product.find(
+  const products = await productsModel.find(
     { $text: { $search: query } },
     { score: { $meta: "textScore" } }
   )
@@ -461,25 +515,42 @@ async function restockProduct(id, quantity) {
       throw new Error("Sản phẩm không tồn tại");
     }
 
-    // Kiểm tra nếu cần reset thủ công (nếu ngày mới nhưng cron chưa chạy)
-    const today = moment().startOf('day').toDate();
+    const today = moment().startOf("day").toDate();
+
+    // Reset nếu là daily và chưa reset hôm nay
     if (product.isDaily && (!product.lastResetDate || moment(product.lastResetDate).isBefore(today))) {
-      await resetProduct(product); // Reset trước khi restock
+      await resetProduct(product);
     }
 
-    if (product.isDaily) {
-      // Daily products: Không cho nhập nếu còn tồn kho
-      if (product.quantity > 0) {
-        throw new Error(`Sản phẩm ${product.name} đang tồn kho (${product.quantity}). Không thể nhập thêm cho sản phẩm theo ngày.`);
+    // Kiểm tra sản phẩm bán chậm dựa vào salesHistory hôm qua
+    let isSlowSelling = false;
+    if (product.isDaily && product.salesHistory?.length > 0) {
+      const yesterday = moment().subtract(1, "day").startOf("day");
+      const lastRecord = product.salesHistory[product.salesHistory.length - 1];
+      if (moment(lastRecord.date).isSame(yesterday, "day") && lastRecord.sold <= 10) {
+        isSlowSelling = true;
       }
-      // Set về giá trị mới (hoặc initial nếu không chỉ định)
-      product.quantity = quantity || product.dailyInitialQuantity;
+    }
+
+    if (isSlowSelling) {
+      const maxRestock = 10;
+
+      if (product.quantity >= maxRestock) {
+        throw new Error(`${product.name} bán chậm, tồn kho (${product.quantity}). Không thể nhập thêm.`);
+      }
+
+      const allowedQuantity = Math.min(quantity, maxRestock - product.quantity);
+      product.quantity += allowedQuantity;
     } else {
-      // Persistent products: Tích lũy tồn kho
+      // Các sản phẩm khác restock bình thường
       product.quantity += quantity;
     }
 
-    product.lastResetDate = today; // Cập nhật nếu là daily
+    // Cập nhật lastResetDate nếu daily
+    if (product.isDaily) {
+      product.lastResetDate = today;
+    }
+
     await product.save();
 
     await notificationController.createNotification({
@@ -498,36 +569,142 @@ async function restockProduct(id, quantity) {
 async function resetProduct(product) {
   if (!product.isDaily) return;
 
-  const today = moment().startOf('day').toDate();
-  if (product.quantity > 0) {
-    // Chuyển dư thừa vào history cho stats
-    product.leftoverHistory.push({
-      date: moment().subtract(1, 'day').toDate(), // Ngày trước
-      leftoverQuantity: product.quantity
-    });
-    await notificationController.createNotification({
-      message: `Sản phẩm ${product.name} còn dư ${product.quantity}, chuyển vào bán chậm.`,
-      type: "system",
-    });
+  const today = moment().startOf("day").toDate();
+  const yesterday = moment().subtract(1, "day").startOf("day").toDate();
+
+  if (!product.lastResetDate || moment(product.lastResetDate).isBefore(today)) {
+    try {
+      const leftover = product.quantity;  // Current quantity trước reset
+      const sold = Math.max(0, product.dailyInitialQuantity - leftover);
+
+      // 👇 Luôn push salesHistory với sold (kể cả 0)
+      product.salesHistory.push({
+        date: yesterday,
+        sold,
+      });
+
+      // 👇 Push leftover nếu >0
+      if (leftover > 0) {
+        product.leftoverHistory.push({
+          date: yesterday,
+          leftoverQuantity: leftover
+        });
+        await notificationController.createNotification({
+          message: `Sản phẩm ${product.name} còn dư ${leftover}, chuyển vào bán chậm.`,
+          type: "system",
+        });
+      }
+
+      // Notification dựa trên sold (giữ nguyên)
+      if (sold < 10) {
+        await notificationController.createNotification({
+          message: `Sản phẩm ${product.name} bán chậm (${sold} sp) hôm qua.`,
+          type: "system",
+        });
+      } else if (sold > 10) {
+        await notificationController.createNotification({
+          message: `Sản phẩm ${product.name} bán chạy (${sold} sp) hôm qua.`,
+          type: "system",
+        });
+      }
+
+      // 👇 FIX: Chỉ reset quantity nếu sold > 10 (auto reset cho best seller)
+      if (sold > 10) {
+        product.quantity = product.dailyInitialQuantity;
+      } // Else: Giữ quantity cho slow seller, cho phép manual restock
+
+      product.lastResetDate = today;
+      await product.save();
+    } catch (err) {
+      console.error(`Lỗi reset sản phẩm ${product.name}:`, err);
+      throw err;
+    }
   }
-  // Reset quantity
-  product.quantity = product.dailyInitialQuantity;
-  product.lastResetDate = today;
-  await product.save();
 }
 
-// Hàm mới: Reset tất cả daily products (cho cron job)
+// Hàm reset toàn bộ daily products
 async function resetAllDailyProducts() {
   try {
-    const dailyProducts = await productsModel.find({ isDaily: true });
+    const today = moment().startOf("day").toDate();
+    const dailyProducts = await productsModel.find({
+      isDaily: true,
+      $or: [
+        { lastResetDate: { $lt: today } },
+        { lastResetDate: null }
+      ]
+    });
+
+    let resetCount = 0;
     for (const product of dailyProducts) {
       await resetProduct(product);
+      resetCount++;
     }
-    console.log("Reset daily products thành công.");
+
+    console.log(`✅ Auto reset daily products thành công cho ${resetCount} sản phẩm.`);
+    return { resetCount };
   } catch (error) {
-    console.error("Lỗi reset daily products:", error);
+    console.error("❌ Lỗi reset daily products:", error);
+    throw error;
   }
 }
+
+// Lấy list sản phẩm bán chậm cần manual restock
+async function getSlowDailyProducts() {
+  try {
+    const yesterday = moment().subtract(1, "day").startOf("day");
+    // 👇 FIX: Không filter lastResetDate != today nữa, để lấy tất cả daily products đã reset hôm nay
+    // Và dựa vào history để check sold <=10 hôm qua
+    const products = await productsModel.find({ isDaily: true }).populate("categoryId");
+
+    // 👇 FIX: Map như getAllPro để thêm soldYesterday và salesStatus
+    return products
+      .map(p => {
+        const plain = p.toObject();
+        let soldYesterday = 0;
+        let salesStatus = "normal";
+        if (p.salesHistory?.length > 0) {
+          const lastRecord = p.salesHistory[p.salesHistory.length - 1];
+          if (moment(lastRecord.date).isSame(yesterday, "day")) {
+            soldYesterday = lastRecord.sold;
+            salesStatus = lastRecord.sold > 10 ? "best" : "slow";
+          }
+        } else {
+          // 👇 Nếu không có history, coi sold=0 → slow
+          salesStatus = "slow";
+        }
+        if (salesStatus === "slow") {
+          plain.soldYesterday = soldYesterday;
+          plain.salesStatus = "slow";
+          return plain; // Chỉ return nếu slow
+        }
+        // Nếu không có history hoặc không slow, return null để filter
+        return null;
+      })
+      .filter(Boolean); // Loại bỏ null
+  } catch (error) {
+    console.error("Lỗi lấy slow daily products:", error);
+    throw error;
+  }
+}
+
+// CRON JOB chạy tự động mỗi ngày lúc 00:00
+cron.schedule(
+  "0 0 * * *", // chạy lúc 15:00 hàng ngày
+  async () => {
+    const now = moment().format("YYYY-MM-DD HH:mm:ss");
+    console.log(`🚀 Cron job reset daily products bắt đầu lúc: ${now}`);
+    try {
+      const result = await resetAllDailyProducts();
+      console.log(`🎉 Hoàn tất reset daily products (${result.resetCount} sản phẩm)`);
+    } catch (error) {
+      console.error("❌ Lỗi khi reset daily products qua cron:", error);
+    }
+  },
+  {
+    timezone: "Asia/Ho_Chi_Minh", // chạy theo giờ Việt Nam
+  }
+);
+
 module.exports = {
   getAllPro,
   getDatailPro,
@@ -541,8 +718,9 @@ module.exports = {
   getDiscountProduct,
   searchProducts,
   getProductsByCategory,
-  // chatWithAI,
+  chatWithAI,
   buyMultiple,
   restockProduct,
-  resetAllDailyProducts
+  resetAllDailyProducts,
+  getSlowDailyProducts
 };
