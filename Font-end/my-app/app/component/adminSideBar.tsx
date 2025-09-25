@@ -13,6 +13,7 @@ import {
   faChevronUp,
   faChevronDown,
   faRightFromBracket,
+  faHeadset,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation"; // thêm useRouter
@@ -177,12 +178,9 @@ export default function AdminSideBar() {
               pathname === "/admin/contact" ? styles.active : ""
             }`}
           >
-            <FontAwesomeIcon
-              icon={faRightFromBracket}
-              className={styles.icon}
-            />
+            <FontAwesomeIcon icon={faHeadset} className={styles.icon} />
             <Link href="/admin/contact" className={styles.linkText}>
-              Liên hệ
+              Hỗ trợ người dùng
             </Link>
           </div>
 
