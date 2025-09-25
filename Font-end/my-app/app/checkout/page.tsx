@@ -24,9 +24,14 @@ import {
   Modal,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
-import styles from '../styles/introduce.module.css';
+import styles from "../styles/introduce.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLocationDot, faPhone, faUser } from "@fortawesome/free-solid-svg-icons";
+import {
+  faLocationDot,
+  faPhone,
+  faUser,
+  faTrashAlt,
+} from "@fortawesome/free-solid-svg-icons";
 
 // Danh sách quận huyện TP.HCM
 const hcmDistricts: string[] = [
@@ -99,7 +104,9 @@ export default function Checkout() {
   const [detailAddress, setDetailAddress] = useState("");
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [selectedAddressIndex, setSelectedAddressIndex] = useState<number | null>(null); // 👈 Index địa chỉ được chọn
+  const [selectedAddressIndex, setSelectedAddressIndex] = useState<
+    number | null
+  >(null); // 👈 Index địa chỉ được chọn
   const [showNewAddressModal, setShowNewAddressModal] = useState(false); // 👈 Modal cho thêm địa chỉ mới
 
   const [isLoading, setIsLoading] = useState(true);
@@ -133,7 +140,7 @@ export default function Checkout() {
     const parts = fullAddress.split(",").map((s) => s.trim());
     return {
       detail: parts[0] || "",
-      district: parts[1] || ""
+      district: parts[1] || "",
     };
   };
 
@@ -147,14 +154,18 @@ export default function Checkout() {
       if (data.status && data.result) {
         setUser(data.result);
         // 👈 Preload địa chỉ mặc định nếu có
-        const defaultAddress = data.result.addresses?.find((addr: ShippingInfo) => addr.isDefault);
+        const defaultAddress = data.result.addresses?.find(
+          (addr: ShippingInfo) => addr.isDefault
+        );
         if (defaultAddress) {
           setName(defaultAddress.name || data.result.name || "");
           setPhone(defaultAddress.phone || data.result.phone || "");
           const parsed = parseAddress(defaultAddress.address);
           setDetailAddress(parsed.detail);
           setDistrict(parsed.district);
-          setSelectedAddressIndex(data.result.addresses.indexOf(defaultAddress));
+          setSelectedAddressIndex(
+            data.result.addresses.indexOf(defaultAddress)
+          );
         } else {
           setName(data.result.name || "");
           setPhone(data.result.phone || "");
@@ -330,7 +341,7 @@ export default function Checkout() {
     const newAddress = {
       name,
       phone,
-      address: `${detailAddress}, ${district}, TP.HCM`
+      address: `${detailAddress}, ${district}, TP.HCM`,
     };
 
     try {
@@ -645,8 +656,11 @@ export default function Checkout() {
 
   // 👈 Sau khi fetch user, nếu không có shippingInfo, set từ user
   useEffect(() => {
-    if (user && !shippingInfo) { // Chỉ set nếu chưa có shippingInfo
-      const defaultAddress = user.addresses?.find((addr: ShippingInfo) => addr.isDefault);
+    if (user && !shippingInfo) {
+      // Chỉ set nếu chưa có shippingInfo
+      const defaultAddress = user.addresses?.find(
+        (addr: ShippingInfo) => addr.isDefault
+      );
       if (defaultAddress) {
         setName(defaultAddress.name || "");
         setPhone(defaultAddress.phone || "");
@@ -730,11 +744,22 @@ export default function Checkout() {
               <h5 className="mb-3">Mã giảm giá</h5>
               {appliedVoucher ? (
                 <Alert variant="success">
-                  <span>
-                    Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>
-                    <br />
-                    Giảm: {discountAmount.toLocaleString()} ₫
-                  </span>
+                  <div className="d-flex justify-content-between align-items-start">
+                    <span>
+                      Voucher đã áp dụng: <strong>{appliedVoucher.code}</strong>
+                      <br />
+                      Giảm: {discountAmount.toLocaleString()} ₫
+                    </span>
+                    <Button
+                      variant="link"
+                      className="p-0"
+                      onClick={handleCancelVoucher}
+                      style={{ color: "red", fontSize: "1.2rem" }}
+                      title="Hủy áp dụng voucher"
+                    >
+                      <FontAwesomeIcon icon={faTrashAlt} />
+                    </Button>
+                  </div>
                 </Alert>
               ) : (
                 <Form.Group>
@@ -749,8 +774,9 @@ export default function Checkout() {
                         {voucher.code} - {voucher.description} -{" "}
                         {voucher.discountType === "fixed"
                           ? `${voucher.discountValue.toLocaleString()} ₫`
-                          : `Giảm tối đa: ${voucher.maxDiscount?.toLocaleString() || 0
-                          } ₫`}
+                          : `Giảm tối đa: ${
+                              voucher.maxDiscount?.toLocaleString() || 0
+                            } ₫`}
                       </option>
                     ))}
                   </Form.Select>
@@ -807,20 +833,30 @@ export default function Checkout() {
                       >
                         <div className={styles.addressInfo}>
                           <p className="d-flex">
-                            <FontAwesomeIcon icon={faUser} className={styles.infoIcon} />
+                            <FontAwesomeIcon
+                              icon={faUser}
+                              className={styles.infoIcon}
+                            />
                             <strong>Họ tên:</strong> {addr.name}
                             {addr.isDefault && (
-                              <Badge className={styles.defaultBadge}>Mặc định</Badge>
+                              <Badge className={styles.defaultBadge}>
+                                Mặc định
+                              </Badge>
                             )}
                           </p>
                           <p>
-                            <FontAwesomeIcon icon={faPhone} className={styles.infoIcon} />
+                            <FontAwesomeIcon
+                              icon={faPhone}
+                              className={styles.infoIcon}
+                            />
                             <strong>Số điện thoại:</strong> {addr.phone}
                           </p>
                           <p>
-                            <FontAwesomeIcon icon={faLocationDot} className={styles.infoIcon} />
+                            <FontAwesomeIcon
+                              icon={faLocationDot}
+                              className={styles.infoIcon}
+                            />
                             <strong>Địa chỉ:</strong> {addr.address}{" "}
-
                           </p>
                         </div>
                       </ListGroup.Item>
@@ -829,7 +865,8 @@ export default function Checkout() {
 
                   {/* dùng class addButton thay vì outline-primary */}
                   <Button
-                    className={styles.confirmClick} onClick={() => {
+                    className={styles.confirmClick}
+                    onClick={() => {
                       setShowNewAddressModal(true);
                       setSelectedAddressIndex(null);
                       setName("");
@@ -847,7 +884,6 @@ export default function Checkout() {
                 </Alert>
               )}
             </Card>
-
 
             {/* Tổng đơn hàng */}
             <Card className="shadow-sm p-4">
@@ -877,8 +913,7 @@ export default function Checkout() {
                   ₫
                 </strong>
               </div>
-              <Button className={styles.confirmClick} onClick={handleOrder}
-              >
+              <Button className={styles.confirmClick} onClick={handleOrder}>
                 Xác nhận đặt hàng
               </Button>
             </Card>
@@ -887,14 +922,22 @@ export default function Checkout() {
       )}
 
       {/* 👈 Modal cho thêm địa chỉ mới */}
-      <Modal show={showNewAddressModal} onHide={() => setShowNewAddressModal(false)} centered>
+      <Modal
+        show={showNewAddressModal}
+        onHide={() => setShowNewAddressModal(false)}
+        centered
+      >
         <Modal.Header closeButton className={styles.modalHeader}>
-          <Modal.Title className={styles.modalTitle}>Thêm địa chỉ mới</Modal.Title>
+          <Modal.Title className={styles.modalTitle}>
+            Thêm địa chỉ mới
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body className={styles.modalBody}>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label className={styles.formGroup}>Họ tên người nhận</Form.Label>
+              <Form.Label className={styles.formGroup}>
+                Họ tên người nhận
+              </Form.Label>
               <Form.Control
                 type="text"
                 className={styles.formControl}
@@ -906,7 +949,9 @@ export default function Checkout() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label className={styles.formGroup}>Số điện thoại</Form.Label>
+              <Form.Label className={styles.formGroup}>
+                Số điện thoại
+              </Form.Label>
               <Form.Control
                 type="text"
                 className={styles.formControl}
@@ -918,11 +963,12 @@ export default function Checkout() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label className={styles.formGroup}>Quận/Huyện (TP.HCM)</Form.Label>
+              <Form.Label className={styles.formGroup}>
+                Quận/Huyện (TP.HCM)
+              </Form.Label>
               <Form.Select
                 value={district}
                 className={styles.formControl}
-
                 onChange={(e) => setDistrict(e.target.value)}
                 required
               >
@@ -936,7 +982,9 @@ export default function Checkout() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label className={styles.formGroup}>Địa chỉ chi tiết</Form.Label>
+              <Form.Label className={styles.formGroup}>
+                Địa chỉ chi tiết
+              </Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -950,10 +998,18 @@ export default function Checkout() {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button   className={styles.cancelButton} variant="secondary" onClick={() => setShowNewAddressModal(false)}>
+          <Button
+            className={styles.cancelButton}
+            variant="secondary"
+            onClick={() => setShowNewAddressModal(false)}
+          >
             Hủy
           </Button>
-          <Button   className={styles.saveButton} variant="primary" onClick={handleAddNewAddress}>
+          <Button
+            className={styles.saveButton}
+            variant="primary"
+            onClick={handleAddNewAddress}
+          >
             Thêm địa chỉ mới
           </Button>
         </Modal.Footer>
