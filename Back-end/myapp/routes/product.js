@@ -214,6 +214,19 @@ router.get("/discount", async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
+router.post("/restock-multiple", async (req, res) => { // API mới cho restock multiple
+  try {
+    const { items } = req.body; // items: [{id, qty}, ...]
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: "Danh sách items không hợp lệ" });
+    }
+
+    await productsController.restockMultiple(items);
+    res.status(200).json({ success: true, message: "Cập nhật số lượng thành công" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
 router.post("/restock/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -234,7 +247,24 @@ router.post("/restock/:id", async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 });
+router.get("/daily-products", async (req, res) => {
+  try {
+    const result = await productsController.getDailyProducts();
+    res.status(200).json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
+// New API: List all inventory (non-daily) products
+router.get("/inventory-products", async (req, res) => {
+  try {
+    const result = await productsController.getInventoryProducts();
+    res.status(200).json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 // New API: List slow daily products for manual restock
 router.get("/slow-daily", async (req, res) => {
   try {

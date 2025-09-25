@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const Contact = require('../model/contactModel');
-const otpModel = require('../model/otpModel.js'); // Note: This is imported but not used; consider removing if unnecessary
 
 // Nodemailer transporter (replace with your email + app password)
 const transporter = nodemailer.createTransport({
@@ -39,7 +38,7 @@ exports.sendContact = async (req, res) => {
     }
 };
 
-// Xác thực OTP và lưu liên hệ
+// Xác thực OTP và gửi email đến admin
 exports.verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
     const stored = otpStore.get(email);
@@ -49,6 +48,7 @@ exports.verifyOTP = async (req, res) => {
     }
 
     try {
+        // Save contact to database
         const contact = new Contact({
             name: stored.name,
             email,
@@ -56,11 +56,20 @@ exports.verifyOTP = async (req, res) => {
             message: stored.message,
         });
         await contact.save();
+
+        // Send email to admin
+        await transporter.sendMail({
+            from: 'info@cuahang.com',
+            to: 'khanhndps38522@gmail.com', // Admin email
+            subject: `New Contact Form Submission: ${stored.subject}`,
+            text: `Name: ${stored.name}\nEmail: ${email}\nSubject: ${stored.subject}\nMessage: ${stored.message}`,
+        });
+
         otpStore.delete(email);
-        res.json({ message: 'Liên hệ đã được gửi thành công' });
+        res.json({ message: 'Liên hệ đã được gửi thành công đến admin' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Không thể lưu liên hệ' });
+        res.status(500).json({ error: 'Không thể gửi liên hệ' });
     }
 };
 

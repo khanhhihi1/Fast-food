@@ -39,8 +39,10 @@ export default function ShowAdmin() {
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const { isDarkMode } = useDarkMode();
 
-  const [showSlowRestockModal, setShowSlowRestockModal] = useState(false);
-  const [slowProducts, setSlowProducts] = useState<PostType[]>([]);
+  const [showDailyRestockModal, setShowDailyRestockModal] = useState(false); // Đổi từ showSlowRestockModal
+  const [dailyProducts, setDailyProducts] = useState<PostType[]>([]); // Đổi từ slowProducts
+  const [showInventoryRestockModal, setShowInventoryRestockModal] = useState(false); // Modal mới cho tồn kho
+  const [inventoryProducts, setInventoryProducts] = useState<PostType[]>([]); // Danh sách sản phẩm tồn kho
   const [restockQuantities, setRestockQuantities] = useState<Record<string, number>>({});
 
   const productsPerPage = 10;
@@ -135,25 +137,45 @@ export default function ShowAdmin() {
     }
   }, [filter, fetchAllProducts, fetchInactiveProducts]);
 
-  const fetchSlowProducts = useCallback(async () => {
+  const fetchDailyProducts = useCallback(async () => { // Đổi từ fetchSlowProducts
     try {
-      const res = await fetch(`${API_URL}/products/slow-daily`);
+      const res = await fetch(`${API_URL}/products/daily-products`); // API mới
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       if (data?.result) {
-        // 👇 FIX: slowProducts giờ đã có soldYesterday từ backend
-        setSlowProducts(data.result);
+        setDailyProducts(data.result);
         const initialQuantities: Record<string, number> = {};
         data.result.forEach((p: PostType) => {
-          initialQuantities[p._id] = 10; // 👇 FIX: Cap tại 10 cho slow
+          initialQuantities[p._id] = 0; // Bắt đầu từ 0, người dùng nhập số lượng thêm
         });
         setRestockQuantities(initialQuantities);
       } else {
-        setSlowProducts([]);
+        setDailyProducts([]);
       }
     } catch (e) {
-      toast.error(`Lỗi tải sản phẩm bán chậm: ${(e as Error).message}`);
-      setSlowProducts([]);
+      toast.error(`Lỗi tải sản phẩm theo ngày: ${(e as Error).message}`);
+      setDailyProducts([]);
+    }
+  }, [API_URL]);
+
+  const fetchInventoryProducts = useCallback(async () => { // Fetch mới cho tồn kho
+    try {
+      const res = await fetch(`${API_URL}/products/inventory-products`); // API mới
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      if (data?.result) {
+        setInventoryProducts(data.result);
+        const initialQuantities: Record<string, number> = {};
+        data.result.forEach((p: PostType) => {
+          initialQuantities[p._id] = 0; // Bắt đầu từ 0
+        });
+        setRestockQuantities(initialQuantities);
+      } else {
+        setInventoryProducts([]);
+      }
+    } catch (e) {
+      toast.error(`Lỗi tải sản phẩm tồn kho: ${(e as Error).message}`);
+      setInventoryProducts([]);
     }
   }, [API_URL]);
 
@@ -161,9 +183,9 @@ export default function ShowAdmin() {
     resetDailyProducts().then(() => {
       fetchPosts();
       fetchCategories();
-      fetchSlowProducts();
+      fetchDailyProducts(); // Đổi từ fetchSlowProducts
     });
-  }, [fetchPosts, fetchCategories, resetDailyProducts, fetchSlowProducts]);
+  }, [fetchPosts, fetchCategories, resetDailyProducts, fetchDailyProducts]);
 
   const filteredProducts = useMemo(
     () =>
@@ -256,58 +278,65 @@ export default function ShowAdmin() {
     setShowRestockModal(true);
   };
 
-  const handleRestockSlowProduct = async (id: string, qty: number) => {
-    const product = slowProducts.find((p) => p._id === id);
-    if (!product) {
-      toast.error("Sản phẩm không tồn tại");
-      return;
-    }
-
-    const maxQuantity = 10; // 👇 FIX: Hardcode 10 cho slow products
-
-    if (qty <= 0) {
-      toast.warn("Vui lòng nhập số lượng hợp lệ để restock");
-      return;
-    }
-
-    if (qty > maxQuantity) {
-      toast.error(
-        ` <strong>${product.name}</strong> bán chậm và đã đạt tối đa tồn kho (${maxQuantity}). Không thể nhập thêm.`,
-        { autoClose: 5000, pauseOnHover: true }
-      );
-      return;
-    }
-
+  const handleRestockMultiple = async (items: { id: string, qty: number }[]) => { // Hàm mới cho cập nhật tổng
     try {
-      const res = await fetch(`${API_URL}/products/restock/${id}`, {
+      const res = await fetch(`${API_URL}/products/restock-multiple`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: qty }),
+        body: JSON.stringify({ items }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        const msg = data.message || `Không thể restock sản phẩm`;
+        const msg = data.message || `Không thể cập nhật sản phẩm`;
         toast.error(msg, { autoClose: 5000, pauseOnHover: true });
         return;
       }
 
       toast.success(
-        <>
-          <strong>{product.name}</strong> đã được nhập thêm <strong>{qty}</strong> sản phẩm
-        </>,
+        `Đã cập nhật tổng cộng ${items.length} sản phẩm thành công!`,
         { autoClose: 4000, pauseOnHover: true }
       );
 
-      fetchSlowProducts();
+      // Refresh data
+      fetchDailyProducts();
+      fetchInventoryProducts();
       fetchPosts();
     } catch (e) {
-      toast.error(`Restock thất bại: ${(e as Error).message}`, {
+      toast.error(`Cập nhật thất bại: ${(e as Error).message}`, {
         autoClose: 5000,
         pauseOnHover: true,
       });
     }
+  };
+
+  const handleDailyRestockAll = () => { // Xử lý cập nhật tổng cho daily
+    const items = dailyProducts
+      .map(p => ({ id: p._id, qty: restockQuantities[p._id] || 0 }))
+      .filter(item => item.qty > 0); // Chỉ cập nhật nếu qty > 0
+
+    if (items.length === 0) {
+      toast.warn("Không có sản phẩm nào cần cập nhật.");
+      return;
+    }
+
+    handleRestockMultiple(items);
+    setShowDailyRestockModal(false);
+  };
+
+  const handleInventoryRestockAll = () => { // Xử lý cập nhật tổng cho inventory
+    const items = inventoryProducts
+      .map(p => ({ id: p._id, qty: restockQuantities[p._id] || 0 }))
+      .filter(item => item.qty > 0);
+
+    if (items.length === 0) {
+      toast.warn("Không có sản phẩm nào cần cập nhật.");
+      return;
+    }
+
+    handleRestockMultiple(items);
+    setShowInventoryRestockModal(false);
   };
 
   const handleQuantityChange = (id: string, value: number) => {
@@ -414,26 +443,25 @@ export default function ShowAdmin() {
                 <Button
                   className={styles.reStockProductBtn}
                   variant="info"
-                  onClick={() => setShowSlowRestockModal(true)}
+                  onClick={() => {
+                    fetchDailyProducts(); // Fetch trước khi mở modal
+                    setShowDailyRestockModal(true);
+                  }}
                 >
-                  Cập nhật số lượng sản phẩm bán chậm
+                  Cập nhật sản phẩm theo ngày
+                </Button>
+                <Button
+                  className={styles.reStockProductBtn}
+                  variant="info"
+                  onClick={() => {
+                    fetchInventoryProducts(); // Fetch trước khi mở modal
+                    setShowInventoryRestockModal(true);
+                  }}
+                >
+                  Cập nhật số lượng tồn kho
                 </Button>
               </div>
-              <Form
-                className={styles.fromInput}
-                onSubmit={(e) => e.preventDefault()}
-              >
-                <input
-                  className={`form-control ${styles["search-input"]}`}
-                  type="search"
-                  placeholder="Tìm kiếm..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <button className={styles["search-button"]} type="submit">
-                  <FaSearch />
-                </button>
-              </Form>
+
             </div>
           </div>
 
@@ -579,42 +607,51 @@ export default function ShowAdmin() {
           fetchPosts={fetchPosts}
         />
 
-        {/* Modal for manual restock slow products */}
-        <Modal show={showSlowRestockModal} onHide={() => setShowSlowRestockModal(false)} size="lg">
+        {/* Modal for daily products restock */}
+        <Modal show={showDailyRestockModal} onHide={() => setShowDailyRestockModal(false)} size="lg">
           <Modal.Header closeButton>
-            <Modal.Title className="text-white">Cập nhật số lượng sản phẩm bán chậm</Modal.Title>
+            <Modal.Title className="text-dark">Cập nhật sản phẩm theo ngày</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            {slowProducts.length === 0 ? (
-              <p>Không có sản phẩm bán chậm cần cập nhật.</p>
+            {dailyProducts.length === 0 ? (
+              <p>Không có sản phẩm theo ngày cần cập nhật.</p>
             ) : (
               <Table striped bordered hover>
                 <thead>
                   <tr>
                     <th>Tên</th>
                     <th>Bán hôm qua</th>
-                    <th>Số lượng mới</th>
-                    <th>Hành động</th>
+                    <th>Số lượng mới (thêm)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {slowProducts.map(p => (
+                  {dailyProducts.map(p => (
                     <tr key={p._id}>
                       <td>{p.name}</td>
-                      <td>{p.soldYesterday || 0}</td>
+                      <td
+                        style={{
+                          color: p.isDaily
+                            ? p.salesStatus === "slow"
+                              ? "red"
+                              : p.salesStatus === "best"
+                                ? "green"
+                                : "inherit"
+                            : "inherit",
+                        }}
+                      >
+                        {p.isDaily && p.soldYesterday !== undefined
+                          ? p.soldYesterday
+                          : "-"}
+                      </td>
                       <td>
                         <InputGroup>
                           <Form.Control
                             type="number"
+                            min={0}
                             value={restockQuantities[p._id] || 0}
                             onChange={(e) => handleQuantityChange(p._id, Number(e.target.value))}
                           />
                         </InputGroup>
-                      </td>
-                      <td>
-                        <Button className={styles.reStockProductBtn} onClick={() => handleRestockSlowProduct(p._id, restockQuantities[p._id])}>
-                          Cập nhật
-                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -623,9 +660,64 @@ export default function ShowAdmin() {
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowSlowRestockModal(false)}>
+            <Button variant="secondary" onClick={() => setShowDailyRestockModal(false)}>
               Đóng
             </Button>
+            {dailyProducts.length > 0 && (
+              <Button className={styles.reStockProductBtn} onClick={handleDailyRestockAll}>
+                Cập nhật tất cả
+              </Button>
+            )}
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal for inventory products restock */}
+        <Modal show={showInventoryRestockModal} onHide={() => setShowInventoryRestockModal(false)} size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title className="text-dark">Cập nhật số lượng tồn kho</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {inventoryProducts.length === 0 ? (
+              <p>Không có sản phẩm tồn kho cần cập nhật.</p>
+            ) : (
+              <Table striped bordered hover>
+                <thead>
+                  <tr>
+                    <th>Tên</th>
+                    <th>Số lượng hiện tại</th>
+                    <th>Số lượng mới (thêm)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventoryProducts.map(p => (
+                    <tr key={p._id}>
+                      <td>{p.name}</td>
+                      <td>{p.quantity || 0}</td>
+                      <td>
+                        <InputGroup>
+                          <Form.Control
+                            type="number"
+                            min={0}
+                            value={restockQuantities[p._id] || 0}
+                            onChange={(e) => handleQuantityChange(p._id, Number(e.target.value))}
+                          />
+                        </InputGroup>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowInventoryRestockModal(false)}>
+              Đóng
+            </Button>
+            {inventoryProducts.length > 0 && (
+              <Button className={styles.reStockProductBtn} onClick={handleInventoryRestockAll}>
+                Cập nhật tất cả
+              </Button>
+            )}
           </Modal.Footer>
         </Modal>
       </Container>

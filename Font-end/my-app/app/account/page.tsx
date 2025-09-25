@@ -17,6 +17,7 @@ import {
   ListGroup,
   InputGroup,
   Alert,
+  Pagination,
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -46,6 +47,8 @@ import {
   faUser,
   faPhone,
   faLocationDot,
+  faAngleRight,
+  faAngleLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import ProtectedRoute from "../component/ProtectedRoute";
 import { toast } from "react-toastify";
@@ -187,17 +190,17 @@ const UserProfile = () => {
   const [showAddressModal, setShowAddressModal] = useState(false); //  Modal cho thêm/sửa địa chỉ
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   useEffect(() => {
-    const fetchUserAndOrders = async () => {
+    const fetchUserAndOrders = async (pageNumber: number) => {
       try {
         setLoading(true);
 
+        // fetch user và orders cùng lúc, orders có phân trang
         const [userRes, ordersRes] = await Promise.all([
-          fetch(`${API_URL}/users/profile`, {
-            credentials: "include",
-          }),
-          fetch(`${API_URL}/orders`, {
+          fetch(`${API_URL}/users/profile`, { credentials: "include" }),
+          fetch(`${API_URL}/orders?page=${pageNumber}&limit=3`, {
             credentials: "include",
           }),
         ]);
@@ -205,6 +208,7 @@ const UserProfile = () => {
         const userData = await userRes.json();
         const ordersData = await ordersRes.json();
 
+        // ---- Xử lý user ----
         if (userRes.ok && userData.status) {
           setUser(userData.result);
         } else {
@@ -212,9 +216,16 @@ const UserProfile = () => {
           toast.error(userData.message || "Không thể lấy thông tin người dùng");
         }
 
+        // ---- Xử lý orders ----
         if (ordersRes.ok && ordersData.status) {
-          setOrders(ordersData.result || []);
-          const completedOrders = ordersData.result.filter(
+          const { orders, totalPages, currentPage } = ordersData.result;
+
+          setOrders(orders || []);
+          setPage(currentPage);
+          setTotalPages(totalPages);
+
+          // xử lý commentable products (chỉ với đơn đã hoàn tất)
+          const completedOrders = orders.filter(
             (order: Order) => order.status === 4
           );
 
@@ -258,8 +269,8 @@ const UserProfile = () => {
       }
     };
 
-    fetchUserAndOrders();
-  }, []);
+    fetchUserAndOrders(page); // chạy khi page thay đổi
+  }, [page]);
 
   //  Hàm thêm/sửa địa chỉ
   const handleSaveAddress = async () => {
@@ -331,7 +342,7 @@ const UserProfile = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: user?.email,
           oldPassword
         }),
@@ -741,7 +752,7 @@ const UserProfile = () => {
                     </Card>
                   </Tab.Pane>
                   <Tab.Pane eventKey="security">
-                   <Card className={`p-4 border-0 shadow-sm ${styles.cardContainer}`}>
+                    <Card className={`p-4 border-0 shadow-sm ${styles.cardContainer}`}>
                       <h5 className={styles.cardTitle}>
                         <FontAwesomeIcon icon={faLock} className="text-dark me-2" />
                         Thay đổi mật khẩu
@@ -817,7 +828,7 @@ const UserProfile = () => {
                           {passwordLoading ? (
                             <Spinner animation="border" size="sm" className="me-2" />
                           ) : null}
-                        Xác nhận thay đổi mật khẩu
+                          Xác nhận thay đổi mật khẩu
                         </Button>
                       </Form>
                     </Card>
@@ -1038,6 +1049,38 @@ const UserProfile = () => {
                           ))}
                         </div>
                       )}
+                      <div
+                        className={`d-flex justify-content-center mt-3 ${styles.pagination}`}
+                      >
+                        {/* Nút Previous */}
+                        <Button
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          disabled={page === 1}
+                          className={styles.pageBtn}
+                        >
+                          <FontAwesomeIcon icon={faAngleLeft} />
+                        </Button>
+
+                        {/* Các nút số trang */}
+                        {[...Array(totalPages)].map((_, idx) => (
+                          <Button
+                            key={idx + 1}
+                            onClick={() => setPage(idx + 1)}
+                            className={`${styles.pageNumber} ${page === idx + 1 ? styles.active : ""}`}
+                          >
+                            {idx + 1}
+                          </Button>
+                        ))}
+
+                        {/* Nút Next */}
+                        <Button
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={page === totalPages}
+                          className={styles.pageBtn}
+                        >
+                          <FontAwesomeIcon icon={faAngleRight} />
+                        </Button>
+                      </div>
                     </Card>
                   </Tab.Pane>
                   {/*  Tab mới cho quản lý địa chỉ */}

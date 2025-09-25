@@ -12,13 +12,12 @@ import AdminSideBar from "../component/adminSideBar";
 import AdminNavbar from "../component/adminNavbar";
 import ProtectedRoute from "../component/ProtectedRoute";
 import Image from "react-bootstrap/Image";
-import { Order } from "../type/oder";
 import { toast } from "react-toastify";
 import styles from "./styles/adminPage.module.css";
 
 // ========== Dark mode hook ==========
 const useDarkMode = () => {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("theme") === "dark";
     }
@@ -26,7 +25,7 @@ const useDarkMode = () => {
   });
 
   const toggleDarkMode = () => {
-    setIsDarkMode((prevMode) => {
+    setIsDarkMode((prevMode: boolean) => {
       const newMode = !prevMode;
       if (typeof window !== "undefined") {
         localStorage.setItem("theme", newMode ? "dark" : "light");
@@ -76,23 +75,120 @@ interface Comment {
   createdAt: string;
 }
 
+interface OrderItem {
+  productId: string;
+  name: string;
+  image?: string;
+  sizeName: string;
+  taste: string[];
+  quantity: number;
+  price: {
+    original: number;
+    discount?: number;
+  };
+  finalPrice: number;
+}
+
+interface Order {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  items: OrderItem[];
+  total: number;
+  discount: number;
+  voucherCode?: string;
+  voucherData?: {
+    code: string;
+    description: string;
+    discountType: string;
+    discountValue: number;
+    minOrderValue: number;
+    maxDiscount: number;
+    expiresAt: string;
+  };
+  shippingInfo: {
+    name: string;
+    phone: string;
+    address: string;
+  };
+  shippingFee: number;
+  tax: number;
+  paymentMethod: string;
+  isPaid: boolean;
+  status: number;
+  createdAt: string;
+}
+
+interface DashboardStats {
+  totalRevenue: number;
+  newUsers: number;
+  vouchersUsed: number;
+  cancelledOrders: number;
+  topProducts: Array<{
+    name: string;
+    revenue: number;
+    sold: number;
+    orderCount: number;
+    image: string;
+  }>;
+  // Thêm các trường khác nếu cần, ví dụ: revenueChart, topCustomers, v.v.
+}
+
 // ========== Main Component ==========
 export default function ShowAdmin() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
-  const [collapsed, setCollapsed] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalRevenue: 0,
+    newUsers: 0,
+    vouchersUsed: 0,
+    cancelledOrders: 0,
+    topProducts: [],
+  });
+  const [totalOrders, setTotalOrders] = useState(0);
+
+  const [collapsed, setCollapsed] = useState<boolean>(false);
 
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  // Fetch Dashboard Stats (thống kê theo tháng)
+  const fetchDashboardStats = async () => {
+    try {
+      const res = await fetch(`${API_URL}/statistics/dashboard?period=month`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to fetch dashboard stats");
+      }
+      const data: DashboardStats = await res.json();
+      setDashboardStats({
+        totalRevenue: data.totalRevenue || 0,
+        newUsers: data.newUsers || 0,
+        vouchersUsed: data.vouchersUsed || 0,
+        cancelledOrders: data.cancelledOrders || 0,
+        topProducts: data.topProducts || [],
+      });
+    } catch (error) {
+      toast.error("Lỗi khi tải dữ liệu thống kê");
+    }
+  };
 
   // Fetch Comments
   const fetchComments = async () => {
     try {
       const res = await fetch(`${API_URL}/comment/all`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch comments");
+      }
       const data = await res.json();
-      if (data.status) {
+      if (data.status && Array.isArray(data.result)) {
         setComments(data.result);
       }
     } catch {
@@ -104,8 +200,11 @@ export default function ShowAdmin() {
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${API_URL}/users`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error("Failed to fetch users");
+      }
       const data = await res.json();
-      if (data?.result) {
+      if (data?.result && Array.isArray(data.result)) {
         setUsers(data.result);
       } else if (Array.isArray(data)) {
         setUsers(data);
@@ -116,43 +215,47 @@ export default function ShowAdmin() {
   };
 
   // Fetch Orders
- const fetchOrders = async () => {
-  try {
-    const res = await fetch(`${API_URL}/orders/admin/all`, {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await res.json();
-    // Đảm bảo data.result là một mảng trước khi cập nhật state
-    if (data.status && Array.isArray(data.result)) {
-      setOrders(data.result);
-    } else {
-      // Nếu không phải mảng, set về mảng rỗng để tránh lỗi
-      setOrders([]); 
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch(`${API_URL}/orders/admin/all`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to fetch orders");
+      }
+      const data = await res.json();
+      if (data.status && Array.isArray(data.result)) {
+        setOrders(data.result);
+      } else {
+        setOrders([]);
+      }
+    } catch {
+      toast.error("Có lỗi khi tải danh sách đơn hàng");
+      setOrders([]);
     }
-  } catch {
-    toast.error("Có lỗi khi tải danh sách đơn hàng");
-    setOrders([]); // Cũng nên set mảng rỗng khi có lỗi
-  }
-};
+  };
 
   // Fetch Hot Products
   useEffect(() => {
     const controller = new AbortController();
-    async function fetchProducts() {
+    const fetchProducts = async () => {
       try {
         const res = await fetch(`${API_URL}/products/hot`, {
           signal: controller.signal,
         });
+        if (!res.ok) {
+          throw new Error("Failed to fetch hot products");
+        }
         const data = await res.json();
 
-        const productList = Array.isArray(data)
+        const productList: Product[] = Array.isArray(data)
           ? data
           : Array.isArray(data.result)
-          ? data.result
-          : Array.isArray(data.data)
-          ? data.data
-          : [];
+            ? data.result
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
 
         setHotProducts(productList);
       } catch (error: any) {
@@ -160,23 +263,22 @@ export default function ShowAdmin() {
           console.error("Lỗi khi fetch sản phẩm:", error);
         }
       }
-    }
+    };
 
     fetchProducts();
     return () => controller.abort();
-  }, []);
+  }, [API_URL]);
 
   useEffect(() => {
+    fetchDashboardStats();
     fetchOrders();
     fetchUsers();
     fetchComments();
-  }, []);
+  }, [API_URL]);
 
-  const totalRevenue = Array.isArray(orders)
-  ? orders.reduce((sum, order) => sum + order.total, 0)
-  : 0;
+  const totalRevenue = dashboardStats.totalRevenue;
 
-  const activities = [
+  const activities: Array<{ icon: string; text: string; time: string }> = [
     { icon: "blue", text: "User A vừa đăng nhập.", time: "4:45 PM" },
     { icon: "green", text: "User B vừa đặt hàng.", time: "3 hrs" },
     { icon: "green", text: "Đã xác thực đơn hàng #123", time: "22 hrs" },
@@ -192,9 +294,8 @@ export default function ShowAdmin() {
         {/* Main Content */}
         <Container
           fluid
-          className={`${styles.content} w-100 ${styles.containerContent} ${
-            collapsed ? styles.collapsedContent : ""
-          }`}
+          className={`${styles.content} w-100 ${styles.containerContent} ${collapsed ? styles.collapsedContent : ""
+            }`}
         >
           <AdminNavbar />
 
@@ -224,7 +325,7 @@ export default function ShowAdmin() {
                   </div>
                   <p className={styles.cardSubtext}>Tổng quan tháng này</p>
                   <div className={styles.cardContent}>
-                    <h3>{orders.length}</h3>
+                    <h3>{totalOrders}</h3>
                     <FontAwesomeIcon
                       icon={faCartShopping}
                       style={{ color: "rgb(25, 154, 193)", fontSize: 23 }}
@@ -240,7 +341,7 @@ export default function ShowAdmin() {
                   </div>
                   <p className={styles.cardSubtext}>Tổng quan tháng này</p>
                   <div className={styles.cardContent}>
-                    <h3>{users.length}</h3>
+                    <h3>{dashboardStats.newUsers}</h3>
                     <FaUsers style={{ color: "#2ecc71", fontSize: 23 }} />
                   </div>
                 </div>
@@ -249,11 +350,11 @@ export default function ShowAdmin() {
               <Col md={3}>
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
-                    <span>Tổng đánh giá</span>
+                    <span>Tổng voucher</span>
                   </div>
                   <p className={styles.cardSubtext}>Tổng quan tháng này</p>
                   <div className={styles.cardContent}>
-                    <h3>{comments.length}</h3>
+                    <h3>{dashboardStats.vouchersUsed}</h3>
                     <FontAwesomeIcon
                       icon={faComments}
                       style={{ color: "rgb(193, 25, 168)", fontSize: 23 }}
@@ -305,9 +406,8 @@ export default function ShowAdmin() {
                     {activities.map((activity, index) => (
                       <li key={index} className={styles.activityItem}>
                         <div
-                          className={`${styles.activityIcon} ${
-                            styles[activity.icon]
-                          }`}
+                          className={`${styles.activityIcon} ${styles[activity.icon as keyof typeof styles] || ""
+                            }`}
                         ></div>
                         <div className={styles.activityContent}>
                           <p>{activity.text}</p>

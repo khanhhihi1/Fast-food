@@ -704,7 +704,53 @@ cron.schedule(
     timezone: "Asia/Ho_Chi_Minh", // chạy theo giờ Việt Nam
   }
 );
+async function getDailyProducts() {
+  try {
+    const yesterday = moment().subtract(1, "day").startOf("day");
+    const products = await productsModel.find({ isDaily: true }).populate("categoryId");
 
+    return products
+      .map(p => {
+        const plain = p.toObject();
+        let soldYesterday = 0;
+        if (p.salesHistory?.length > 0) {
+          const lastRecord = p.salesHistory[p.salesHistory.length - 1];
+          if (moment(lastRecord.date).isSame(yesterday, "day")) {
+            soldYesterday = lastRecord.sold;
+          }
+        }
+        plain.soldYesterday = soldYesterday;
+        return plain;
+      });
+  } catch (error) {
+    console.error("Lỗi lấy daily products:", error);
+    throw error;
+  }
+}
+
+// Lấy list sản phẩm tồn kho (non-daily)
+async function getInventoryProducts() {
+  try {
+    const products = await productsModel.find({ isDaily: false }).populate("categoryId");
+    return products.map(p => p.toObject());
+  } catch (error) {
+    console.error("Lỗi lấy inventory products:", error);
+    throw error;
+  }
+}
+async function restockMultiple(items) { // Hàm mới cho cập nhật multiple
+  try {
+    for (const { id, qty } of items) {
+      if (qty > 0) {
+        await restockProduct(id, qty);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error("Lỗi restock multiple:", error);
+    throw error;
+  }
+}
 module.exports = {
   getAllPro,
   getDatailPro,
@@ -722,5 +768,8 @@ module.exports = {
   buyMultiple,
   restockProduct,
   resetAllDailyProducts,
-  getSlowDailyProducts
+  getSlowDailyProducts,
+  getInventoryProducts,
+  getDailyProducts,
+  restockMultiple,
 };
