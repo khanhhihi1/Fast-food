@@ -155,19 +155,23 @@ async function createOrderFromCart(req) {
 // Lấy danh sách đơn hàng của người dùng
 async function getUserOrders(req) {
   const userId = req.userId;
-  let orders = await Order.find({ userId })
-    .populate({
-      path: "items.productId",
-      select: "name image",
-    })
+  const page = parseInt(req.query.page) || 1; // mặc định trang 1
+  const limit = parseInt(req.query.limit) || 3; // mặc định 3 đơn mỗi trang
+  const skip = (page - 1) * limit;
 
-    .sort({
-      createdAt: -1
+  const [orders, totalOrders] = await Promise.all([
+    Order.find({ userId })
+      .populate({
+        path: "items.productId",
+        select: "name image",
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Order.countDocuments({ userId }),
+  ]);
 
-    });
-
-  // Format với prepend URL
-  orders = orders.map((order) => {
+  const formatted = orders.map((order) => {
     const orderDoc = order.toObject();
     orderDoc.items = orderDoc.items.map((item) => {
       let image = item.image || (item.productId ? item.productId.image : "");
@@ -183,7 +187,12 @@ async function getUserOrders(req) {
     return orderDoc;
   });
 
-  return orders;
+  return {
+    orders: formatted,
+    totalOrders,
+    totalPages: Math.ceil(totalOrders / limit),
+    currentPage: page,
+  };
 }
 
 // Lấy tất cả đơn hàng (admin)
